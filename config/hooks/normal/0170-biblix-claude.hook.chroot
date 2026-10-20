@@ -1,0 +1,23 @@
+#!/bin/sh
+# Claude Desktop (offizielle Linux-Beta von Anthropic) mit Chat, Cowork und Claude Code.
+# Schritte wie in https://code.claude.com/docs/en/desktop-linux
+set -e
+export DEBIAN_FRONTEND=noninteractive
+KEY=/usr/share/keyrings/claude-desktop-archive-keyring.asc
+FPR=31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE
+
+curl -fsSLo "$KEY" https://downloads.claude.ai/claude-desktop/key.asc
+# Schluessel nur nehmen, wenn er wirklich von Anthropic ist
+gpg --show-keys --with-colons "$KEY" | grep -q "^fpr:::::::::$FPR:" || {
+    echo "Biblix: FEHLER - Claude-Schluessel hat nicht den erwarteten Fingerabdruck"; exit 1; }
+
+echo "deb [arch=amd64,arm64 signed-by=$KEY] https://downloads.claude.ai/claude-desktop/apt/stable stable main" \
+    > /etc/apt/sources.list.d/claude-desktop.list
+apt-get update || echo "Biblix: Warnung - nicht alle Paketquellen erreichbar"
+apt-get install -y claude-desktop
+
+# KDE Wallet speichert die Anmeldung. GNOME Keyring daneben stoert laut Anthropic.
+if dpkg -s gnome-keyring >/dev/null 2>&1; then
+    apt-get purge -y gnome-keyring || echo "Biblix: gnome-keyring konnte nicht entfernt werden"
+fi
+echo "Biblix: Claude Desktop $(dpkg-query -W -f='${Version}' claude-desktop) installiert"

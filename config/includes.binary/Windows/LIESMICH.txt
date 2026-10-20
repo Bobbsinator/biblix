@@ -1,0 +1,18 @@
+Biblix fuer Windows
+===================
+
+1) "Spielstarter einrichten.cmd" einmal doppelklicken (fragt nach Admin-Rechten).
+   Das kopiert alles nach C:\Biblix und richtet den Spielstarter ein.
+
+2) Danach liegt in C:\Biblix:
+   - "Neustart in Biblix.cmd": startet den PC einmal direkt in Biblix.
+     Tipp: Rechtsklick > Senden an > Desktop (Verknuepfung erstellen).
+   - spiele.ini: welche Spiele der Knopf in Biblix starten darf.
+     Call of Duty ist schon eingetragen.
+
+So funktioniert der Knopf "Call of Duty (Windows)" in Biblix:
+   Klick in Biblix -> PC startet in Windows -> du meldest dich an ->
+   nach ein paar Sekunden startet Call of Duty von selbst.
+
+Entfernen: "Spielstarter entfernen.cmd".
+Protokoll: C:\Biblix\spielstarter.log

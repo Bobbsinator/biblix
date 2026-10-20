@@ -1,0 +1,46 @@
+#!/bin/bash
+# Secure Boot mit Biblix: eigenen Signierschluessel fuer diesen PC erzeugen, alle
+# selbst gebauten Treiber (NVIDIA, Xbox) damit neu signieren und den Schluessel
+# beim UEFI anmelden. Danach kann Secure Boot an bleiben (wichtig fuer Windows-
+# Spiele mit Anti-Cheat im Dual-Boot).
+#   bibi biblix-secureboot
+set -e
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Bitte mit Admin-Rechten starten: bibi biblix-secureboot"
+    exit 1
+fi
+KEY=/var/lib/dkms/mok.key
+PUB=/var/lib/dkms/mok.pub
+MARK=/var/lib/biblix/mok-eigener-schluessel
+
+echo "=== Secure Boot fuer Biblix einrichten ==="
+mokutil --sb-state 2>/dev/null || true
+echo
+
+# 1. Der Schluessel aus dem ISO-Bau ist in jeder Biblix-Kopie gleich: durch einen eigenen ersetzen
+if [ ! -f "$MARK" ]; then
+    echo "Erzeuge eigenen Schluessel fuer diesen PC ..."
+    rm -f "$KEY" "$PUB"
+    dkms generate_mok
+    echo "Signiere alle Treiber neu (dauert ein paar Minuten) ..."
+    dkms status | sed -n 's#^\([^/]*\)/\([^,]*\), \([^,]*\),.*installed.*#\1 \2 \3#p' | sort -u |
+    while read -r mod ver kern; do
+        # "install --force" wuerde das alte, falsch signierte Modul wiederverwenden
+        dkms unbuild -m "$mod" -v "$ver" -k "$kern" >/dev/null
+        dkms install -m "$mod" -v "$ver" -k "$kern"
+    done
+    mkdir -p "$(dirname "$MARK")"
+    date > "$MARK"
+fi
+
+# 2. Schluessel beim UEFI anmelden
+echo
+echo "Jetzt ein Einmal-Passwort ausdenken (z. B. 12345678) und zweimal eingeben."
+echo "Das brauchst du nur beim naechsten Neustart, danach nie wieder."
+mokutil --import "$PUB"
+echo
+echo "So geht es weiter:"
+echo "  1. Neu starten. Es erscheint ein blauer Bildschirm (MOK-Verwaltung)."
+echo "  2. 'Enroll MOK' -> 'Continue' -> 'Yes' -> Einmal-Passwort -> 'Reboot'."
+echo "  3. Im BIOS Secure Boot einschalten (falls aus)."
+echo "  4. In Biblix pruefen: biblix-gpu"

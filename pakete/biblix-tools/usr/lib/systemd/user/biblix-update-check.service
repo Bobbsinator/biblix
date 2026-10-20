@@ -1,0 +1,9 @@
+[Unit]
+Description=Biblix: nach Updates suchen und Bescheid geben
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/biblix-update-check
+TimeoutStartSec=12h

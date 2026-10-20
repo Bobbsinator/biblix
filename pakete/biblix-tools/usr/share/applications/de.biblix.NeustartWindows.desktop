@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Neustart in Windows
+Comment=Einmal direkt Windows starten, ohne Bootmenü
+Exec=biblix-neustart-windows
+Icon=system-reboot
+Terminal=false
+Categories=System;
+Keywords=windows;neustart;reboot;dualboot;

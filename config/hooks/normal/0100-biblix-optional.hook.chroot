@@ -1,0 +1,10 @@
+#!/bin/sh
+# Pakete, die je nach Debian-Stand fehlen koennen: einzeln versuchen, Build bricht nicht ab.
+set -e
+for pkg in mangohud gamescope goverlay; do
+    if apt-get install -y --no-install-recommends "$pkg"; then
+        echo "Biblix: $pkg installiert"
+    else
+        echo "Biblix: $pkg nicht verfuegbar, uebersprungen"
+    fi
+done

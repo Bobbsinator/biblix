@@ -1,0 +1,21 @@
+#!/bin/sh
+# Laeuft nur im Live-System: Verknuepfungen auf den Schreibtisch des Live-Benutzers.
+USER_NAME=bibi
+HOME_DIR=/home/$USER_NAME
+[ -d "$HOME_DIR" ] || exit 0
+usermod -aG kvm "$USER_NAME" 2>/dev/null || true
+mkdir -p "$HOME_DIR/Desktop"
+for f in /usr/share/applications/install-debian.desktop /usr/share/applications/calamares.desktop \
+         /usr/share/applications/de.biblix.SLauncher.desktop /usr/share/applications/de.biblix.SLauncher.Spiele.desktop \
+         /usr/share/applications/de.biblix.NeustartWindows.desktop /usr/share/applications/de.biblix.WindowsSpiel.cod.desktop; do
+    [ -f "$f" ] || continue
+    cp "$f" "$HOME_DIR/Desktop/"
+    chmod +x "$HOME_DIR/Desktop/$(basename "$f")"
+done
+chown -R "$USER_NAME:$USER_NAME" "$HOME_DIR/Desktop"
+
+# Live-Autologin in Plasma unter Wayland (HDR, mehrere Monitore), nicht X11.
+# live-config schreibt /etc/sddm.conf, und das hat Vorrang vor sddm.conf.d.
+if [ -f /etc/sddm.conf ] && [ -f /usr/share/wayland-sessions/plasma.desktop ]; then
+    sed -i 's/^Session=.*/Session=plasma.desktop/' /etc/sddm.conf
+fi

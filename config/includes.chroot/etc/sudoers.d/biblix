@@ -1,0 +1,5 @@
+# Biblix: Admin-Rechte holt man sich mit "bibi" (bibi apt install ...).
+# bibi ist sudo unter anderem Namen; diese Datei gilt fuer beide.
+Defaults passprompt="[bibi] Passwort für %p: "
+Defaults badpass_message="Falsches Passwort. Nochmal probieren."
+Defaults pwfeedback

@@ -1,0 +1,46 @@
+# Biblix-Bootmenue
+title-text: ""
+desktop-image: "background.png"
+desktop-color: "#072a36"
+terminal-font: "DejaVu Sans Regular 16"
+terminal-box: "menu_*.png"
+
++ boot_menu {
+    left = 30%
+    top = 36%
+    width = 40%
+    height = 42%
+    item_font = "DejaVu Sans Bold 24"
+    item_color = "#cfe6ee"
+    selected_item_color = "#ffffff"
+    icon_width = 48
+    icon_height = 48
+    item_icon_space = 20
+    item_height = 72
+    item_padding = 14
+    item_spacing = 10
+    menu_pixmap_style = "menu_*.png"
+    selected_item_pixmap_style = "select_*.png"
+    scrollbar = false
+}
+
++ label {
+    id = "__timeout__"
+    top = 82%
+    left = 0
+    width = 100%
+    align = "center"
+    font = "DejaVu Sans Regular 16"
+    color = "#8fb0bf"
+    text = "Biblix startet in %d Sekunden"
+}
+
++ label {
+    top = 88%
+    left = 0
+    width = 100%
+    align = "center"
+    font = "DejaVu Sans Regular 16"
+    color = "#5d7a86"
+    text = "Pfeiltasten: wählen   Enter: starten   E: bearbeiten"
+}

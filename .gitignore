@@ -1,0 +1,18 @@
+*.iso
+*.iso.sha256
+build.log
+.build/
+cache/
+chroot/
+binary/
+config/binary
+config/bootstrap
+config/chroot
+config/common
+config/source
+__pycache__/
+# Paketquelle wird auf den Zweig gh-pages veroeffentlicht, nicht in main
+paketquelle/
+# Private Schluessel gehoeren nie ins Repository
+*.asc
+*PRIVAT*

@@ -1,0 +1,133 @@
+#!/bin/sh
+# Logo, Hintergrund, Bootanimation, Anmeldebildschirm und Installer im Biblix-Look.
+set -e
+BR=/usr/share/biblix/branding
+T=/usr/share/desktop-base/biblix-theme
+
+png() { rsvg-convert -w "$2" -h "$3" -o "$4" "$1"; }
+
+# --- Logos und Icons
+for s in 16 22 24 32 48 64 128 256; do
+    mkdir -p /usr/share/icons/hicolor/${s}x${s}/apps
+    png $BR/biblix-logo.svg $s $s /usr/share/icons/hicolor/${s}x${s}/apps/biblix.png
+    png /usr/share/icons/hicolor/scalable/apps/s-launcher.svg $s $s /usr/share/icons/hicolor/${s}x${s}/apps/s-launcher.png
+done
+mkdir -p /usr/share/pixmaps
+png $BR/biblix-logo.svg 256 256 /usr/share/pixmaps/biblix.png
+gtk-update-icon-cache -q -f /usr/share/icons/hicolor || true
+
+# --- Desktop-Theme fuer desktop-base (Hintergrund, Anmeldung, GRUB)
+mkdir -p $T/wallpaper/contents/images $T/login $T/grub
+for r in 1920x1080 2560x1440 3840x2160; do
+    png $BR/wallpaper.svg ${r%x*} ${r#*x} $T/wallpaper/contents/images/$r.png
+done
+cat > $T/wallpaper/metadata.json <<'J'
+{ "KPlugin": { "Id": "Biblix", "Name": "Biblix", "Authors": [ { "Name": "Biblix" } ], "License": "CC-BY-SA-4.0" } }
+J
+cp $T/wallpaper/contents/images/1920x1080.png $T/login/background.png
+cp $BR/wallpaper.svg $T/login/background.svg
+png $BR/wallpaper.svg 1920 1080 $T/grub/grub-16x9.png
+png $BR/wallpaper.svg 1920 1200 $T/grub/grub-4x3.png
+update-alternatives --install /usr/share/desktop-base/active-theme desktop-theme $T 100
+update-alternatives --set desktop-theme $T
+ln -sfn $T/wallpaper /usr/share/wallpapers/Biblix
+
+# --- Plasma: dunkles Breeze, Bibi-Cyan als Akzent, Biblix-Hintergrund
+mkdir -p /etc/xdg
+cat > /etc/xdg/kdeglobals <<'K'
+[General]
+ColorScheme=BreezeDark
+AccentColor=10,165,198
+
+[KDE]
+LookAndFeelPackage=org.kde.breezedark.desktop
+
+[Icons]
+Theme=breeze-dark
+K
+mkdir -p /usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates
+cat > /usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/biblix-wallpaper.js <<'K'
+// Biblix: Hintergrund beim ersten Login setzen
+desktops().forEach(function (d) {
+    d.wallpaperPlugin = "org.kde.image";
+    d.currentConfigGroup = ["Wallpaper", "org.kde.image", "General"];
+    d.writeConfig("Image", "file:///usr/share/wallpapers/Biblix");
+});
+K
+
+# --- Anmeldebildschirm (SDDM Breeze mit Biblix-Hintergrund)
+mkdir -p /etc/sddm.conf.d /usr/share/sddm/themes/breeze
+cat > /etc/sddm.conf.d/biblix.conf <<'K'
+[Theme]
+Current=breeze
+K
+cat > /usr/share/sddm/themes/breeze/theme.conf.user <<K
+[General]
+background=$T/login/background.png
+type=image
+K
+
+# --- Bootmenue (GRUB-Theme) fuer das installierte System
+GT=/usr/share/grub/themes/biblix
+GS=/usr/share/biblix/grub
+mkdir -p $GT/icons
+cp $GS/theme.txt $GT/theme.txt
+png $GS/background.svg 1920 1080 $GT/background.png
+png $GS/select.svg 8 8 $GT/select_c.png
+for p in n s e w nw ne sw se; do png $GS/select-edge.svg 3 3 $GT/select_$p.png; done
+for p in c n s e w nw ne sw se; do png $GS/menu.svg 8 8 $GT/menu_$p.png; done
+# Icons je Eintragsklasse: Biblix/Debian, Windows, UEFI-Einstellungen
+for c in biblix debian gnu-linux gnu linux os; do png $BR/biblix-logo.svg 48 48 $GT/icons/$c.png; done
+for c in windows windows10 windows11; do png $GS/icon-windows.svg 48 48 $GT/icons/$c.png; done
+for c in efi recovery memtest; do png $GS/icon-system.svg 48 48 $GT/icons/$c.png; done
+for s in 16 24; do
+    grub-mkfont -s $s -o $GT/dejavu_regular_$s.pf2 /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+    grub-mkfont -s $s -o $GT/dejavu_bold_$s.pf2 /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf
+done
+
+# --- Bootanimation
+P=/usr/share/plymouth/themes/biblix
+png $BR/biblix-logo.svg 160 160 $P/logo.png
+png $BR/bar-track.svg 240 6 $P/bar-track.png
+png $BR/bar-fill.svg 240 6 $P/bar-fill.png
+plymouth-set-default-theme biblix
+update-initramfs -u -k all
+
+# --- fastfetch mit Biblix-Logo
+mkdir -p /etc/xdg/fastfetch
+cat > /etc/xdg/fastfetch/config.jsonc <<'K'
+{
+  "logo": { "source": "/usr/share/biblix/branding/fastfetch-logo.txt", "color": { "1": "cyan", "2": "yellow" } },
+  "modules": ["title", "separator", "os", "kernel", "uptime", "packages", "shell", "de", "cpu", "gpu", "memory", "disk",
+              { "type": "custom", "format": "AUF BIBLIX GEHT DAS." }]
+}
+K
+
+# --- Installer (Calamares) mit Biblix-Namen und Logo
+if [ -d /etc/calamares/branding/debian ]; then
+    CB=/etc/calamares/branding/biblix
+    rm -rf $CB
+    cp -a /etc/calamares/branding/debian $CB
+    for key in productName shortProductName bootloaderEntryName; do
+        sed -i "s|^\( *$key: *\).*|\1Biblix|" $CB/branding.desc
+    done
+    for key in version shortVersion; do
+        sed -i "s|^\( *$key: *\).*|\1\"1.0\"|" $CB/branding.desc
+    done
+    for key in versionedName shortVersionedName; do
+        sed -i "s|^\( *$key: *\).*|\1\"Biblix 1.0\"|" $CB/branding.desc
+    done
+    sed -i "s|^componentName:.*|componentName: biblix|" $CB/branding.desc
+    for key in productLogo productIcon; do
+        img=$(sed -n "s|^ *$key: *\"\{0,1\}\([^\"]*\)\"\{0,1\} *$|\1|p" $CB/branding.desc)
+        [ -n "$img" ] && png $BR/biblix-logo.svg 256 256 "$CB/$img"
+    done
+    sed -i "s|^branding:.*|branding: biblix|" /etc/calamares/settings.conf
+fi
+
+# --- Installer-Starter umbenennen
+for f in /usr/share/applications/calamares*.desktop /usr/share/applications/install-debian.desktop; do
+    [ -f "$f" ] || continue
+    sed -i -e 's/^Name=.*/Name=Biblix installieren/' -e 's/^Name\[de\]=.*/Name[de]=Biblix installieren/' \
+           -e 's/^Comment=.*/Comment=VIEL ERFOLG./' -e 's/^Icon=.*/Icon=biblix/' "$f"
+done

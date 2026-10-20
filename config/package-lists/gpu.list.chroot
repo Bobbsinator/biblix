@@ -1,0 +1,20 @@
+# --- Firmware und Microcode
+firmware-linux
+firmware-linux-nonfree
+firmware-misc-nonfree
+firmware-amd-graphics
+firmware-iwlwifi
+firmware-realtek
+intel-microcode
+amd64-microcode
+# --- AMD und Intel: Mesa (OpenGL, Vulkan RADV/ANV, Video-Beschleunigung)
+mesa-vulkan-drivers
+libgl1-mesa-dri
+mesa-va-drivers
+intel-media-va-driver-non-free
+vulkan-tools
+mesa-utils
+# --- NVIDIA: Treiber 615 (offene Module) kommt per Hook 0150 direkt von NVIDIA
+dkms
+# --- Laptops mit zwei Grafikkarten ("Mit dedizierter Grafikkarte starten")
+switcheroo-control

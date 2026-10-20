@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=S-Launcher
+GenericName=App-Browser
+Comment=Apps und Spiele installieren, starten und aktualisieren
+Exec=s-launcher
+Icon=s-launcher
+Terminal=false
+Categories=System;PackageManager;Game;
+Keywords=apps;store;flatpak;flathub;steam;spiele;installieren;

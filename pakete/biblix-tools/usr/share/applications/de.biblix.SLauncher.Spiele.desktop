@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Spiele
+GenericName=Spielezentrale
+Comment=Steam-Bibliothek, Leistung und Spiele-Werkzeuge
+Exec=s-launcher --spiele
+Icon=applications-games
+Terminal=false
+Categories=Game;
+Keywords=steam;games;spiele;proton;

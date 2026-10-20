@@ -1,0 +1,6 @@
+// Biblix: Paketlisten taeglich auffrischen und Updates schon vorab herunterladen.
+// Installiert wird nichts automatisch, das macht "System aktualisieren" im S-Launcher.
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Download-Upgradeable-Packages "1";
+APT::Periodic::Unattended-Upgrade "0";
+APT::Periodic::AutocleanInterval "7";

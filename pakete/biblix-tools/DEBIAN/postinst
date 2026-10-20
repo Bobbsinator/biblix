@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+if [ "$1" = configure ]; then
+    systemctl enable biblix-gpu-setup.service >/dev/null 2>&1 || true
+    systemctl --global enable biblix-update-check.timer >/dev/null 2>&1 || true
+    update-desktop-database -q /usr/share/applications 2>/dev/null || true
+fi
+exit 0

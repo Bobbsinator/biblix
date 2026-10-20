@@ -1,0 +1,138 @@
+#!/bin/bash
+# biblix-gpu - zeigt Grafikkarten, Treiber und Gaming-Status.
+#   biblix-gpu          ausfuehrlicher Bericht
+#   biblix-gpu --short  eine Zeile (fuer den S-Launcher)
+#   biblix-gpu --setup  NVIDIA-Treiber fuer Flatpak-Spiele nachziehen (laeuft beim Start als Dienst)
+
+gpus() {
+    lspci -Dnn 2>/dev/null | grep -Ei ' \[(0300|0302|0380)\]'
+}
+
+driver_of() {
+    lspci -ks "$1" 2>/dev/null | sed -n 's/.*Kernel driver in use: //p'
+}
+
+vendor_of() {
+    case "$1" in
+        *"[10de:"*) echo NVIDIA ;;
+        *"[1002:"*) echo AMD ;;
+        *"[8086:"*) echo Intel ;;
+        *) echo Andere ;;
+    esac
+}
+
+nvidia_version() {
+    cat /sys/module/nvidia/version 2>/dev/null
+}
+
+# Flatpak braucht eine GL-Erweiterung, die exakt zur NVIDIA-Treiberversion passt.
+nvidia_flatpak_ext() {
+    local v
+    v=$(nvidia_version) || return 1
+    [ -n "$v" ] || return 1
+    echo "org.freedesktop.Platform.GL.nvidia-${v//./-}"
+}
+
+has_flatpak_ext() {
+    flatpak list --runtime --columns=application 2>/dev/null | grep -qx "$1"
+}
+
+short() {
+    local out="" line slot drv
+    while read -r line; do
+        slot=${line%% *}
+        drv=$(driver_of "$slot")
+        name=$(echo "$line" | sed -E 's/^[^ ]+ [^:]+: //; s/ \[[0-9a-f]{4}:[0-9a-f]{4}\].*//')
+        out+="${out:+  |  }$name → Treiber: ${drv:-keiner}"
+    done < <(gpus)
+    [ -n "$(nvidia_version)" ] && out+="  (NVIDIA $(nvidia_version))"
+    echo "Grafik: ${out:-keine Grafikkarte erkannt}"
+}
+
+setup() {
+    local ext
+    ext=$(nvidia_flatpak_ext) || exit 0
+    has_flatpak_ext "$ext" && exit 0
+    command -v flatpak >/dev/null || exit 0
+    echo "Installiere $ext fuer Flatpak-Spiele ..."
+    flatpak install --system -y --noninteractive flathub "$ext"
+}
+
+report() {
+    echo "=== Biblix Grafik- und CPU-Check ==="
+    echo "Kernel: $(uname -r)"
+    echo
+    local any=0 line slot drv vendor
+    while read -r line; do
+        any=1
+        slot=${line%% *}
+        drv=$(driver_of "$slot")
+        vendor=$(vendor_of "$line")
+        echo "• $(echo "$line" | sed -E 's/^[^ ]+ [^:]+: //')"
+        echo "  Hersteller: $vendor   Treiber in Benutzung: ${drv:-keiner}"
+        case "$vendor:$drv" in
+            NVIDIA:nvidia)
+                if grep -q "Open Kernel Module" /proc/driver/nvidia/version 2>/dev/null; then
+                    echo "  OK: NVIDIA-Treiber $(nvidia_version) mit offenen Modulen aktiv (passt auch fuer RTX 50)."
+                else
+                    echo "  Hinweis: NVIDIA $(nvidia_version) mit geschlossenen Modulen - RTX 50 braucht die offenen."
+                fi ;;
+            NVIDIA:nouveau) echo "  Hinweis: freier nouveau-Treiber aktiv - langsam fuer Spiele. Secure Boot pruefen (siehe unten)." ;;
+            NVIDIA:*) echo "  Problem: NVIDIA-Treiber nicht geladen. Secure Boot pruefen oder 'bibi dkms autoinstall' ausfuehren." ;;
+            AMD:amdgpu) echo "  OK: amdgpu + Mesa (RADV Vulkan) aktiv." ;;
+            AMD:radeon) echo "  Hinweis: alte Radeon-Karte mit radeon-Treiber, Vulkan eingeschraenkt." ;;
+            Intel:i915|Intel:xe) echo "  OK: Intel-Treiber + Mesa aktiv." ;;
+        esac
+        echo
+    done < <(gpus)
+    [ $any = 0 ] && echo "Keine Grafikkarte erkannt (virtuelle Maschine?)." && echo
+
+    local cpu sdrv epp
+    cpu=$(sed -n 's/^model name\s*: //p' /proc/cpuinfo | head -n1)
+    sdrv=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver 2>/dev/null)
+    epp=$(cat /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference 2>/dev/null)
+    echo "• CPU: ${cpu:-unbekannt} ($(nproc) Threads)"
+    echo "  Taktsteuerung: ${sdrv:-unbekannt}${epp:+   Energie-Vorgabe: $epp}"
+    case "$sdrv" in
+        amd-pstate-epp|amd-pstate) echo "  OK: moderner Ryzen-Takttreiber aktiv." ;;
+        acpi-cpufreq) grep -q AuthenticAMD /proc/cpuinfo && echo "  Hinweis: alter Takttreiber. Im BIOS 'CPPC' einschalten, dann greift amd-pstate." ;;
+    esac
+    case "$cpu" in
+        *X3D*) echo "  X3D-Cache erkannt. Spiele profitieren automatisch, nichts einzustellen." ;;
+    esac
+    echo
+
+    if command -v mokutil >/dev/null; then
+        echo "Secure Boot: $(mokutil --sb-state 2>/dev/null | head -n1)"
+        echo "  Fuer Secure Boot einmal einen eigenen Schluessel einrichten (nicht den aus dem ISO nehmen):"
+        echo "  bibi biblix-secureboot"
+        echo
+    fi
+
+    if command -v vulkaninfo >/dev/null; then
+        echo "Vulkan-Geraete:"
+        vulkaninfo --summary 2>/dev/null | grep -E 'deviceName|driverName' | sed 's/^ */  /'
+        echo
+    fi
+
+    local ext
+    if ext=$(nvidia_flatpak_ext); then
+        if has_flatpak_ext "$ext"; then
+            echo "Flatpak/Steam: passende NVIDIA-Erweiterung installiert ($ext)."
+        else
+            echo "Flatpak/Steam: $ext fehlt. Beheben mit: bibi biblix-gpu --setup"
+        fi
+    fi
+    echo
+    echo "Energieprofil: $(powerprofilesctl get 2>/dev/null || echo unbekannt)"
+    echo "GameMode:      $(gamemoded -s 2>/dev/null || echo nicht gefunden)"
+    echo "HDR:           Systemeinstellungen → Anzeige → HDR (Bildschirm muss HDR koennen)"
+    echo
+    echo "AUF BIBLIX GEHT DAS."
+}
+
+case "$1" in
+    --short) short ;;
+    --setup) setup ;;
+    *) report ;;
+esac

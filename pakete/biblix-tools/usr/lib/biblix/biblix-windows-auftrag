@@ -1,0 +1,27 @@
+#!/bin/bash
+# Legt einen Spielauftrag fuer Windows im UEFI-Speicher ab und setzt den naechsten Start auf Windows.
+# Laeuft als root ueber pkexec (Policy de.biblix.windows-spiel).
+#   biblix-windows-auftrag <kennung>
+# Windows liest den Auftrag beim Anmelden (Biblix-Spielstarter) und loescht ihn.
+set -e
+CONF=/etc/biblix/windows-spiele.conf
+GUID=111c1337-65dd-47c2-9e92-7c71c8e26c13
+EFIVARS=${BIBLIX_EFIVARS:-/sys/firmware/efi/efivars}
+VAR="$EFIVARS/BiblixSpiel-$GUID"
+
+id="$1"
+# Nur Kennungen aus der Liste, nur einfache Zeichen
+[[ "$id" =~ ^[a-z0-9-]{1,32}$ ]] || { echo "Ungueltige Kennung" >&2; exit 2; }
+grep -q "^$id|" "$CONF" || { echo "Spiel '$id' steht nicht in $CONF" >&2; exit 2; }
+[ -d "$EFIVARS" ] || { echo "Kein UEFI-Speicher gefunden (BIOS-Modus?)" >&2; exit 3; }
+
+# Vorhandenen Auftrag ersetzen (efivarfs schuetzt Variablen gegen versehentliches Loeschen)
+if [ -e "$VAR" ]; then
+    chattr -i "$VAR" 2>/dev/null || true
+    rm -f "$VAR"
+fi
+# 4 Byte Attribute (NV + BS + RT = 7), danach die Kennung
+printf '\x07\x00\x00\x00%s' "$id" > "$VAR"
+
+/usr/lib/biblix/biblix-bootnext-windows
+echo "Auftrag '$id' fuer Windows abgelegt."

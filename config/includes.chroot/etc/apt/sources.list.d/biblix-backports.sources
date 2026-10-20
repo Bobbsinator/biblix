@@ -1,0 +1,6 @@
+# Biblix: neuer Kernel, Firmware und Mesa fuer aktuelle Hardware (Ryzen 9000, X870/B850)
+Types: deb
+URIs: http://deb.debian.org/debian
+Suites: trixie-backports
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp

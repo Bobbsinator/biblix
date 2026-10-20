@@ -1,0 +1,33 @@
+#!/bin/sh
+# Flathub einrichten und Steam vorinstallieren. Klappt das im Build nicht (kein Netz,
+# kein bubblewrap im Container), bietet der S-Launcher die Installation spaeter an.
+set -e
+flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+if flatpak install --system -y --noninteractive flathub com.valvesoftware.Steam; then
+    echo "Biblix: Steam installiert"
+    branch=$(flatpak info --show-runtime com.valvesoftware.Steam | awk -F/ '{print $3}')
+    # MangoHud (FPS-Anzeige) und Gamescope (HDR in Spielen) als Bausteine fuer Steam
+    for layer in MangoHud gamescope; do
+        flatpak install --system -y --noninteractive flathub "org.freedesktop.Platform.VulkanLayer.$layer//$branch" \
+            || echo "Biblix: $layer fuer Flatpak uebersprungen"
+    done
+    # MangoHud-Konfiguration lesen; Wayland direkt nutzen (noetig fuer HDR)
+    flatpak override --system --filesystem=xdg-config/MangoHud:ro --socket=wayland com.valvesoftware.Steam
+else
+    echo "Biblix: Steam-Vorinstallation uebersprungen (wird im S-Launcher angeboten)"
+fi
+
+# Vorinstallierte Apps: WhatsApp (ZapZap, WhatsApp Web als eigene App)
+for app in com.rtosta.zapzap; do
+    flatpak install --system -y --noninteractive flathub "$app" \
+        || echo "Biblix: $app uebersprungen (im S-Launcher installierbar)"
+done
+
+# Passenden NVIDIA-Baustein fuer Flatpak-Spiele gleich mitliefern (Live-System ohne Internet)
+nv=$(dpkg-query -W -f='${Version}' nvidia-open 2>/dev/null | cut -d- -f1)
+if [ -n "$nv" ]; then
+    ext="org.freedesktop.Platform.GL.nvidia-$(echo "$nv" | tr . -)"
+    flatpak install --system -y --noninteractive flathub "$ext//1.4" \
+        || echo "Biblix: $ext uebersprungen (wird beim ersten Start nachgeladen)"
+fi

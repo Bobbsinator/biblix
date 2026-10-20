@@ -1,0 +1,22 @@
+#!/bin/sh
+# NVIDIA-Kernelmodul (offene Variante) fuer jeden Kernel im Image bauen und pruefen.
+set -e
+for kdir in /lib/modules/*; do
+    kver=$(basename "$kdir")
+    [ -d "/usr/src/linux-headers-$kver" ] || continue
+    if ! find "$kdir" -name 'nvidia.ko*' | grep -q .; then
+        echo "Biblix: baue NVIDIA-Modul fuer $kver"
+        dkms autoinstall -k "$kver"
+    fi
+    mod=$(find "$kdir" -name 'nvidia.ko*' | head -n1)
+    [ -n "$mod" ] || { echo "Biblix: FEHLER - kein nvidia.ko fuer $kver"; exit 1; }
+    # RTX 50 laeuft nur mit den offenen Modulen (Lizenz "Dual MIT/GPL")
+    lic=$(modinfo -F license "$mod")
+    echo "Biblix: $kver -> $(basename "$mod") ($lic)"
+    case "$lic" in
+        *MIT*) ;;
+        *) echo "Biblix: FEHLER - geschlossenes NVIDIA-Modul, RTX 50 braucht die offene Variante"; exit 1 ;;
+    esac
+done
+# Standby-Dienste von NVIDIA (Grafikspeicher sichern)
+systemctl enable nvidia-suspend.service nvidia-resume.service nvidia-hibernate.service 2>/dev/null || true

@@ -1,0 +1,16 @@
+#!/bin/bash
+# Knopf "Neustart in Windows": fragt kurz nach, setzt den naechsten Start auf Windows
+# und startet neu. Das Bootmenue wird dabei uebersprungen, nur fuer diesen einen Start.
+HELPER=/usr/lib/biblix/biblix-bootnext-windows
+
+frage() { kdialog --title "Neustart in Windows" --warningyesno "$1" --yes-label "Neu starten" --no-label "Abbrechen"; }
+fehler() { kdialog --title "Neustart in Windows" --error "$1"; }
+
+if ! frage "Jetzt Windows starten?\n\nNicht gespeicherte Arbeit geht verloren."; then
+    exit 0
+fi
+if ! out=$(pkexec "$HELPER" 2>&1); then
+    fehler "Windows wurde nicht gefunden.\n\nIst Windows im UEFI-Modus installiert? Im Bootmenü beim Start steht es trotzdem zur Wahl.\n\n$out"
+    exit 1
+fi
+systemctl reboot

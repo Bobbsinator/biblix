@@ -1,0 +1,23 @@
+#!/bin/sh
+# Biblix: live-build-Grundeinstellungen (Debian 13 "trixie", amd64)
+set -e
+
+lb config noauto \
+    --distribution trixie \
+    --architectures amd64 \
+    --archive-areas "main contrib non-free non-free-firmware" \
+    --mode debian \
+    --debian-installer none \
+    --firmware-chroot true \
+    --firmware-binary true \
+    --linux-packages "linux-image linux-headers" \
+    --bootappend-live "boot=live components quiet splash amd_pstate=active nvidia-drm.modeset=1 nvidia-drm.fbdev=1 locales=de_AT.UTF-8 keyboard-layouts=de timezone=Europe/Vienna username=bibi hostname=biblix" \
+    --iso-application "Biblix" \
+    --iso-publisher "Biblix - DEIN SYSTEM. DEIN PROBLEM." \
+    --iso-volume "BIBLIX" \
+    --image-name "biblix" \
+    --memtest none \
+    --security true \
+    --updates true \
+    --apt-recommends true \
+    "${@}"

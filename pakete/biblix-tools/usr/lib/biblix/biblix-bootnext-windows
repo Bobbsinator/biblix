@@ -1,0 +1,13 @@
+#!/bin/sh
+# Setzt den naechsten Start (nur einmal) auf den Windows Boot Manager.
+# Laeuft als root ueber pkexec (Policy de.biblix.bootnext-windows), nimmt keine Argumente.
+#   --pruefen   nur nachsehen, ob es einen Windows-Eintrag gibt
+set -e
+id=$(efibootmgr | sed -n 's/^Boot\([0-9A-Fa-f]\{4\}\)\*\{0,1\} \{1,\}Windows Boot Manager.*/\1/p' | head -n1)
+if [ -z "$id" ]; then
+    echo "Kein Windows-Eintrag im UEFI gefunden." >&2
+    exit 2
+fi
+[ "$1" = "--pruefen" ] && { echo "$id"; exit 0; }
+efibootmgr --quiet --bootnext "$id"
+echo "Naechster Start: Windows (Boot$id)"

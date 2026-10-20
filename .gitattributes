@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.png binary
+*.iso binary
+*.gpg binary
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+config/includes.binary/Windows/*.txt text eol=crlf
+*.ini text eol=crlf

@@ -1,0 +1,11 @@
+# --- App-System und S-Launcher
+flatpak
+python3-pyqt6
+pkexec
+polkitd
+# --- Gaming und Leistung
+gamemode
+steam-devices
+power-profiles-daemon
+systemd-zram-generator
+irqbalance

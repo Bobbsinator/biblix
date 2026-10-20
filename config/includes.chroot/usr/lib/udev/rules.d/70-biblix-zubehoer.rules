@@ -1,0 +1,3 @@
+# Biblix: angemeldeter Benutzer darf USB-HID-Geraete direkt ansprechen
+# (RGB-Steuerung, Headset-/Maus-Software). Kein SMBus/i2c: RAM-RGB bleibt aus Sicherheitsgruenden aus.
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", TAG+="uaccess"

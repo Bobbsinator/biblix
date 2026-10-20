@@ -1,0 +1,13 @@
+#!/bin/sh
+# Wird vom S-Launcher ueber pkexec gestartet: Debian-Pakete, Kernel und Treiber aktualisieren.
+set -e
+export DEBIAN_FRONTEND=noninteractive
+# Laeuft gerade das automatische Herunterladen im Hintergrund, bis zu 5 Minuten warten statt abzubrechen
+LOCK="-o DPkg::Lock::Timeout=300"
+echo "Paketlisten werden geladen ..."
+# Eine nicht erreichbare Quelle soll nicht alle anderen Updates blockieren
+apt-get $LOCK update || echo "Warnung: nicht alle Paketquellen erreichbar, mache mit den anderen weiter."
+echo "System wird aktualisiert ..."
+apt-get $LOCK -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold full-upgrade
+apt-get $LOCK -y autoremove
+echo "Fertig. Neustart empfohlen."

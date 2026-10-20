@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Biblix</vendor>
+  <action id="de.biblix.windows-spiel">
+    <description>Start a Windows game</description>
+    <description xml:lang="de">Windows-Spiel starten</description>
+    <message>Authentication is required to start a Windows game.</message>
+    <message xml:lang="de">Zum Starten des Windows-Spiels ist dein Passwort nötig.</message>
+    <icon_name>applications-games</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <!-- Wer am PC sitzt, darf ohne Passwort; erlaubt sind nur Spiele aus /etc/biblix/windows-spiele.conf -->
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/biblix/biblix-windows-auftrag</annotate>
+  </action>
+</policyconfig>

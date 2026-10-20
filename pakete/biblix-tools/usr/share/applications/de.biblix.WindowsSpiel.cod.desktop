@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Call of Duty (Windows)
+Comment=Startet den PC in Windows, Call of Duty startet nach der Anmeldung von selbst
+Exec=biblix-windows-spiel cod
+Icon=applications-games
+Terminal=false
+Categories=Game;
+Keywords=call of duty;cod;mw4;windows;

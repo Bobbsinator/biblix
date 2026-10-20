@@ -1,0 +1,19 @@
+#!/bin/bash
+# Knopf fuer ein Windows-Spiel: PC startet in Windows, das Spiel startet nach der Anmeldung von selbst.
+#   biblix-windows-spiel <kennung>      (Kennungen: /etc/biblix/windows-spiele.conf)
+CONF=/etc/biblix/windows-spiele.conf
+id="$1"
+name=$(sed -n "s/^$id|//p" "$CONF" 2>/dev/null | head -n1)
+titel="${name:-Windows-Spiel}"
+
+if [ -z "$name" ]; then
+    kdialog --title "$titel" --error "Das Spiel '$id' ist nicht eingerichtet ($CONF)."
+    exit 1
+fi
+kdialog --title "$titel" --warningyesno "$name starten?\n\nDer PC startet dazu in Windows neu. Nach deiner Anmeldung in Windows startet das Spiel von selbst.\n\nNicht gespeicherte Arbeit geht verloren." \
+    --yes-label "Neu starten und spielen" --no-label "Abbrechen" || exit 0
+if ! out=$(pkexec /usr/lib/biblix/biblix-windows-auftrag "$id" 2>&1); then
+    kdialog --title "$titel" --error "Das hat nicht geklappt:\n\n$out"
+    exit 1
+fi
+systemctl reboot

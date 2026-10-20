@@ -1,0 +1,5 @@
+# Biblix: NVIDIA-Treiber direkt von NVIDIA (Debian selbst hat nur 550, RTX 50 braucht 570+)
+Types: deb
+URIs: https://developer.download.nvidia.com/compute/cuda/repos/debian13/x86_64/
+Suites: /
+Signed-By: /usr/share/keyrings/cuda-archive-keyring.gpg

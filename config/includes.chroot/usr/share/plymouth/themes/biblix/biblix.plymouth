@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Biblix
+Description=Biblix Bootanimation
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/biblix
+ScriptFile=/usr/share/plymouth/themes/biblix/biblix.script

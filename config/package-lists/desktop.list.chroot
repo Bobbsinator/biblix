@@ -1,0 +1,63 @@
+# --- KDE Plasma 6 Desktop
+kde-plasma-desktop
+sddm
+sddm-theme-breeze
+kde-config-sddm
+plasma-nm
+plasma-pa
+plasma-systemmonitor
+bluedevil
+powerdevil
+kscreen
+kinfocenter
+systemsettings
+xdg-desktop-portal-kde
+konsole
+dolphin
+kate
+ark
+gwenview
+okular
+kde-spectacle
+kcalc
+partitionmanager
+breeze-gtk-theme
+# --- Ton, Netzwerk, Drucken
+pipewire-audio
+wireplumber
+network-manager
+cups
+print-manager
+# --- Browser und Sprache
+firefox-esr
+firefox-esr-l10n-de
+locales
+hunspell-de-at
+fonts-noto
+fonts-noto-color-emoji
+# --- Installer
+calamares
+calamares-settings-debian
+# --- Werkzeuge (Biblix ist auch fuer Nerds)
+sudo
+bash-completion
+fastfetch
+htop
+curl
+wget
+git
+vim
+nano
+build-essential
+python3
+python3-venv
+pciutils
+usbutils
+lm-sensors
+mokutil
+libnotify-bin
+librsvg2-bin
+# --- Bootanimation
+plymouth
+plymouth-themes
+desktop-base

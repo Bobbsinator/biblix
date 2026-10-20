@@ -1,0 +1,56 @@
+# --- Dual-Boot: Windows im Bootmenue
+os-prober
+# --- NVIDIA: Hardware-Videobeschleunigung (YouTube, Twitch, Filme im Browser)
+nvidia-vaapi-driver
+# --- Handy verbinden (Dateien, Benachrichtigungen, Zwischenablage)
+kdeconnect
+# --- Buero
+libreoffice-plasma
+libreoffice-l10n-de
+libreoffice-help-de
+# --- Schriften mit gleichen Massen wie Arial, Times, Calibri, Cambria
+fonts-liberation
+fonts-crosextra-carlito
+fonts-crosextra-caladea
+# --- Archive (RAR, 7z) und bsdtar fuer den Xbox-Funkadapter
+7zip
+unrar
+libarchive-tools
+# --- Drucken und Scannen
+hplip
+printer-driver-gutenprint
+sane-utils
+sane-airscan
+ipp-usb
+skanlite
+# --- Sicherheit: Snapshots vor Updates, Firewall mit Oberflaeche
+timeshift
+firewalld
+plasma-firewall
+# --- OneDrive
+onedrive
+# --- Zubehoer: Gaming-Maeuse (Piper), Wasserkuehlungen/Netzteile (liquidctl)
+ratbagd
+liquidctl
+# --- Fuer Paketquellen mit Schluesselpruefung (Claude Desktop)
+gnupg
+# --- Bootmenue und Neustart-Knoepfe
+grub-common
+fonts-dejavu-core
+efibootmgr
+kdialog
+# --- Videos: Haruna (Standard), mpv (Hochqualitaet), VLC (fuer alles andere)
+haruna
+mpv
+vlc
+# --- E-Mail: Thunderbird (Gmail und Outlook per Browser-Anmeldung, Kalender, Kontakte)
+thunderbird
+thunderbird-l10n-de
+# --- Bootloader fuer den Installer und Kernel-Updates (sonst startet Biblix nach der Installation nicht)
+grub-efi-amd64
+# --- Secure Boot: signiertes GRUB + shim (Dual-Boot mit Secure Boot an)
+grub-efi-amd64-signed
+shim-signed
+# --- KDE Wallet beim Login automatisch entsperren (Claude, Chrome, WLAN-Passwoerter)
+libpam-kwallet5
+ca-certificates

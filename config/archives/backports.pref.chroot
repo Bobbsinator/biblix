@@ -1,0 +1,3 @@
+Package: src:linux src:linux-signed-amd64 src:linux-base src:firmware-nonfree src:firmware-free src:amd64-microcode src:mesa
+Pin: release n=trixie-backports
+Pin-Priority: 990

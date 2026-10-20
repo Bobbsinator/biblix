@@ -1,0 +1,27 @@
+#!/bin/bash
+# OneDrive unter Biblix einrichten (Client "onedrive" von abraunegg).
+# Synchronisiert in ~/OneDrive und laeuft danach automatisch im Hintergrund.
+set -e
+echo "=== OneDrive einrichten ==="
+echo
+echo "1. Gleich erscheint ein langer Link. Den im Browser oeffnen und mit"
+echo "   deinem Microsoft-Konto anmelden."
+echo "2. Danach landet der Browser auf einer leeren Seite. Deren komplette"
+echo "   Adresse aus der Adresszeile kopieren und hier einfuegen."
+echo
+if [ ! -f "$HOME/.config/onedrive/refresh_token" ]; then
+    # Loest die Anmeldung aus (Link + Eingabe) und zeigt danach nur den Speicherplatz an
+    onedrive --display-quota || true
+fi
+if [ ! -f "$HOME/.config/onedrive/refresh_token" ]; then
+    echo "Anmeldung nicht abgeschlossen. Einfach nochmal starten: biblix-onedrive"
+    exit 1
+fi
+echo
+echo "Anmeldung ok. Erste Synchronisierung nach ~/OneDrive startet."
+echo "Je nach Datenmenge kann das dauern, der Rest laeuft im Hintergrund weiter."
+systemctl --user enable --now onedrive.service
+echo
+echo "Status pruefen:   systemctl --user status onedrive"
+echo "Pausieren:        systemctl --user stop onedrive"
+echo "AUF BIBLIX GEHT DAS."

@@ -1,0 +1,13 @@
+[Unit]
+Description=Biblix: NVIDIA-Treiber fuer Flatpak-Spiele abgleichen
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/sys/module/nvidia/version
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/biblix-gpu --setup
+TimeoutStartSec=15min
+
+[Install]
+WantedBy=multi-user.target

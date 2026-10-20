@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=OneDrive einrichten
+Comment=Microsoft OneDrive mit dem Ordner ~/OneDrive verbinden
+Exec=konsole --hold -e biblix-onedrive
+Icon=folder-cloud
+Terminal=false
+Categories=Network;FileTransfer;
+Keywords=onedrive;microsoft;cloud;sync;

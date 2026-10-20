@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3840 2160" width="3840" height="2160">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f6e86"/><stop offset=".55" stop-color="#072a36"/><stop offset="1" stop-color="#02090d"/></linearGradient>
+    <radialGradient id="glow" cx=".72" cy=".42" r=".5"><stop offset="0" stop-color="#3fd0ee" stop-opacity=".28"/><stop offset="1" stop-color="#3fd0ee" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="3840" height="2160" fill="url(#bg)"/>
+  <rect width="3840" height="2160" fill="url(#glow)"/>
+  <g stroke="#3fd0ee" stroke-opacity=".07" stroke-width="2">
+    <path d="M0 1700 H3840 M0 1820 H3840 M0 1940 H3840 M0 2060 H3840"/>
+    <path d="M1920 1600 L0 2160 M1920 1600 L960 2160 M1920 1600 L1920 2160 M1920 1600 L2880 2160 M1920 1600 L3840 2160"/>
+  </g>
+  <g transform="translate(2760 900) scale(9)" fill="#e3f3f8" fill-opacity=".1"><path d="M-22 -14 C-28 -26 -42 -28 -46 -20 C-49 -12 -40 -2 -26 0 Z"/><path d="M22 -14 C28 -26 42 -28 46 -20 C49 -12 40 -2 26 0 Z"/><path d="M0 -40 C22 -40 34 -20 34 0 C34 22 22 38 0 38 C-22 38 -34 22 -34 0 C-34 -20 -22 -40 0 -40 Z"/></g>
+  <g transform="translate(2760 900) scale(9)" fill="#3fd0ee" fill-opacity=".35"><circle cx="-12" cy="-4" r="6"/><circle cx="12" cy="-4" r="6"/></g>
+  <text x="300" y="1780" font-family="Noto Sans, sans-serif" font-weight="800" font-size="220" fill="#e3f3f8" fill-opacity=".9">Biblix</text>
+  <text x="306" y="1880" font-family="Noto Sans Mono, monospace" font-weight="600" font-size="64" fill="#ffd23f" fill-opacity=".85">DEIN SYSTEM. DEIN PROBLEM.</text>
+</svg>

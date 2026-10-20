@@ -1,0 +1,16 @@
+# Biblix: Videos und Musik mit Haruna oeffnen
+[Default Applications]
+video/mp4=org.kde.haruna.desktop
+video/x-matroska=org.kde.haruna.desktop
+video/webm=org.kde.haruna.desktop
+video/x-msvideo=org.kde.haruna.desktop
+video/quicktime=org.kde.haruna.desktop
+video/mpeg=org.kde.haruna.desktop
+video/x-ms-wmv=org.kde.haruna.desktop
+video/mp2t=org.kde.haruna.desktop
+video/x-flv=org.kde.haruna.desktop
+video/ogg=org.kde.haruna.desktop
+audio/x-matroska=org.kde.haruna.desktop
+# E-Mail-Links (mailto:) mit Thunderbird
+x-scheme-handler/mailto=thunderbird.desktop
+message/rfc822=thunderbird.desktop

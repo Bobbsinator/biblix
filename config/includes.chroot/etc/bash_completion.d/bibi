@@ -1,0 +1,12 @@
+# Tab-Vervollstaendigung fuer "bibi" wie bei sudo
+_biblix_bibi_complete() {
+    _comp_load -- sudo 2>/dev/null || _completion_loader sudo 2>/dev/null
+    if declare -F _comp_cmd_sudo >/dev/null; then
+        complete -F _comp_cmd_sudo bibi
+        _comp_cmd_sudo "$@"
+    elif declare -F _sudo >/dev/null; then
+        complete -F _sudo bibi
+        _sudo "$@"
+    fi
+}
+complete -F _biblix_bibi_complete bibi

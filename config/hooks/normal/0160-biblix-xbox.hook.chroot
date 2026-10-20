@@ -1,0 +1,53 @@
+#!/bin/sh
+# Xbox-Controller: xone (Funkadapter + Kabel) und xpadneo (Bluetooth) per DKMS.
+# Beide gibt es nicht als Debian-Paket, deshalb aus festen, getesteten Versionen.
+set -e
+XONE=0.5.8
+XPADNEO=0.10.5
+W=$(mktemp -d)
+cd "$W"
+curl -fsSL "https://github.com/dlundqvist/xone/archive/refs/tags/v$XONE.tar.gz" | tar xz
+curl -fsSL "https://github.com/atar-axis/xpadneo/archive/refs/tags/v$XPADNEO.tar.gz" | tar xz
+
+kernels() {
+    for k in /lib/modules/*; do
+        k=$(basename "$k")
+        [ -d "/usr/src/linux-headers-$k" ] && echo "$k"
+    done
+}
+
+# --- xone
+rm -rf "/usr/src/xone-$XONE"
+cp -a "xone-$XONE" "/usr/src/xone-$XONE"
+find "/usr/src/xone-$XONE" -type f \( -name dkms.conf -o -name '*.c' \) -exec sed -i "s/#VERSION#/$XONE/" {} +
+dkms add -m xone -v "$XONE"
+for k in $(kernels); do dkms install -m xone -v "$XONE" -k "$k"; done
+# Keine globale Sperre von xpad/mt76x2u wie bei xone ueblich: sonst fallen Xbox-360-Pads
+# und MediaTek-WLAN-Sticks aus. biblix-xbox-funkadapter setzt nur das Noetige.
+# Firmware-Skript fuer den Funkadapter (Microsoft-Firmware, holt der Nutzer selbst)
+install -D -m 755 "xone-$XONE/install/firmware.sh" /usr/lib/biblix/xone-firmware.sh
+
+# --- xpadneo
+rm -rf "/usr/src/hid-xpadneo-$XPADNEO"
+cp -a "xpadneo-$XPADNEO/hid-xpadneo" "/usr/src/hid-xpadneo-$XPADNEO"
+sed "s/\"@DO_NOT_CHANGE@\"/\"$XPADNEO\"/" "/usr/src/hid-xpadneo-$XPADNEO/dkms.conf.in" > "/usr/src/hid-xpadneo-$XPADNEO/dkms.conf"
+dkms add -m hid-xpadneo -v "$XPADNEO"
+for k in $(kernels); do dkms install -m hid-xpadneo -v "$XPADNEO" -k "$k"; done
+cp -a "/usr/src/hid-xpadneo-$XPADNEO/etc-modprobe.d/." /etc/modprobe.d/
+cp -a "/usr/src/hid-xpadneo-$XPADNEO/etc-udev-rules.d/." /usr/lib/udev/rules.d/
+
+# Bluetooth: schnelleres Verbinden und sauberes Wiederkoppeln der Controller
+if [ -f /etc/bluetooth/main.conf ]; then
+    sed -i -e 's/^#\?\s*FastConnectable\s*=.*/FastConnectable = true/' \
+           -e 's/^#\?\s*JustWorksRepairing\s*=.*/JustWorksRepairing = always/' \
+           -e 's/^#\?\s*Privacy\s*=.*/Privacy = device/' /etc/bluetooth/main.conf
+fi
+
+for k in $(kernels); do
+    for m in xone_dongle xone_wired hid-xpadneo; do
+        find "/lib/modules/$k" -name "$m.ko*" | grep -q . || { echo "Biblix: FEHLER - $m fehlt fuer $k"; exit 1; }
+    done
+    echo "Biblix: Xbox-Treiber fuer $k gebaut"
+done
+cd /
+rm -rf "$W"

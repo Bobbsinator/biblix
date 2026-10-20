@@ -1,0 +1,10 @@
+[Unit]
+Description=Biblix: regelmaessig nach Updates suchen
+
+[Timer]
+OnStartupSec=15min
+OnUnitActiveSec=6h
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

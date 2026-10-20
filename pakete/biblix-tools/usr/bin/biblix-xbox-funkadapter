@@ -1,0 +1,27 @@
+#!/bin/bash
+# Richtet den Xbox-Funkadapter (USB-Dongle) ein: holt die Microsoft-Firmware und
+# sorgt dafuer, dass der WLAN-Treiber mt76x2u den Adapter nicht belegt.
+#   bibi biblix-xbox-funkadapter
+# Kabel und Bluetooth brauchen das nicht, die gehen sofort.
+set -e
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Bitte mit Admin-Rechten starten: bibi biblix-xbox-funkadapter"
+    exit 1
+fi
+echo "=== Xbox-Funkadapter einrichten ==="
+echo "Die Firmware kommt direkt von Microsoft. Im naechsten Schritt siehst du"
+echo "deren Nutzungsbedingungen. Mit Enter stimmst du ihnen zu."
+echo
+/usr/lib/biblix/xone-firmware.sh
+
+cat > /etc/modprobe.d/biblix-xone-dongle.conf <<'EOF'
+# Biblix: Xbox-Funkadapter gehoert xone, nicht dem WLAN-Treiber
+blacklist mt76x2u
+EOF
+modprobe -r mt76x2u 2>/dev/null || true
+modprobe xone_dongle 2>/dev/null || true
+echo
+echo "Fertig. Adapter einmal aus- und wieder einstecken, dann den Knopf am"
+echo "Adapter und am Controller druecken."
+echo "Hinweis: MediaTek-WLAN-Sticks mit mt76x2u gehen jetzt nicht mehr."
+echo "Rueckgaengig: bibi rm /etc/modprobe.d/biblix-xone-dongle.conf"

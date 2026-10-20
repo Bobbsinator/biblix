@@ -1,0 +1,17 @@
+#!/bin/sh
+# NVIDIA-Treiber 615 mit offenen Kernelmodulen direkt von NVIDIA einbauen.
+# Pflicht fuer RTX 50 (Blackwell, z. B. RTX 5070 Ti): Debian selbst hat nur 550.
+# Laeuft genauso auf aelteren Karten ab GTX 16 / RTX 20. AMD und Intel stoert es nicht.
+set -e
+export DEBIAN_FRONTEND=noninteractive
+
+# Paketquelle und Schluessel kommen aus includes.chroot
+test -f /etc/apt/sources.list.d/nvidia-cuda.sources
+test -f /usr/share/keyrings/cuda-archive-keyring.gpg
+apt-get update || echo "Biblix: Warnung - nicht alle Paketquellen erreichbar"
+
+# Auf Zweig 615 festhalten: Updates innerhalb von 615 ja, kein ungeplanter Sprung auf 620+
+apt-get install -y nvidia-driver-pinning-615
+apt-get install -y nvidia-open nvidia-settings
+
+echo "Biblix: NVIDIA $(dpkg-query -W -f='${Version}' nvidia-open) installiert"

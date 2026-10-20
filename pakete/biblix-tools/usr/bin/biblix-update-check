@@ -1,0 +1,42 @@
+#!/bin/bash
+# Prueft auf System- und App-Updates und meldet sich mit einer Benachrichtigung.
+# Klick auf "Updates ansehen" oeffnet den S-Launcher auf der Update-Seite.
+# Laeuft als Benutzerdienst (biblix-update-check.timer) alle 6 Stunden.
+state="${XDG_CACHE_HOME:-$HOME/.cache}/biblix/updates-gemeldet"
+mkdir -p "$(dirname "$state")"
+
+sys=$(apt list --upgradable 2>/dev/null | grep -F '[upgradable from' || true)
+apps=$(flatpak remote-ls --updates --columns=application 2>/dev/null || true)
+n_sys=$(printf '%s' "$sys" | grep -c . || true)
+n_apps=$(printf '%s' "$apps" | grep -c . || true)
+
+if [ "$n_sys" -eq 0 ] && [ "$n_apps" -eq 0 ]; then
+    rm -f "$state"
+    exit 0
+fi
+
+# Dieselben Updates nicht staendig neu melden
+sig=$(printf '%s\n%s' "$sys" "$apps" | md5sum | cut -d' ' -f1)
+[ -f "$state" ] && [ "$(cat "$state")" = "$sig" ] && exit 0
+echo "$sig" > "$state"
+
+title="Updates verfügbar"
+body=""
+# Eigene Biblix-Updates (S-Launcher, Helfer) extra nennen
+neu=$(printf '%s' "$sys" | sed -n 's#^biblix-tools/[^ ]* \([^ ]*\) .*#\1#p' | head -n1)
+if [ -n "$neu" ]; then
+    title="Biblix-Update verfügbar"
+    body="Biblix-Werkzeuge $neu (S-Launcher und Helfer)\n"
+fi
+parts=""
+[ "$n_sys" -gt 0 ] && parts="System: $n_sys Paket(e)"
+[ "$n_apps" -gt 0 ] && parts="${parts:+$parts, }Apps: $n_apps"
+body="$body$parts"
+if printf '%s' "$sys" | grep -qE '^(linux-image|nvidia|firmware|amd64-microcode)'; then
+    body="$body\nEnthält Kernel/Treiber: danach neu starten."
+fi
+
+action=$(notify-send --app-name="S-Launcher" --icon=s-launcher --urgency=normal \
+    --action=open="Updates ansehen" --wait "$title" "$(echo -e "$body")")
+[ "$action" = open ] && exec s-launcher --updates
+exit 0

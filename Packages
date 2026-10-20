@@ -1,0 +1,21 @@
+Package: biblix-tools
+Architecture: all
+Version: 1.0.0
+Priority: optional
+Section: admin
+Maintainer: Biblix <biblix@localhost>
+Depends: python3, python3-pyqt6, flatpak, pciutils, pkexec, polkitd, libnotify-bin, kdialog, efibootmgr, konsole, curl
+Recommends: mokutil, onedrive, dkms, libarchive-tools, gamemode, power-profiles-daemon, vulkan-tools
+Filename: ./biblix-tools_1.0.0_all.deb
+Size: 20756
+MD5sum: e001b9457954806356fa784233d136df
+SHA1: cb6342672de0ce1a4f00c1612a1026be8bd82fe9
+SHA256: 1279fe1d84530cc123a1f308ae81f955200de82bb575d4e48978ec02b0332d76
+SHA512: cac68637bd9543d9783a07c629e3053443af35cd0bba71e7a5f8bfece511d8b6ad14f85ba6705e3152dab54acd3d046440ae46f6ad975477fc4556e7b0b15611
+Description: Biblix-Werkzeuge: S-Launcher und Systemhelfer
+ S-Launcher (App-Browser und Spielezentrale), biblix-gpu (Grafik- und CPU-Check),
+ Update-Benachrichtigungen, Secure-Boot-, OneDrive- und Xbox-Funkadapter-Helfer,
+ Neustart in Windows sowie die Paketquelle fuer kuenftige Biblix-Updates.
+ .
+ AUF BIBLIX GEHT DAS.
+

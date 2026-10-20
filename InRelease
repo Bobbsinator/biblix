@@ -1,0 +1,30 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Date: Tue, 20 Oct 2026 21:31:52 +0000
+Label: Biblix
+Origin: Biblix
+Suite: stable
+MD5Sum:
+ 2c2847b6790c2420cb30fd828f93b26e             1018 Packages
+ d5b8b9901f6f9db5c531e6ef49e8a92e              723 Packages.gz
+ 2405840e9cce2921c875428f80fa0a90               81 Release
+SHA1:
+ 9722f7135aa8fa9890a284153cbf00e9df0cee9c             1018 Packages
+ 7030924c8c186f53117707afcabd43cd9f7892df              723 Packages.gz
+ 8f2b04c7d4ce4d1d3e4016d59f578ca6b3757028               81 Release
+SHA256:
+ 7c573ce336b97a8a3fa3e0acb92fa9677e519e442c977355fdab79cd6996d62b             1018 Packages
+ ee41da31415fa91e7089350655476a2a2d9602b4f2f3cccb4917cc67acc587b1              723 Packages.gz
+ 8dd560743d87a7c77bd6784ef0b5e9d6de5a3770111168c52e2cf8445edeb184               81 Release
+SHA512:
+ 3ad5ad39f87abaf9313dea5d9c2f405ccb1f7824ac78bd691977559ea77ae6a445f67a90f2006cee9da21984f89f94cbfc03b262f07ce6696fffb327f3811346             1018 Packages
+ d7eaf7ff3ce057e12b07528ec745b5b1eb87b87bf979d7c0f4a4f31d25d691d1462ae7e406392e85a7943650767d16304d463f0045cb3ff449fca045431f2497              723 Packages.gz
+ 4afe0f033962c6ee65a57730f51848e333cb1084bf3d78aabe5d17b56700ee621011a55a30943d04d59f625b0ddbebfd8ac7a49a1e61df64da564412b685c8d9               81 Release
+-----BEGIN PGP SIGNATURE-----
+
+iIcEARYKAC8WIQRJ/JGMv/YJz4gUCaHrF5mybBG3iAUCatfdyBEcYmlibGl4QGxv
+Y2FsaG9zdAAKCRDrF5mybBG3iH7YAP9BJn9s8oNebEr9jJG5k2Nt0Y2I3zjeN2ys
+j7+7hOpnkAD+OEP+CFeyhdja4gnGidARfaRDnXMo++Du+pus30JW1g8=
+=nwll
+-----END PGP SIGNATURE-----

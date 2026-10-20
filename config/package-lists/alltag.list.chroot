@@ -48,6 +48,8 @@ thunderbird
 thunderbird-l10n-de
 # --- Bootloader fuer den Installer und Kernel-Updates (sonst startet Biblix nach der Installation nicht)
 grub-efi-amd64
+# (Debians Installer will "grub-efi" nachladen; liegt so schon bereit, auch ohne Internet)
+grub-efi
 # --- Secure Boot: signiertes GRUB + shim (Dual-Boot mit Secure Boot an)
 grub-efi-amd64-signed
 shim-signed

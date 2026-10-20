@@ -14,7 +14,7 @@ fi
 if ! command -v lb >/dev/null; then
     echo "== live-build wird installiert"
     apt-get update
-    apt-get install -y live-build
+    apt-get install -y live-build xorriso squashfs-tools mtools dosfstools
 fi
 
 echo "== Dateien vorbereiten (Windows-Zeilenenden entfernen, Rechte setzen)"

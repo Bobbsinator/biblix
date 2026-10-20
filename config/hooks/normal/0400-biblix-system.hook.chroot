@@ -18,6 +18,39 @@ if [ -f /etc/calamares/modules/users.conf ] && ! grep -q '^    - kvm$' /etc/cala
     sed -i 's/^    - bluetooth$/    - bluetooth\n    - kvm/' /etc/calamares/modules/users.conf
 fi
 
+# Installer (Calamares) an Biblix anpassen
+if [ -f /etc/calamares/settings.conf ]; then
+    # Kein "hwclock --systohc --utc" am Ende: sonst geht die Uhr in Windows wieder falsch
+    sed -i '/^[[:space:]]*- hwclock[[:space:]]*$/d' /etc/calamares/settings.conf
+    ! grep -qE '^[[:space:]]*- hwclock' /etc/calamares/settings.conf
+fi
+# Debians Calamares schreibt am Ende eine sources.list nur mit "main non-free-firmware".
+# Dann bekaemen contrib/non-free-Pakete (steam-devices, unrar, Intel-Treiber ...) keine Updates mehr.
+H=/usr/share/calamares/helpers/calamares-sources-final
+if [ -f "$H" ]; then
+    cat > "$H" <<'SF'
+#!/bin/sh
+# Biblix: Paketquellen des installierten Systems (Backports, NVIDIA, Claude, Biblix liegen in sources.list.d)
+CHROOT=$(mount | grep proc | grep calamares | awk '{print $3}' | sed -e "s#/proc##g")
+cat > "$CHROOT/etc/apt/sources.list.d/debian.sources" <<EOF
+Types: deb
+URIs: http://deb.debian.org/debian
+Suites: trixie trixie-updates
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
+
+Types: deb
+URIs: http://security.debian.org/debian-security
+Suites: trixie-security
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
+EOF
+printf '# Biblix: Paketquellen liegen in /etc/apt/sources.list.d/\n' > "$CHROOT/etc/apt/sources.list"
+exit 0
+SF
+    chmod 0755 "$H"
+fi
+
 systemctl enable firewalld.service 2>/dev/null || true
 # Knopf "Neustart in Windows" auf dem Schreibtisch neuer Benutzer
 mkdir -p /etc/skel/Desktop

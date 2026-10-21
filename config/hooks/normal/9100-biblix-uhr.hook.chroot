@@ -1,6 +1,10 @@
 #!/bin/sh
-# Dual-Boot: Hardware-Uhr in Ortszeit wie Windows, sonst geht die Uhr nach jedem Wechsel falsch.
-# Muss nach live-builds eigenem Schritt 8000-remove-adjtime-configuration laufen,
-# der /etc/adjtime sonst wieder auf UTC setzt. (Live-System: Startparameter utc=no)
+# Spaete Korrekturen, nach live-builds eigenen Schritten (8000-...):
 set -e
+# Dual-Boot: Hardware-Uhr in Ortszeit wie Windows. live-build setzt sie in Schritt 8000 auf UTC zurueck.
+# (Live-System: Startparameter utc=no)
 printf '0.0 0 0.0\n0\nLOCAL\n' > /etc/adjtime
+# Systemname: live-build ersetzt /etc/os-release beim Grundsystem durch eine Debian-Kopie.
+# Wieder auf die Biblix-Datei aus biblix-system zeigen lassen.
+ln -sfn ../usr/lib/os-release /etc/os-release
+grep -q Biblix /etc/os-release

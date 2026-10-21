@@ -3,6 +3,10 @@ set -e
 case "$1" in
     configure)
         visudo -cf /etc/sudoers.d/biblix >/dev/null
+        # /etc/os-release muss auf die Biblix-Datei zeigen (live-build legt beim Bau eine Debian-Kopie an)
+        if [ ! -L /etc/os-release ] || [ "$(readlink /etc/os-release)" != ../usr/lib/os-release ]; then
+            ln -sfn ../usr/lib/os-release /etc/os-release
+        fi
         if [ -z "$2" ]; then
             # Nur bei der Erstinstallation: spaeter trifft der Nutzer diese Wahl selbst
             for s in firewalld power-profiles-daemon switcheroo-control irqbalance cups; do

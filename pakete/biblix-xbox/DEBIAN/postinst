@@ -1,0 +1,29 @@
+#!/bin/sh
+set -e
+XONE=@XONE@
+XPADNEO=@XPADNEO@
+
+kernels() {
+    for k in /lib/modules/*; do
+        k=$(basename "$k")
+        [ -d "/usr/src/linux-headers-$k" ] && echo "$k"
+    done
+    return 0
+}
+
+if [ "$1" = configure ]; then
+    dkms add -m xone -v "$XONE" >/dev/null 2>&1 || true
+    dkms add -m hid-xpadneo -v "$XPADNEO" >/dev/null 2>&1 || true
+    for k in $(kernels); do
+        dkms install -m xone -v "$XONE" -k "$k" || echo "biblix-xbox: xone fuer $k nicht gebaut"
+        dkms install -m hid-xpadneo -v "$XPADNEO" -k "$k" || echo "biblix-xbox: xpadneo fuer $k nicht gebaut"
+    done
+    # Bluetooth: schnelleres Verbinden und sauberes Wiederkoppeln der Controller
+    if [ -f /etc/bluetooth/main.conf ]; then
+        sed -i -e 's/^#\?\s*FastConnectable\s*=.*/FastConnectable = true/' \
+               -e 's/^#\?\s*JustWorksRepairing\s*=.*/JustWorksRepairing = always/' \
+               -e 's/^#\?\s*Privacy\s*=.*/Privacy = device/' /etc/bluetooth/main.conf
+    fi
+    udevadm control --reload >/dev/null 2>&1 || true
+fi
+exit 0

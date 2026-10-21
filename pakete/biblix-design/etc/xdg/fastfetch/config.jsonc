@@ -1,0 +1,5 @@
+{
+  "logo": { "source": "/usr/share/biblix/branding/fastfetch-logo.txt", "color": { "1": "cyan", "2": "yellow" } },
+  "modules": ["title", "separator", "os", "kernel", "uptime", "packages", "shell", "de", "cpu", "gpu", "memory", "disk",
+              { "type": "custom", "format": "AUF BIBLIX GEHT DAS." }]
+}

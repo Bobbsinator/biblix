@@ -1,0 +1,35 @@
+#!/bin/sh
+set -e
+T=/usr/share/desktop-base/biblix-theme
+
+# Taskleiste und Startmenue: S-Launcher statt Discover (nach jedem Plasma-Update erneut)
+starter() {
+    for f in /usr/share/plasma/plasmoids/org.kde.plasma.taskmanager/contents/config/main.xml \
+             /usr/share/plasma/plasmoids/org.kde.plasma.kickoff/contents/config/main.xml \
+             /usr/share/plasma/plasmoids/org.kde.plasma.kicker/contents/config/main.xml; do
+        [ -f "$f" ] && sed -i 's/org\.kde\.discover\.desktop/de.biblix.SLauncher.desktop/g' "$f"
+    done
+    return 0
+}
+
+case "$1" in
+    configure)
+        update-alternatives --install /usr/share/desktop-base/active-theme desktop-theme $T 100
+        # Erstinstallation: Biblix-Design aktivieren. Spaeter nicht ueberstimmen, falls der Nutzer etwas anderes waehlt.
+        if [ -z "$2" ]; then
+            update-alternatives --set desktop-theme $T
+            plymouth-set-default-theme biblix 2>/dev/null || true
+        fi
+        starter
+        gtk-update-icon-cache -q -f /usr/share/icons/hicolor 2>/dev/null || true
+        # Neue Bilder fuer Bootanimation und Bootmenue uebernehmen
+        update-initramfs -u >/dev/null 2>&1 || true
+        if [ -e /boot/grub/grub.cfg ] && command -v update-grub >/dev/null; then
+            update-grub >/dev/null 2>&1 || true
+        fi
+        ;;
+    triggered)
+        starter
+        ;;
+esac
+exit 0

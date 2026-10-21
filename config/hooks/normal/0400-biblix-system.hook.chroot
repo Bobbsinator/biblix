@@ -1,17 +1,10 @@
 #!/bin/sh
-# Systemidentitaet, Rechte und Dienste.
+# Was nur im ISO geht: Installer (Calamares), Schreibtisch neuer Benutzer, Anmeldetexte.
+# Systemeinstellungen, Dienste und Systemname kommen aus dem Paket biblix-system (per Update aenderbar).
 set -e
-chmod 0755 /usr/bin/s-launcher /usr/bin/biblix-gpu /usr/bin/biblix-* /usr/lib/biblix/*
 chmod 0755 /usr/lib/live/config/9990-biblix-desktop 2>/dev/null || true
 
-# "bibi" ist der Admin-Befehl von Biblix (sudo unter Biblix-Namen)
-ln -sf sudo /usr/bin/bibi
-ln -sf sudo.8.gz /usr/share/man/man8/bibi.8.gz
-chmod 0440 /etc/sudoers.d/biblix
-visudo -cf /etc/sudoers.d/biblix
-
-# Dual-Boot: Hardware-Uhr in Ortszeit wie Windows, sonst geht die Uhr nach jedem Wechsel falsch
-printf '0.0 0 0.0\n0\nLOCAL\n' > /etc/adjtime
+# Uhr (Ortszeit fuer Dual-Boot): siehe Hook 9100, live-build setzt sie in Schritt 8000 sonst zurueck
 
 # Neue Benutzer aus dem Installer: auch in kvm (Claude Cowork, virtuelle Maschinen)
 if [ -f /etc/calamares/modules/users.conf ] && ! grep -q '^    - kvm$' /etc/calamares/modules/users.conf; then
@@ -51,34 +44,14 @@ SF
     chmod 0755 "$H"
 fi
 
-systemctl enable firewalld.service 2>/dev/null || true
-# Knopf "Neustart in Windows" auf dem Schreibtisch neuer Benutzer
+# Knoepfe "Neustart in Windows" und "Call of Duty (Windows)" auf dem Schreibtisch neuer Benutzer
 mkdir -p /etc/skel/Desktop
 for f in de.biblix.NeustartWindows.desktop de.biblix.WindowsSpiel.cod.desktop; do
     cp /usr/share/applications/$f /etc/skel/Desktop/
     chmod 0755 /etc/skel/Desktop/$f
 done
 
-# Update-Benachrichtigungen fuer alle Benutzer
-systemctl --global enable biblix-update-check.timer
-
-# Systemname: /usr/lib/os-release gehoert base-files. Umleiten, damit Debian-Updates
-# "Biblix" nicht wieder mit "Debian" ueberschreiben (/etc/os-release bleibt der Verweis).
-dpkg-divert --local --rename --add /usr/lib/os-release
-ln -sf ../usr/lib/os-release /etc/os-release
-cat > /usr/lib/os-release <<'OS'
-PRETTY_NAME="Biblix 1.0 (Debian 13 trixie)"
-NAME="Biblix"
-VERSION_ID="1.0"
-VERSION="1.0"
-VERSION_CODENAME=trixie
-ID=biblix
-ID_LIKE=debian
-LOGO=biblix
-HOME_URL="https://www.debian.org/"
-SUPPORT_URL="https://www.debian.org/support"
-BUG_REPORT_URL="https://bugs.debian.org/"
-OS
+# Anmeldetexte auf der Konsole
 cat > /etc/issue <<'OS'
 Biblix 1.0 \n \l
 DEIN SYSTEM. DEIN PROBLEM.
@@ -86,20 +59,4 @@ DEIN SYSTEM. DEIN PROBLEM.
 OS
 echo "Biblix 1.0" > /etc/issue.net
 
-systemctl enable biblix-gpu-setup.service
-systemctl enable power-profiles-daemon.service 2>/dev/null || true
-systemctl enable switcheroo-control.service 2>/dev/null || true
-systemctl enable irqbalance.service 2>/dev/null || true
-systemctl enable cups.service 2>/dev/null || true
-
-# Leistung als Standard-Energieprofil
-mkdir -p /var/lib/power-profiles-daemon
-cat > /var/lib/power-profiles-daemon/state.ini <<'OS'
-[State]
-CpuDriver=
-PlatformDriver=
-Profile=performance
-OS
-
 update-desktop-database -q /usr/share/applications || true
-gtk-update-icon-cache -q -f /usr/share/icons/hicolor || true

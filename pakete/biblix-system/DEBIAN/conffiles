@@ -1,0 +1,13 @@
+/etc/apt/apt.conf.d/20biblix-updates
+/etc/apt/preferences.d/biblix-backports.pref
+/etc/apt/sources.list.d/biblix-backports.sources
+/etc/bash_completion.d/bibi
+/etc/default/grub.d/biblix.cfg
+/etc/firefox-esr/biblix.js
+/etc/firewalld/zones/public.xml
+/etc/gamemode.ini
+/etc/mpv/mpv.conf
+/etc/profile.d/biblix-nvidia-video.sh
+/etc/sudoers.d/biblix
+/etc/systemd/zram-generator.conf
+/etc/xdg/mimeapps.list

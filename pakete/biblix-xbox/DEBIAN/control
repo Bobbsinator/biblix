@@ -1,0 +1,12 @@
+Package: biblix-xbox
+Version: @VERSION@
+Architecture: all
+Section: kernel
+Priority: optional
+Maintainer: Biblix <biblix@localhost>
+Depends: dkms, linux-headers-amd64 | linux-headers
+Recommends: bluez, libarchive-tools, curl
+Description: Biblix: Treiber fuer Xbox-Controller
+ xone (Xbox-Funkadapter und Kabel) und xpadneo (Bluetooth) als DKMS-Module,
+ die bei jedem Kernel-Update automatisch neu gebaut werden. Firmware fuer den
+ Funkadapter: bibi biblix-xbox-funkadapter

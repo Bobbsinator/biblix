@@ -5,9 +5,14 @@
 set -e
 export DEBIAN_FRONTEND=noninteractive
 
-# Paketquelle und Schluessel kommen aus includes.chroot
-test -f /etc/apt/sources.list.d/nvidia-cuda.sources
-test -f /usr/share/keyrings/cuda-archive-keyring.gpg
+# NVIDIA-Paketquelle ueber NVIDIAs eigenes Paket cuda-keyring: genau eine Quelle (kein Konflikt,
+# falls spaeter jemand CUDA nach NVIDIA-Anleitung einrichtet), NVIDIA erneuert seinen Schluessel selbst.
+KEYRING_URL=https://developer.download.nvidia.com/compute/cuda/repos/debian13/x86_64/cuda-keyring_1.1-1_all.deb
+KEYRING_SHA=d0d4ef986a44400f9db33c600ef33a985175e7cc63d805a10e1839c7a1e78f5f
+curl -fsSLo /tmp/cuda-keyring.deb "$KEYRING_URL"
+echo "$KEYRING_SHA  /tmp/cuda-keyring.deb" | sha256sum -c --quiet
+dpkg -i /tmp/cuda-keyring.deb
+rm -f /tmp/cuda-keyring.deb
 apt-get update || echo "Biblix: Warnung - nicht alle Paketquellen erreichbar"
 
 # Auf Zweig 615 festhalten: Updates innerhalb von 615 ja, kein ungeplanter Sprung auf 620+

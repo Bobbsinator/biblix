@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+# Systemname: /usr/lib/os-release gehoert base-files (Essential). Offiziell umleiten, damit
+# Debian-Updates "Biblix" nicht ueberschreiben. Ohne Umbenennen: die Datei ist nie weg,
+# auch wenn die Installation mittendrin abbricht. Debians Fassung liegt als Kopie daneben.
+if [ "$1" = install ] || [ "$1" = upgrade ]; then
+    if ! dpkg-divert --list /usr/lib/os-release | grep -q biblix-system; then
+        cp -a /usr/lib/os-release /usr/lib/os-release.debian
+        dpkg-divert --package biblix-system --no-rename --divert /usr/lib/os-release.debian --add /usr/lib/os-release >/dev/null
+    fi
+fi
+exit 0

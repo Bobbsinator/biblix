@@ -18,19 +18,20 @@ if ! command -v lb >/dev/null; then
 fi
 
 echo "== Dateien vorbereiten (Windows-Zeilenenden entfernen, Rechte setzen)"
-find auto config -type f ! -name '*.png' ! -name '*.gpg' ! -name '*.deb' ! -path '*/includes.binary/*' -exec sed -i 's/\r$//' {} +
+find auto config -type f ! -name '*.png' ! -name '*.gpg' ! -name '*.deb' ! -name '*.pf2' ! -path '*/includes.binary/*' -exec sed -i 's/\r$//' {} +
 chmod +x auto/* config/hooks/normal/* config/includes.chroot/usr/lib/live/config/*
 
-echo "== biblix-tools"
-VERSION=$(tr -d ' \r\n' < pakete/VERSION)
-if [ -f "config/packages.chroot/biblix-tools_${VERSION}_all.deb" ]; then
-    # Genau das veroeffentlichte Paket nehmen, nicht neu bauen (sonst andere Datei, gleiche Version)
-    echo "nehme vorhandenes biblix-tools $VERSION"
-elif gpg --list-secret-keys "Biblix Paketquelle" >/dev/null 2>&1; then
-    bash pakete/bauen.sh
-else
-    echo "biblix-tools fehlt: erst bash pakete/schluessel-erzeugen.sh und bash pakete/bauen.sh"; exit 1
-fi
+echo "== Biblix-Pakete"
+# Das ISO nimmt genau die veroeffentlichten Pakete (gebaut mit pakete/bauen.sh), baut selbst nichts neu.
+for d in pakete/*/DEBIAN; do
+    name=$(basename "$(dirname "$d")")
+    v=$(tr -d ' \r\n' < "pakete/$name/VERSION")
+    if [ -f "config/packages.chroot/${name}_${v}_all.deb" ]; then
+        echo "ok $name $v"
+    else
+        echo "FEHLT: config/packages.chroot/${name}_${v}_all.deb - erst bash pakete/bauen.sh ausfuehren"; exit 1
+    fi
+done
 
 echo "== Vorabpruefung"
 # (biblix-tools prueft pakete/bauen.sh selbst)

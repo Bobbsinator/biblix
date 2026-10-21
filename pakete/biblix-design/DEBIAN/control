@@ -1,0 +1,12 @@
+Package: biblix-design
+Version: @VERSION@
+Architecture: all
+Section: x11
+Priority: optional
+Maintainer: Biblix <biblix@localhost>
+Depends: desktop-base, plymouth, grub-common
+Recommends: sddm-theme-breeze, fastfetch
+Description: Biblix-Design: Hintergrund, Bootmenue, Bootanimation, Icons
+ Das Aussehen von Biblix: Hintergrundbild, Anmeldebildschirm, Bootmenue
+ ("Wohin heute?"), Bootanimation, Icons, Farben und die Taskleiste mit
+ S-Launcher. Kommt als Update, ohne Neuinstallation.

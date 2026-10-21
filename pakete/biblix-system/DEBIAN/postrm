@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+# Beim Entfernen (oder abgebrochener Installation) Debians os-release zurueckholen
+if [ "$1" = remove ] || [ "$1" = purge ] || [ "$1" = abort-install ]; then
+    if dpkg-divert --list /usr/lib/os-release | grep -q biblix-system; then
+        [ -f /usr/lib/os-release.debian ] && mv -f /usr/lib/os-release.debian /usr/lib/os-release
+        dpkg-divert --package biblix-system --no-rename --remove /usr/lib/os-release >/dev/null
+    fi
+fi
+exit 0

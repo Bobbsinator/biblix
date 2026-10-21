@@ -1,0 +1,46 @@
+# Biblix: Bootmenue des USB-Sticks
+title-text: ""
+desktop-image: "background.png"
+desktop-color: "#072a36"
+terminal-font: "DejaVu Sans Regular 16"
+terminal-box: "menu_*.png"
+
++ boot_menu {
+    left = 30%
+    top = 38%
+    width = 40%
+    height = 40%
+    item_font = "DejaVu Sans Bold 24"
+    item_color = "#cfe6ee"
+    selected_item_color = "#ffffff"
+    icon_width = 40
+    icon_height = 40
+    item_icon_space = 18
+    item_height = 60
+    item_padding = 12
+    item_spacing = 8
+    menu_pixmap_style = "menu_*.png"
+    selected_item_pixmap_style = "select_*.png"
+    scrollbar = false
+}
+
++ label {
+    id = "__timeout__"
+    top = 82%
+    left = 0
+    width = 100%
+    align = "center"
+    font = "DejaVu Sans Regular 16"
+    color = "#8fb0bf"
+    text = "Biblix startet in %d Sekunden"
+}
+
++ label {
+    top = 88%
+    left = 0
+    width = 100%
+    align = "center"
+    font = "DejaVu Sans Regular 16"
+    color = "#5d7a86"
+    text = "Pfeiltasten: wählen   Enter: starten   Installieren geht danach vom Schreibtisch aus"
+}

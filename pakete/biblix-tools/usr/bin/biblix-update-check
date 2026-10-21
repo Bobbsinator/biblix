@@ -22,11 +22,25 @@ echo "$sig" > "$state"
 
 title="Updates verfügbar"
 body=""
-# Eigene Biblix-Updates (S-Launcher, Helfer) extra nennen
-neu=$(printf '%s' "$sys" | sed -n 's#^biblix-tools/[^ ]* \([^ ]*\) .*#\1#p' | head -n1)
+# Eigene Biblix-Updates (S-Launcher, System, Design, Treiber) extra nennen
+neu=$(printf '%s\n' "$sys" | sed -n 's#^\(biblix[a-z-]*\)/[^ ]* \([^ ]*\) .*#\1 \2#p')
 if [ -n "$neu" ]; then
     title="Biblix-Update verfügbar"
-    body="Biblix-Werkzeuge $neu (S-Launcher und Helfer)\n"
+    teile=""
+    while read -r name ver; do
+        case "$name" in
+            biblix-tools)  t="S-Launcher und Helfer" ;;
+            biblix-system) t="Systemeinstellungen" ;;
+            biblix-design) t="Aussehen" ;;
+            biblix-xbox)   t="Xbox-Treiber" ;;
+            biblix)        t="Biblix" ;;
+            *)             t="$name" ;;
+        esac
+        teile="${teile:+$teile, }$t $ver"
+    done <<EOF
+$neu
+EOF
+    body="$teile\n"
 fi
 parts=""
 [ "$n_sys" -gt 0 ] && parts="System: $n_sys Paket(e)"

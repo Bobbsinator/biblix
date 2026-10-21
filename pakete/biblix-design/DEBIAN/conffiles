@@ -1,0 +1,4 @@
+/etc/xdg/kdeglobals
+/etc/sddm.conf.d/biblix.conf
+/etc/xdg/fastfetch/config.jsonc
+/etc/skel/.config/MangoHud/MangoHud.conf

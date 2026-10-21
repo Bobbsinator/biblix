@@ -1,0 +1,27 @@
+#!/bin/sh
+set -e
+case "$1" in
+    configure)
+        visudo -cf /etc/sudoers.d/biblix >/dev/null
+        if [ -z "$2" ]; then
+            # Nur bei der Erstinstallation: spaeter trifft der Nutzer diese Wahl selbst
+            for s in firewalld power-profiles-daemon switcheroo-control irqbalance cups; do
+                systemctl enable "$s.service" >/dev/null 2>&1 || true
+            done
+            mkdir -p /var/lib/power-profiles-daemon
+            [ -e /var/lib/power-profiles-daemon/state.ini ] || \
+                printf '[State]\nCpuDriver=\nPlatformDriver=\nProfile=performance\n' > /var/lib/power-profiles-daemon/state.ini
+            # Dual-Boot: Hardware-Uhr in Ortszeit wie Windows
+            printf '0.0 0 0.0\n0\nLOCAL\n' > /etc/adjtime
+        fi
+        # Neue Werte sofort wirksam machen (Rest beim naechsten Neustart)
+        sysctl --system >/dev/null 2>&1 || true
+        udevadm control --reload >/dev/null 2>&1 || true
+        firewall-cmd --reload >/dev/null 2>&1 || true
+        update-initramfs -u >/dev/null 2>&1 || true
+        if [ -e /boot/grub/grub.cfg ] && command -v update-grub >/dev/null; then
+            update-grub >/dev/null 2>&1 || true
+        fi
+        ;;
+esac
+exit 0

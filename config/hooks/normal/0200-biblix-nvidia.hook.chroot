@@ -17,6 +17,11 @@ for kdir in /lib/modules/*; do
         *MIT*) ;;
         *) echo "Biblix: FEHLER - geschlossenes NVIDIA-Modul, RTX 50 braucht die offene Variante"; exit 1 ;;
     esac
+    # Xbox-Treiber aus dem Paket biblix-xbox
+    for m in xone_dongle xone_wired hid-xpadneo; do
+        find "$kdir" -name "$m.ko*" | grep -q . || { echo "Biblix: FEHLER - $m fehlt fuer $kver"; exit 1; }
+    done
+    echo "Biblix: Xbox-Treiber fuer $kver vorhanden"
 done
 # Standby-Dienste von NVIDIA (Grafikspeicher sichern)
 systemctl enable nvidia-suspend.service nvidia-resume.service nvidia-hibernate.service 2>/dev/null || true

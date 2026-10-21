@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+# Bei Entfernen und vor Updates die alte Treiberversion sauber abmelden
+if [ "$1" = remove ] || [ "$1" = upgrade ] || [ "$1" = deconfigure ]; then
+    dkms remove -m xone -v @XONE@ --all >/dev/null 2>&1 || true
+    dkms remove -m hid-xpadneo -v @XPADNEO@ --all >/dev/null 2>&1 || true
+fi
+exit 0

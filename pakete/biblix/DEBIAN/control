@@ -4,6 +4,6 @@ Architecture: all
 Section: metapackages
 Priority: optional
 Maintainer: Biblix <biblix@localhost>
-Depends: biblix-tools (>= 1.1.0), biblix-system (>= 1.0.1), biblix-design (>= 1.0.0), biblix-xbox (>= 1.0.0)
+Depends: biblix-tools (>= 1.1.1), biblix-system (>= 1.0.2), biblix-design (>= 1.0.0), biblix-xbox (>= 1.0.0)
 Description: Biblix - DEIN SYSTEM. DEIN PROBLEM.
  Sammelpaket: haelt alle Biblix-Teile aktuell und bringt neue Teile per Update mit.

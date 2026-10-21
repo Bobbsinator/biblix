@@ -1,3 +1,3 @@
-Package: src:linux src:linux-signed-amd64 src:linux-base src:firmware-nonfree src:firmware-free src:amd64-microcode src:mesa
+Package: src:linux src:linux-signed-amd64 src:linux-base src:firmware-nonfree src:firmware-free src:amd64-microcode src:mesa src:nvidia-vaapi-driver
 Pin: release n=trixie-backports
 Pin-Priority: 990

@@ -9,5 +9,7 @@ echo "Paketlisten werden geladen ..."
 apt-get $LOCK update || echo "Warnung: nicht alle Paketquellen erreichbar, mache mit den anderen weiter."
 echo "System wird aktualisiert ..."
 apt-get $LOCK -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold full-upgrade
+# Zweiter Durchgang: neue Biblix-Regeln (z. B. Pakete aus Backports) wirken erst nach dem ersten
+apt-get $LOCK -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold full-upgrade
 apt-get $LOCK -y autoremove
 echo "Fertig. Neustart empfohlen."

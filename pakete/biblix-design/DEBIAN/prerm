@@ -2,5 +2,7 @@
 set -e
 if [ "$1" = remove ]; then
     update-alternatives --remove desktop-theme /usr/share/desktop-base/biblix-theme || true
+    /usr/lib/biblix/biblix-sperrbildschirm entfernen || true
+    systemctl --global disable biblix-design-tagnacht.timer >/dev/null 2>&1 || true
 fi
 exit 0

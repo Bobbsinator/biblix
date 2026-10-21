@@ -1,0 +1,7 @@
+[Unit]
+Description=Biblix Design: Tag/Nacht-Modus prüfen
+ConditionPathExists=%h/.config/biblix/design.json
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/biblix-design anmeldung

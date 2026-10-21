@@ -1,0 +1,15 @@
+{
+  "id": "bibi-budget-bank",
+  "name": "Bibi Budget Bank",
+  "beschreibung": "Dunkelgrün, Braun, Goldakzente",
+  "logo": "bibi-budget-bank.svg",
+  "klang": "bank",
+  "dunkel": {
+    "grund": "#0b1f15", "flaeche": "#143323", "karte": "#1c432f", "rand": "#2c5a43",
+    "text": "#efe6cf", "leise": "#a8b59c", "akzent": "#c9a227", "akzent2": "#9a6a44", "gefahr": "#d0553f"
+  },
+  "hell": {
+    "grund": "#efe8d6", "flaeche": "#faf6ec", "karte": "#ffffff", "rand": "#d9cfb2",
+    "text": "#1d2a20", "leise": "#66644f", "akzent": "#1d5a3c", "akzent2": "#a8841a", "gefahr": "#b5422e"
+  }
+}

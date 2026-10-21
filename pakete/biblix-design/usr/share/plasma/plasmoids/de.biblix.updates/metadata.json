@@ -1,0 +1,14 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [{ "Name": "Biblix" }],
+        "Category": "System Information",
+        "Description": "Zeigt, wenn ein Biblix-Update bereitsteht",
+        "Icon": "update-none",
+        "Id": "de.biblix.updates",
+        "License": "GPL-2.0-or-later",
+        "Name": "Biblix Updates",
+        "Version": "2.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

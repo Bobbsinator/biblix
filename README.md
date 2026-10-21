@@ -259,6 +259,48 @@ der vorherige Kernel unter „Erweiterte Optionen" im Bootmenü startbar.
 
 ---
 
+## Biblix Design (ab Design-Update 2.0)
+
+Die App **Biblix Design** (Startmenü → Biblix Design) macht Biblix eigen.
+Sie ist ein **Konfigurator**: Dein Desktop ist groß in der Mitte zu sehen,
+Leuchtpunkte sitzen auf jedem Teil. Ein Klick auf ein Teil öffnet rechts die
+passende Auswahl, unten liegt die Lackfarben-Leiste, „Übernehmen" wendet alles an.
+
+- **Sechs Firmen-Designs**, jeweils dunkel und hell oder automatisch nach
+  Tageszeit: Bibi Tech, Bibi Budget Bank, Bibi Delivery, Bibi Mac,
+  Nassmacher, Bibiplexx. Dazu **eigene Farben** mischen.
+- **Bibi-Startmenü** mit Suche, Schnellknöpfen, angehefteten Apps,
+  „Zuletzt gespielt" (inkl. Call of Duty über Windows), CPU-/GPU-Temperatur,
+  Bibi-Sprüchen und Schrauben-Knöpfen (Sperren, Standby, Neustart in
+  Windows, Neustart, Ausschalten). Auch als Vollbild-Starter.
+- **Fensterrahmen** mit Schrauben-Knöpfen (oder Punkte, Terminal, Klammern,
+  Kapsel, Balken), nahtlos, farbig oder schlank, runde oder eckige Ecken.
+- **Animationen:** Bibi-Pop beim Öffnen, Zusammenziehen beim Schließen,
+  Minimieren in die Taskleiste, **3D-Würfel** beim Wechsel der Arbeitsfläche
+  (Meta+C dreht ihn per Maus), wackelnde Fenster. Bei Vollbild-Spielen aus.
+- **Viele Hintergründe:** elf Motive in deinen Farben, dazu eigene Serien pro
+  Firma (z. B. acht Exabibi-Tower-Bilder), auch als Diashow.
+- **Symbole und Mauszeiger** in Firmenfarbe, Lade-Zeiger als drehende Mutter.
+- **Klänge:** Bibi-Jingle beim Start, Firmen-Klänge (Kassa bei Bibi Mac,
+  Roller-Hupe bei Delivery, Kino-Gong bei Bibiplexx …), Retro oder ruhig.
+- **Sperrbildschirm** mit großer Uhr und Bibi-Spruch (oder Terminal-Stil),
+  Startbildschirm mit dem Schichten-B, **Bootmenü** im Kachel-Stil in
+  Designfarbe (fragt dafür einmal nach dem Passwort).
+- **Extras:** Terminal-Farben und Biblix-Prompt, Firefox-Startseite,
+  Spielereien für die Taskleiste (Spielmodus-Anzeige, Update-Symbol,
+  Temperaturen, Kopfhörer-Schalter).
+- **Rückgängig** mit Verlauf und **Meine Mischungen** zum Speichern.
+
+Notfall, auch ohne Desktop:
+
+```bash
+biblix-design zuruecksetzen
+```
+
+Weitere Befehle: `biblix-design presets`, `biblix-design anwenden bibi-mac --hell`.
+
+---
+
 ## Biblix-Updates (eigene Paketquelle)
 
 S-Launcher und alle Biblix-Helfer stecken im Paket **`biblix-tools`**.

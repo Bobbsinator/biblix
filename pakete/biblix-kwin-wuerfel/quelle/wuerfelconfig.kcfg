@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+    <kcfgfile name="kwinrc"/>
+    <group name="Effect-biblix_wuerfel">
+        <entry name="Dauer" type="Int"><default>320</default></entry>
+        <entry name="FlaechenAbstand" type="Double"><default>60</default></entry>
+        <entry name="Entfernung" type="Double"><default>130</default></entry>
+        <entry name="Hintergrundfarbe" type="Color"><default>15,20,28</default></entry>
+    </group>
+</kcfg>

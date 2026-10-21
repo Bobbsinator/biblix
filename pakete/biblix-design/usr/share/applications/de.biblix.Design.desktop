@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Biblix Design
+GenericName=Aussehen
+Comment=Biblix eigen machen: Firmen-Designs, Farben, Startmenü, Animationen, Hintergründe
+Exec=biblix-design
+Icon=de.biblix.Design
+Terminal=false
+Categories=Settings;DesktopSettings;Qt;KDE;
+Keywords=design;theme;aussehen;farben;hintergrund;wallpaper;startmenü;animation;bibi;
+StartupNotify=true

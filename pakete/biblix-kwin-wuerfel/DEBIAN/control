@@ -1,0 +1,12 @@
+Package: biblix-kwin-wuerfel
+Version: @VERSION@
+Architecture: amd64
+Section: x11
+Priority: optional
+Maintainer: Biblix <biblix@localhost>
+Depends: kwin-wayland (>= 4:6.3), kwin-wayland (<< 4:6.4), libkwin6 (>= 4:6.3), libkwin6 (<< 4:6.4), qml6-module-qtquick3d, libkf6globalaccel6, libkf6i18n6, libkf6configcore6, libkf6configgui6, libkf6coreaddons6, libqt6quick6
+Description: Biblix-Würfel: 3D-Würfel beim Wechsel der Arbeitsfläche
+ Die Arbeitsflächen sitzen auf einem 3D-Würfel, der sich beim Wechseln dreht.
+ Mit Meta+C lässt er sich auch mit der Maus drehen. Portierung von
+ kwin-effects-cube (Vlad Zahorodnii) für KWin 6.3. Ein- und ausschalten
+ in der App "Biblix Design".

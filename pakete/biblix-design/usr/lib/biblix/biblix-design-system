@@ -1,0 +1,84 @@
+#!/usr/bin/python3
+"""Biblix Design: Bootmenü, Startbildschirm und Anmeldung im aktuellen Design (läuft als root über pkexec).
+
+Erwartet auf der Standardeingabe JSON von der App:
+  {"palette": {grund, flaeche, karte, rand, text, leise, akzent, akzent2, gefahr}, "name": "...",
+   "dunkel": true, "hintergrund": "<motiv-id>", "bootmenue": true}
+Alle Werte werden streng geprüft, bevor etwas als root passiert.
+"""
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/usr/share/biblix/design/lib")
+from biblix_design import kern, system, hintergruende  # noqa: E402
+
+GRUB_CFG = Path("/etc/default/grub.d/zz-biblix-design.cfg")
+SDDM_CFG = Path("/usr/share/sddm/themes/breeze/theme.conf.user")
+FARBE = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+
+def fehler(text):
+    print(f"biblix-design-system: {text}", file=sys.stderr)
+    sys.exit(2)
+
+
+def pruefen(auftrag):
+    if not isinstance(auftrag, dict):
+        fehler("ungültiger Auftrag")
+    pal = auftrag.get("palette")
+    if not isinstance(pal, dict) or set(pal) != set(kern.FARBNAMEN):
+        fehler("ungültige Palette")
+    for k, v in pal.items():
+        if not isinstance(v, str) or not FARBE.match(v):
+            fehler(f"ungültige Farbe {k}")
+    motive = {i for i, _, _ in hintergruende.alle()}
+    if auftrag.get("hintergrund") not in motive:
+        fehler("unbekanntes Hintergrundmotiv")
+    name = str(auftrag.get("name", "Biblix"))[:40]
+    if not re.match(r"^[\w äöüÄÖÜß.-]*$", name):
+        name = "Biblix"
+    p = dict((k, v.lower()) for k, v in pal.items())
+    p["name"] = name
+    p["dunkel"] = bool(auftrag.get("dunkel", True))
+    # abgeleitete Töne wie in kern.palette
+    p["akzent_hell"] = kern.heller(p["akzent"], 0.25)
+    p["akzent_dunkel"] = kern.dunkler(p["akzent"], 0.25)
+    p["auf_akzent"] = kern.text_auf(p["akzent"])
+    return p, auftrag["hintergrund"], bool(auftrag.get("bootmenue", True))
+
+
+def main():
+    if os.geteuid() != 0:
+        fehler("muss als root laufen")
+    try:
+        auftrag = json.loads(sys.stdin.read() or "{}")
+    except ValueError:
+        fehler("kein gültiges JSON")
+    p, motiv, bootmenue = pruefen(auftrag)
+    svg = hintergruende.svg(motiv, p)
+
+    # Anmeldebildschirm (Breeze-SDDM mit Biblix-Hintergrund)
+    bild = system.sddm(p, svg)
+    SDDM_CFG.write_text(f"[General]\nbackground={bild}\ntype=image\ncolor={p['grund']}\n", encoding="utf-8")
+
+    if not bootmenue:
+        return
+    # Startbildschirm (Plymouth)
+    system.plymouth(p)
+    subprocess.run(["plymouth-set-default-theme", "biblix-aktuell"], check=False)
+    # Bootmenü (GRUB)
+    system.grub(p, svg)
+    GRUB_CFG.parent.mkdir(parents=True, exist_ok=True)
+    GRUB_CFG.write_text("# Biblix Design: Bootmenü im aktuellen Design\n"
+                        f"GRUB_THEME={system.GRUB}/theme.txt\n", encoding="utf-8")
+    if Path("/boot/grub/grub.cfg").exists():
+        subprocess.run(["update-grub"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+    subprocess.run(["update-initramfs", "-u"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Biblix</vendor>
+  <action id="de.biblix.design-system">
+    <description>Bootmenü und Startbildschirm im Biblix-Design einfärben</description>
+    <message>Biblix Design möchte Bootmenü, Startbildschirm und Anmeldung an dein Design anpassen.</message>
+    <icon_name>de.biblix.Design</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/biblix/biblix-design-system</annotate>
+  </action>
+</policyconfig>

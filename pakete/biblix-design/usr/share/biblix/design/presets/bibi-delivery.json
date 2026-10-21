@@ -1,0 +1,15 @@
+{
+  "id": "bibi-delivery",
+  "name": "Bibi Delivery",
+  "beschreibung": "Gelb und knalliges Blau",
+  "logo": "bibi-delivery.svg",
+  "klang": "delivery",
+  "dunkel": {
+    "grund": "#05102b", "flaeche": "#0a1a3d", "karte": "#10255a", "rand": "#1d3a78",
+    "text": "#ffffff", "leise": "#9fb0d8", "akzent": "#ffd000", "akzent2": "#1e6bff", "gefahr": "#ff5a5a"
+  },
+  "hell": {
+    "grund": "#fff6cc", "flaeche": "#fffbe6", "karte": "#ffffff", "rand": "#f0dc80",
+    "text": "#0a1a3d", "leise": "#4a5a80", "akzent": "#0047ff", "akzent2": "#e0b400", "gefahr": "#d93030"
+  }
+}

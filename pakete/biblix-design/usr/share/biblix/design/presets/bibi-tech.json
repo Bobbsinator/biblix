@@ -1,0 +1,15 @@
+{
+  "id": "bibi-tech",
+  "name": "Bibi Tech",
+  "beschreibung": "Graphit, Electric Blue, gelber B-Akzent",
+  "logo": "bibi-tech.svg",
+  "klang": "tech",
+  "dunkel": {
+    "grund": "#0f141c", "flaeche": "#1a2029", "karte": "#232a35", "rand": "#313a48",
+    "text": "#e8ecf2", "leise": "#8b95a5", "akzent": "#378add", "akzent2": "#ffd400", "gefahr": "#e24b4a"
+  },
+  "hell": {
+    "grund": "#e9edf2", "flaeche": "#f7f9fb", "karte": "#ffffff", "rand": "#d3d9e1",
+    "text": "#18202b", "leise": "#5b6575", "akzent": "#1f6fc2", "akzent2": "#d9a400", "gefahr": "#c93636"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "id": "nassmacher",
+  "name": "Nassmacher",
+  "beschreibung": "Bunt und sommerlich, Cyan als Basis",
+  "logo": "nassmacher.svg",
+  "klang": "nass",
+  "dunkel": {
+    "grund": "#03242a", "flaeche": "#06323a", "karte": "#0a434d", "rand": "#146070",
+    "text": "#e6fbfd", "leise": "#8ac6cf", "akzent": "#22d3e6", "akzent2": "#ffb020", "gefahr": "#ff6b6b"
+  },
+  "hell": {
+    "grund": "#dcf6f9", "flaeche": "#f0fcfd", "karte": "#ffffff", "rand": "#a8e6ee",
+    "text": "#06323a", "leise": "#3d7a84", "akzent": "#00a7b5", "akzent2": "#ff8a3d", "gefahr": "#e04848"
+  }
+}

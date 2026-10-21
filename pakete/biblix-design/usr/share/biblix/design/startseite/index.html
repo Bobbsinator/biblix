@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biblix</title>
+<style>
+  :root {
+    --grund: @GRUND@; --flaeche: @FLAECHE@; --karte: @KARTE@; --rand: @RAND@;
+    --text: @TEXT@; --leise: @LEISE@; --akzent: @AKZENT@; --akzent2: @AKZENT2@; --auf-akzent: @AUF_AKZENT@;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: radial-gradient(ellipse at 70% 30%, var(--flaeche), var(--grund) 70%);
+    color: var(--text); font-family: "DejaVu Sans", sans-serif;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 24px 16px;
+  }
+  .kopf { display: flex; align-items: center; gap: 18px; }
+  .kopf svg { width: 64px; height: 64px; }
+  .uhr { font-family: "DejaVu Sans Mono", monospace; font-size: clamp(48px, 9vw, 96px); font-weight: bold; letter-spacing: 2px; }
+  .datum { color: var(--leise); margin-top: 4px; font-size: 17px; text-align: center; }
+  form { margin: 36px 0 28px; width: min(640px, 100%); }
+  input {
+    width: 100%; padding: 16px 20px; font-size: 18px; border-radius: 14px; border: 1px solid var(--rand);
+    background: color-mix(in srgb, var(--karte) 80%, transparent); color: var(--text); outline: none;
+  }
+  input:focus { border-color: var(--akzent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--akzent) 30%, transparent); }
+  .kacheln { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; width: min(720px, 100%); }
+  .kacheln a {
+    display: block; text-decoration: none; color: var(--text); background: var(--karte); border: 1px solid var(--rand);
+    border-radius: 14px; padding: 16px 8px; text-align: center; font-size: 14px; transition: transform .15s, border-color .15s;
+  }
+  .kacheln a:hover { border-color: var(--akzent); transform: translateY(-2px); }
+  .kacheln b { display: block; font-size: 22px; margin-bottom: 6px; color: var(--akzent); font-family: "DejaVu Sans Mono", monospace; }
+  .spruch { margin-top: 40px; color: var(--leise); font-family: "DejaVu Sans Mono", monospace; letter-spacing: 1px; text-align: center; max-width: 720px; }
+  .spruch::before { content: ">_ "; color: var(--akzent2); }
+</style>
+</head>
+<body>
+  <div class="kopf">
+    <svg viewBox="0 0 120 120" aria-hidden="true">
+      <rect width="120" height="120" rx="26" fill="var(--karte)"/>
+      <path d="M26 44 L42 60 L26 76" fill="none" stroke="var(--akzent)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M54 34 H74 a13 13 0 0 1 0 26 H54 Z M54 60 H78 a14 14 0 0 1 0 28 H54 Z" fill="none" stroke="var(--text)" stroke-width="7" stroke-linejoin="round"/>
+      <rect x="54" y="94" width="34" height="6" rx="2" fill="var(--akzent)"/>
+    </svg>
+    <div class="uhr" id="uhr">--:--</div>
+  </div>
+  <div class="datum" id="datum"></div>
+  <form action="https://www.google.com/search" method="get">
+    <input name="q" placeholder="Suchen oder Adresse eingeben" autofocus autocomplete="off">
+  </form>
+  <div class="kacheln">
+    <a href="https://www.youtube.com"><b>▶</b>YouTube</a>
+    <a href="https://mail.google.com"><b>@</b>Gmail</a>
+    <a href="https://outlook.live.com"><b>✉</b>Outlook</a>
+    <a href="https://web.whatsapp.com"><b>☎</b>WhatsApp</a>
+    <a href="https://store.steampowered.com"><b>◆</b>Steam</a>
+    <a href="https://github.com/Bobbsinator/biblix"><b>&gt;_</b>Biblix</a>
+  </div>
+  <div class="spruch" id="spruch"></div>
+<script>
+  const sprueche = @SPRUECHE@;
+  document.getElementById("spruch").textContent = sprueche[Math.floor(Math.random() * sprueche.length)] || "AUF BIBLIX GEHT DAS.";
+  function zeit() {
+    const j = new Date();
+    document.getElementById("uhr").textContent = j.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
+    document.getElementById("datum").textContent = j.toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long" });
+  }
+  zeit();
+  setInterval(zeit, 1000);
+</script>
+</body>
+</html>

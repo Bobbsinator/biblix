@@ -1,9 +1,14 @@
 [General]
 ColorScheme=BreezeDark
-AccentColor=10,165,198
+AccentColor=55,138,221
+accentColorFromWallpaper=false
 
 [KDE]
 LookAndFeelPackage=org.kde.breezedark.desktop
 
 [Icons]
 Theme=breeze-dark
+
+[Sounds]
+Enable=true
+Theme=biblix-tech

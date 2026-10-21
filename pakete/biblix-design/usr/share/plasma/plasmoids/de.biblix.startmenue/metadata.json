@@ -1,0 +1,16 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [{ "Name": "Biblix" }],
+        "Category": "Application Launchers",
+        "Description": "Das Bibi-Startmenü: Apps, Suche, Spiele, Temperaturen und Bibi-Sprüche",
+        "EnabledByDefault": true,
+        "Icon": "biblix",
+        "Id": "de.biblix.startmenue",
+        "License": "GPL-2.0-or-later",
+        "Name": "Bibi-Startmenü",
+        "Version": "2.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-Provides": ["org.kde.plasma.launchermenu"]
+}

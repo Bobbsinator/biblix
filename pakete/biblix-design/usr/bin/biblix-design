@@ -1,0 +1,83 @@
+#!/usr/bin/python3
+"""Biblix Design – App und Befehle.
+
+  biblix-design                       App öffnen (Konfigurator)
+  biblix-design anwenden [PRESET] [--hell|--dunkel|--auto]
+                                      Preset wählen und alles anwenden (ohne Angabe: aktuelle Einstellungen)
+  biblix-design zuruecksetzen         Alles auf den Biblix-Standard (Notfall, geht auch ohne Desktop)
+  biblix-design presets               verfügbare Presets anzeigen
+  biblix-design anmeldung             beim Anmelden: Erststart und Tag/Nacht-Modus (Autostart)
+  biblix-design system                Bootmenü und Startbildschirm neu einfärben (fragt nach dem Passwort)
+"""
+import sys
+
+sys.path.insert(0, "/usr/share/biblix/design/lib")
+from biblix_design import kern, anwenden  # noqa: E402
+
+
+def ausgabe(text):
+    print(f"  {text}")
+
+
+def main(argv):
+    if not argv:
+        sys.path.insert(0, "/usr/share/biblix/design/app")
+        import biblix_design_app
+        return biblix_design_app.main()
+    befehl, rest = argv[0], argv[1:]
+    if befehl in ("-h", "--help", "hilfe"):
+        print(__doc__)
+        return 0
+    if befehl == "presets":
+        for p in kern.presets():
+            print(f"  {p['id']:20} {p['name']} – {p['beschreibung']}")
+        return 0
+    if befehl == "anwenden":
+        e = kern.laden()
+        for a in rest:
+            if a in ("--hell", "--dunkel", "--auto"):
+                e["modus"] = a[2:]
+            elif a in [p["id"] for p in kern.presets()]:
+                e["preset"] = a
+                e["eigene_farben"] = None
+            else:
+                print(f"Unbekannt: {a}  (siehe: biblix-design presets)")
+                return 1
+        kern.speichern(e)
+        print("Biblix Design wird angewendet:")
+        anwenden.alles(e, melden=ausgabe)
+        return 0
+    if befehl == "zuruecksetzen":
+        e = dict(kern.STANDARD)
+        kern.speichern(e)
+        print("Biblix-Standard wird wiederhergestellt:")
+        anwenden.alles(e, melden=ausgabe)
+        print("DEIN SYSTEM. DEIN PROBLEM. Gelöst.")
+        return 0
+    if befehl == "system":
+        e = kern.laden()
+        print(anwenden.system_teile(kern.palette(e), e))
+        return 0
+    if befehl == "anmeldung":
+        # Erststart: noch keine Einstellungen -> Biblix-Standard anwenden (Systemteile macht das Paket)
+        if not kern.EINSTELLUNGEN.exists():
+            e = dict(kern.STANDARD)
+            kern.speichern(e, verlauf=False)
+            anwenden.alles(e, system=False, melden=lambda t: None)
+            return 0
+        e = kern.laden()
+        if e["modus"] == "auto":
+            try:
+                import json
+                letzte = json.loads(anwenden.PALETTE.read_text(encoding="utf-8")).get("modus")
+            except Exception:
+                letzte = None
+            if letzte != kern.aktueller_modus(e):
+                anwenden.alles(e, system=False, melden=lambda t: None)
+        return 0
+    print(__doc__)
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]) or 0)

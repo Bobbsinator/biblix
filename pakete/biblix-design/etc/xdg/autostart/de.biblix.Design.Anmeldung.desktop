@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Biblix Design (Anmeldung)
+Comment=Wendet beim ersten Anmelden das Biblix-Design an und schaltet den Tag/Nacht-Modus um
+Exec=biblix-design anmeldung
+Icon=de.biblix.Design
+Terminal=false
+NoDisplay=true
+X-KDE-autostart-phase=2
+OnlyShowIn=KDE;

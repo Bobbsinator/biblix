@@ -1,0 +1,27 @@
+#!/bin/bash
+# Tonausgabe anzeigen oder zur naechsten wechseln (fuer das Biblix-Taskleisten-Widget).
+#   biblix-tonausgabe            -> Beschreibung der aktuellen Ausgabe
+#   biblix-tonausgabe wechseln   -> zur naechsten Ausgabe wechseln, laufende Wiedergaben mitnehmen
+command -v pactl >/dev/null || exit 0
+jetzt=$(pactl get-default-sink 2>/dev/null)
+beschreibung() {
+    pactl list sinks 2>/dev/null | awk -v n="$1" '
+        /^\s*Name: / { name = $2 }
+        /^\s*Description: / && name == n { sub(/^\s*Description: /, ""); print; exit }'
+}
+if [ "$1" = wechseln ]; then
+    mapfile -t alle < <(pactl list short sinks 2>/dev/null | awk '{print $2}' | grep -v '\.monitor$')
+    [ "${#alle[@]}" -lt 2 ] && { beschreibung "$jetzt"; exit 0; }
+    naechste="${alle[0]}"
+    for i in "${!alle[@]}"; do
+        if [ "${alle[$i]}" = "$jetzt" ]; then
+            naechste="${alle[$(( (i + 1) % ${#alle[@]} ))]}"
+        fi
+    done
+    pactl set-default-sink "$naechste"
+    for s in $(pactl list short sink-inputs 2>/dev/null | awk '{print $1}'); do
+        pactl move-sink-input "$s" "$naechste" 2>/dev/null
+    done
+    jetzt="$naechste"
+fi
+beschreibung "$jetzt"

@@ -1,0 +1,16 @@
+{
+    "KPackageStructure": "KWin/Effect",
+    "KPlugin": {
+        "Authors": [{ "Name": "Biblix" }],
+        "Category": "Window Open/Close Animation",
+        "Description": "Biblix: Fenster öffnen mit Bibi-Pop, schließen mit Zusammenziehen (einstellbar in Biblix Design)",
+        "EnabledByDefault": false,
+        "Icon": "preferences-system-windows-effect-scale",
+        "Id": "biblix_fenster",
+        "License": "GPL",
+        "Name": "Biblix Fenster-Animationen"
+    },
+    "X-KDE-Ordering": 60,
+    "X-KWin-Exclusive-Category": "toplevel-open-close-animation",
+    "X-Plasma-API": "javascript"
+}

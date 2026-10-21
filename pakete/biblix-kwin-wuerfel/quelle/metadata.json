@@ -1,0 +1,14 @@
+{
+    "KPlugin": {
+        "Authors": [
+            { "Name": "Vlad Zahorodnii", "Email": "vlad.zahorodnii@kde.org" },
+            { "Name": "Biblix" }
+        ],
+        "Category": "Virtual Desktop Switching Animation",
+        "Description": "Biblix: Arbeitsflächen sitzen auf einem 3D-Würfel, der sich beim Wechseln dreht (Meta+C zum Drehen per Maus)",
+        "EnabledByDefault": false,
+        "License": "GPL",
+        "Name": "Biblix-Würfel"
+    },
+    "X-KWin-Exclusive-Category": "desktop-animations"
+}

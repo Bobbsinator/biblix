@@ -1,0 +1,528 @@
+"""Wendet die Biblix-Design-Einstellungen auf Plasma, KWin und die Programme an (als Benutzer).
+
+Jeder Schritt ist einzeln abgesichert: faellt einer aus (z. B. ohne laufendes Plasma),
+laufen die anderen trotzdem. Rueckgabe: Liste von Meldungen fuer die App.
+"""
+import json
+import os
+import shutil
+import subprocess
+from pathlib import Path
+
+from . import kern, farbschema, aurorae, zeiger, symbole, terminal, hintergruende, grafik
+from .kern import DATEN, KONFIG, DESIGN
+
+AKTUELL = KONFIG / "biblix" / "aktuell.json"      # zuletzt angewendeter Stand (fuer A/B-Namen)
+PALETTE = KONFIG / "biblix" / "palette.json"      # wirksame Palette fuer S-Launcher und Co.
+HG_DIR = DATEN / "wallpapers" / "biblix"
+DIASHOW_DIR = DATEN / "wallpapers" / "biblix-diashow"
+SYSTEM_HELFER = "/usr/lib/biblix/biblix-design-system"
+PROMPT_ZEILE = "[ -f /usr/share/biblix/design/prompt.sh ] && . /usr/share/biblix/design/prompt.sh  # Biblix-Prompt"
+
+
+def _lauf(*cmd, eingabe=None, warten=True):
+    if not shutil.which(cmd[0]) and not Path(cmd[0]).exists():
+        return None
+    try:
+        if not warten:
+            subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return 0
+        r = subprocess.run(cmd, input=eingabe, capture_output=True, text=True, timeout=120)
+        return r.returncode
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+
+def kconf(datei, gruppen, schluessel, wert):
+    """kwriteconfig6 mit verschachtelten Gruppen; wert None loescht."""
+    cmd = ["kwriteconfig6", "--file", datei]
+    for g in (gruppen if isinstance(gruppen, (list, tuple)) else [gruppen]):
+        cmd += ["--group", g]
+    cmd += ["--key", schluessel]
+    if wert is None:
+        cmd.append("--delete")
+    elif isinstance(wert, bool):
+        cmd += ["--type", "bool", "true" if wert else "false"]
+    else:
+        cmd.append(str(wert))
+    return _lauf(*cmd)
+
+
+def dbus(dienst, pfad, schnittstelle, methode, *args):
+    """D-Bus-Aufruf ueber gdbus (immer vorhanden) oder qdbus."""
+    if shutil.which("gdbus"):
+        cmd = ["gdbus", "call", "--session", "--dest", dienst, "--object-path", pfad,
+               "--method", f"{schnittstelle}.{methode}"] + [json.dumps(a) if isinstance(a, str) else str(a) for a in args]
+        return _lauf(*cmd)
+    for q in ("qdbus6", "qdbus", "/usr/lib/qt6/bin/qdbus"):
+        if shutil.which(q) or Path(q).exists():
+            return _lauf(q, dienst, pfad, f"{schnittstelle}.{methode}", *[str(a) for a in args])
+    return None
+
+
+def plasma_skript(js):
+    """Plasma-Skript ausführen; gibt die print()-Ausgabe des Skripts zurück."""
+    if not shutil.which("gdbus"):
+        dbus("org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell", "evaluateScript", js)
+        return ""
+    try:
+        r = subprocess.run(["gdbus", "call", "--session", "--dest", "org.kde.plasmashell", "--object-path", "/PlasmaShell",
+                            "--method", "org.kde.PlasmaShell.evaluateScript", json.dumps(js)],
+                           capture_output=True, text=True, timeout=60)
+        return r.stdout
+    except (OSError, subprocess.TimeoutExpired):
+        return ""
+
+
+def _libexec(name):
+    for d in ("/usr/lib/x86_64-linux-gnu/libexec", "/usr/libexec", "/usr/lib/libexec"):
+        if Path(d, name).exists():
+            return str(Path(d, name))
+    return None
+
+
+def _ab(name, aktuell):
+    """Plasma laedt Themen gleichen Namens nicht neu -> abwechselnd A/B verwenden."""
+    alt = aktuell.get(name, "B")
+    neu = "A" if alt == "B" else "B"
+    aktuell[name] = neu
+    return neu
+
+
+# ================================================================ Einzelne Teile
+
+def farben(p, akt):
+    d = DATEN / "color-schemes"
+    d.mkdir(parents=True, exist_ok=True)
+    name = "Biblix" + _ab("farben", akt)
+    for alt in d.glob("Biblix?.colors"):
+        if alt.stem != name:
+            alt.unlink()
+    (d / f"{name}.colors").write_text(farbschema.erzeugen(p, name), encoding="utf-8")
+    kconf("kdeglobals", "General", "accentColorFromWallpaper", False)
+    _lauf("plasma-apply-colorscheme", name)
+    return f"Farben: {p['name']} ({'dunkel' if p['dunkel'] else 'hell'})"
+
+
+def rahmen(p, e, akt):
+    d = DATEN / "aurorae" / "themes"
+    name = "Biblix" + _ab("rahmen", akt)
+    for alt in d.glob("Biblix?") if d.exists() else []:
+        if alt.name != name:
+            shutil.rmtree(alt, ignore_errors=True)
+    aurorae.erzeugen(p, e, d, name)
+    g = "org.kde.kdecoration2"
+    kconf("kwinrc", g, "library", "org.kde.kwin.aurorae")
+    kconf("kwinrc", g, "theme", f"__aurorae__svg__{name}")
+    if e["knoepfe_links"]:
+        kconf("kwinrc", g, "ButtonsOnLeft", "XAI")
+        kconf("kwinrc", g, "ButtonsOnRight", "")
+    else:
+        kconf("kwinrc", g, "ButtonsOnLeft", "M")
+        kconf("kwinrc", g, "ButtonsOnRight", "IAX")
+    return "Fensterrahmen: " + dict(kern.WAHL["knoepfe"])[e["knoepfe"]]
+
+
+def mauszeiger(p, e, akt):
+    if e["zeiger"] == "standard":
+        _lauf("plasma-apply-cursortheme", "breeze_cursors")
+        return "Mauszeiger: Standard"
+    d = DATEN / "icons"
+    name = "BiblixZeiger" + _ab("zeiger", akt)
+    for alt in d.glob("BiblixZeiger?") if d.exists() else []:
+        if alt.name != name:
+            shutil.rmtree(alt, ignore_errors=True)
+    if zeiger.erzeugen(p, e["ladezeiger"], d, name):
+        _lauf("plasma-apply-cursortheme", name)
+        return "Mauszeiger: Biblix"
+    return "Mauszeiger: xcursorgen fehlt, übersprungen"
+
+
+def symbol_thema(p, e, akt):
+    d = DATEN / "icons"
+    name = "BiblixSymbole" + _ab("symbole", akt)
+    for alt in d.glob("BiblixSymbole?") if d.exists() else []:
+        if alt.name != name:
+            shutil.rmtree(alt, ignore_errors=True)
+    symbole.erzeugen(p, e["symbole"], d, name)
+    tool = _libexec("plasma-changeicons")
+    if tool:
+        _lauf(tool, name)
+    else:
+        kconf("kdeglobals", "Icons", "Theme", name)
+    return "Symbole: " + dict(kern.WAHL["symbole"])[e["symbole"]]
+
+
+def hintergrund(p, e):
+    mid = e["hintergrund"]
+    png = hintergruende.rendern(mid, p, HG_DIR)
+    # alte Bilder aufraeumen (die letzten 12 behalten)
+    bilder = sorted(HG_DIR.glob("*.png"), key=lambda f: f.stat().st_mtime, reverse=True)
+    for alt in bilder[12:]:
+        alt.unlink(missing_ok=True)
+    if e["diashow"]:
+        diashow(p, e)
+    else:
+        _lauf("plasma-apply-wallpaperimage", str(png))
+    gruppen = ["Greeter", "Wallpaper", "org.kde.image", "General"]
+    kconf("kscreenlockerrc", ["Greeter"], "WallpaperPlugin", "org.kde.image")
+    kconf("kscreenlockerrc", gruppen, "Image", f"file://{png}")
+    kconf("kscreenlockerrc", gruppen, "PreviewImage", f"file://{png}")
+    return png
+
+
+def diashow(p, e):
+    """Alle Motive der Gruppe des gewaehlten Bildes (oder alle allgemeinen) als Diashow."""
+    gruppe = next((g for i, _, g in hintergruende.alle() if i == e["hintergrund"]), "allgemein")
+    DIASHOW_DIR.mkdir(parents=True, exist_ok=True)
+    for alt in DIASHOW_DIR.glob("*.png"):
+        alt.unlink()
+    for mid, _, g in hintergruende.alle():
+        if g == gruppe:
+            png = hintergruende.rendern(mid, p, HG_DIR)
+            ziel = DIASHOW_DIR / f"{mid}.png"
+            try:
+                ziel.symlink_to(png)
+            except OSError:
+                shutil.copy(png, ziel)
+    minuten = max(1, int(e.get("diashow_minuten", 30)))
+    plasma_skript(f"""
+desktops().forEach(function (d) {{
+    d.wallpaperPlugin = "org.kde.slideshow";
+    d.currentConfigGroup = ["Wallpaper", "org.kde.slideshow", "General"];
+    d.writeConfig("SlidePaths", "{DIASHOW_DIR}");
+    d.writeConfig("SlideInterval", {minuten * 60});
+    d.writeConfig("SlideshowMode", 1);
+}});""")
+
+
+def klaenge(e):
+    if e["klaenge"] == "aus":
+        kconf("kdeglobals", "Sounds", "Enable", False)
+        return "Klänge: aus"
+    kconf("kdeglobals", "Sounds", "Enable", True)
+    if e["klaenge"] == "preset":
+        thema = "biblix-" + kern.preset(e["preset"]).get("klang", "tech")
+    else:
+        thema = {"biblix": "biblix", "retro": "biblix-retro", "ruhig": "biblix-ruhig"}[e["klaenge"]]
+    kconf("kdeglobals", "Sounds", "Theme", thema)
+    # Startklang beim Anmelden
+    kconf("plasma_workspace.notifyrc", "Event/startkde", "Action", "Sound" if e["startklang"] else "")
+    kconf("plasma_workspace.notifyrc", "Event/startkde", "Sound", "desktop-login.oga")
+    return f"Klänge: {thema}"
+
+
+def effekte(e):
+    an = e["animationen"]
+    kconf("kdeglobals", "KDE", "AnimationDurationFactor", "1" if an else "0")
+    pl = "Plugins"
+    oeffnen, schliessen = e["effekt_oeffnen"], e["effekt_schliessen"]
+    eigene = an and not (oeffnen == "aus" and schliessen == "aus")
+    kconf("kwinrc", pl, "biblix_fensterEnabled", eigene)
+    kconf("kwinrc", pl, "scaleEnabled", False if eigene else an)
+    kconf("kwinrc", pl, "glideEnabled", False)
+    kconf("kwinrc", "Effect-biblix_fenster", "Oeffnen", oeffnen)
+    kconf("kwinrc", "Effect-biblix_fenster", "Schliessen", schliessen)
+    m = e["effekt_minimieren"]
+    kconf("kwinrc", pl, "squashEnabled", an and m == "fliegen")
+    kconf("kwinrc", pl, "magiclampEnabled", an and m == "wabern")
+    kconf("kwinrc", pl, "biblix_minimierenEnabled", an and m == "ausblenden")
+    w = e["arbeitsflaeche"]
+    wuerfel_da = Path("/usr/share/kwin/effects/biblix_wuerfel").exists() or \
+        any(Path(d).exists() for d in ("/usr/lib/x86_64-linux-gnu/qt6/plugins/kwin/effects/plugins/biblix_wuerfel.so",))
+    if w == "wuerfel" and not wuerfel_da:
+        w = "gleiten"
+    kconf("kwinrc", pl, "biblix_wuerfelEnabled", an and w == "wuerfel")
+    if an and w == "wuerfel":
+        arbeitsflaechen_sicherstellen(4)
+    kconf("kwinrc", pl, "slideEnabled", an and w == "gleiten")
+    kconf("kwinrc", pl, "fadedesktopEnabled", an and w == "ueberblenden")
+    kconf("kwinrc", pl, "wobblywindowsEnabled", an and e["wackeln"])
+    kconf("kwinrc", pl, "translucencyEnabled", e["durchsichtig_verschieben"])
+    kconf("kwinrc", "Effect-translucency", "MoveResize", 70 if e["durchsichtig_verschieben"] else 100)
+    kconf("kwinrc", pl, "mouseclickEnabled", e["klick_funken"])
+    # KWin 6.3 lädt Effekte beim Neu-Einlesen nicht nach: jeden direkt ein- oder ausschalten
+    zustand = {
+        "scale": an and not eigene, "glide": False, "biblix_fenster": eigene,
+        "squash": an and m == "fliegen", "magiclamp": an and m == "wabern", "biblix_minimieren": an and m == "ausblenden",
+        "biblix_wuerfel": an and w == "wuerfel", "slide": an and w == "gleiten", "fadedesktop": an and w == "ueberblenden",
+        "wobblywindows": an and e["wackeln"], "translucency": e["durchsichtig_verschieben"], "mouseclick": e["klick_funken"],
+    }
+    for name, ein in zustand.items():
+        dbus("org.kde.KWin", "/Effects", "org.kde.kwin.Effects", "loadEffect" if ein else "unloadEffect", name)
+    for name in ("biblix_fenster", "translucency"):
+        if zustand[name]:
+            dbus("org.kde.KWin", "/Effects", "org.kde.kwin.Effects", "reconfigureEffect", name)
+    return "Animationen: " + ("an" if an else "aus")
+
+
+def arbeitsflaechen_sicherstellen(anzahl):
+    """Der Würfel braucht mehrere Arbeitsflächen: fehlende über KWin anlegen (nur wenn es weniger als 2 gibt)."""
+    try:
+        r = subprocess.run(["kreadconfig6", "--file", "kwinrc", "--group", "Desktops", "--key", "Number", "--default", "1"],
+                           capture_output=True, text=True, timeout=10)
+        jetzt = int(r.stdout.strip() or 1)
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        return
+    if jetzt >= 2:
+        return
+    for i in range(jetzt, anzahl):
+        dbus("org.kde.KWin", "/VirtualDesktopManager", "org.kde.KWin.VirtualDesktopManager", "createDesktop",
+             i, f"Arbeitsfläche {i + 1}")
+
+
+def kwin_neu_laden():
+    dbus("org.kde.KWin", "/KWin", "org.kde.KWin", "reconfigure")
+
+
+# ---------------------------------------------------------------- Taskleiste und Startmenue
+
+def taskleiste(e, p):
+    """Panels per Plasma-Skript einrichten. Biblix-Startmenue rein, Kickoff raus (oder umgekehrt)."""
+    menue = {"bibi": "de.biblix.startmenue", "vollbild": "de.biblix.startmenue", "klassisch": "org.kde.plasma.kickoff"}[e["startmenue"]]
+    stil = "vollbild" if e["startmenue"] == "vollbild" else "panel"
+    deckkraft = {"milchglas": 2, "undurchsichtig": 1, "adaptiv": 0}[e["transparenz"]]
+    icon = "biblix" if e["startknopf"] == "biblix" else f"/usr/share/biblix/design/logos/{e['preset']}.svg"
+    js = f"""
+var menueTyp = "{menue}";
+var umgebaut = false;
+var starter = ["org.kde.plasma.kickoff", "org.kde.plasma.kicker", "org.kde.plasma.kickerdash", "de.biblix.startmenue"];
+var ps = panels();
+// Monitore: Taskleiste auf jedem Bildschirm (oder nur auf dem Hauptmonitor)
+var modus = "{e['monitore']}";
+var vorhanden = {{}};
+ps.forEach(function (p) {{ vorhanden[p.screen] = p; }});
+if (modus != "haupt") {{
+    for (var s = 0; s < screenCount; s++) {{
+        if (!vorhanden[s]) {{
+            var n = new Panel("org.kde.panel");
+            n.location = "bottom";
+            n.screen = s;
+            n.addWidget(menueTyp);
+            var t = n.addWidget("org.kde.plasma.icontasks");
+            t.currentConfigGroup = ["General"];
+            t.writeConfig("showOnlyCurrentScreen", true);
+            if (modus == "gleich") {{ n.addWidget("org.kde.plasma.systemtray"); n.addWidget("org.kde.plasma.digitalclock"); }}
+            vorhanden[s] = n;
+        }}
+    }}
+}} else {{
+    ps.forEach(function (p) {{ if (p.screen != 0) p.remove(); }});
+}}
+panels().forEach(function (p) {{
+    p.floating = {str(e['taskleiste'] == 'schwebend').lower()};
+    p.lengthMode = "{'fit' if e['taskleiste'] == 'dock' else 'fill'}";
+    p.alignment = "{'center' if e['taskleiste'] == 'dock' else 'left'}";
+    p.height = {44 if e['taskleiste'] != 'dock' else 52};
+    try {{ p.opacity = {['"adaptive"', '"opaque"', '"translucent"'][deckkraft]}; }} catch (x) {{}}
+    // Gewuenschte Reihenfolge: Startmenue zuerst (bei "Mitte": Abstand | Startmenue + Fenster | Abstand),
+    // dann alle anderen Widgets wie bisher. Weicht die Leiste davon ab, wird sie neu aufgebaut
+    // (angeheftete Apps der Fensterliste bleiben erhalten).
+    var aufgaben = ["org.kde.plasma.icontasks", "org.kde.plasma.taskmanager"];
+    function info(w) {{
+        var i = {{ typ: w.type, conf: {{}} }};
+        w.currentConfigGroup = ["General"];
+        if (aufgaben.indexOf(w.type) >= 0) {{
+            var l = w.readConfig("launchers", "");
+            if (l && l.length) i.conf.launchers = l;
+        }}
+        if (w.type == "org.kde.plasma.panelspacer" && w.readConfig("biblix", "") == "1") i.biblix = true;
+        return i;
+    }}
+    var jetzt = p.widgets().map(info);
+    var behalten = jetzt.filter(function (i) {{ return starter.indexOf(i.typ) < 0 && !i.biblix; }});
+    var mitte = "{e['startmenue_position']}" == "mitte" && "{e['taskleiste']}" != "dock";
+    var abstand = {{ typ: "org.kde.plasma.panelspacer", conf: {{ biblix: "1", expanding: true }}, biblix: true }};
+    var soll;
+    if (mitte) {{
+        var vorn = behalten.filter(function (i) {{ return aufgaben.indexOf(i.typ) >= 0; }});
+        var rest = behalten.filter(function (i) {{ return aufgaben.indexOf(i.typ) < 0; }});
+        soll = [abstand, {{ typ: menueTyp, conf: {{}} }}].concat(vorn, [abstand], rest);
+    }} else {{
+        soll = [{{ typ: menueTyp, conf: {{}} }}].concat(behalten);
+    }}
+    var ist = jetzt.map(function (i) {{ return i.typ + (i.biblix ? "*" : ""); }}).join(",");
+    var sollText = soll.map(function (i) {{ return i.typ + (i.biblix ? "*" : ""); }}).join(",");
+    if (ist != sollText) {{
+        p.widgets().forEach(function (w) {{ w.remove(); }});
+        soll.forEach(function (i) {{
+            var w = p.addWidget(i.typ);
+            w.currentConfigGroup = ["General"];
+            for (var k in i.conf) w.writeConfig(k, i.conf[k]);
+        }});
+        umgebaut = true;
+    }}
+    p.widgets().forEach(function (w) {{
+        if (w.type == "de.biblix.startmenue") {{
+            w.currentConfigGroup = ["General"];
+            w.writeConfig("icon", "{icon}");
+            w.writeConfig("stil", "{stil}");
+        }}
+        if (aufgaben.indexOf(w.type) >= 0) {{
+            w.currentConfigGroup = ["General"];
+            w.writeConfig("showOnlyCurrentScreen", {str(e['monitore'] == 'beide').lower()});
+        }}
+    }});
+}});
+print(umgebaut ? "BIBLIX-UMGEBAUT" : "BIBLIX-OK");
+"""
+    plasma_skript(js)
+    # Spielereien in der Taskleiste
+    extras = [("spielmodus_anzeige", "de.biblix.spielmodus"), ("update_symbol", "de.biblix.updates"),
+              ("leistungs_anzeige", "de.biblix.leistung"), ("kopfhoerer_schalter", "de.biblix.kopfhoerer")]
+    js2 = "var p = panels().filter(function (x) { return x.screen == 0; })[0] || panels()[0];\nif (p) {\n"
+    for schluessel, plasmoid in extras:
+        if e.get(schluessel):
+            js2 += f'  if (p.widgets("{plasmoid}").length == 0) {{ var w = p.addWidget("{plasmoid}"); }}\n'
+        else:
+            js2 += f'  p.widgets("{plasmoid}").forEach(function (w) {{ w.remove(); }});\n'
+    js2 += "}\n"
+    plasma_skript(js2)
+    return "Taskleiste: " + dict(kern.WAHL["taskleiste"])[e["taskleiste"]]
+
+
+def sperrbildschirm(e):
+    kconf("kscreenlockerrc", ["Greeter", "LnF", "General"], "biblixStil", e["sperrbildschirm"])
+    kconf("kscreenlockerrc", ["Greeter", "LnF", "General"], "alwaysShowClock", e["sperrbildschirm"] != "schlicht")
+
+
+def ladebildschirm(p, e):
+    """Eigenes Look-and-Feel-Paket nur fuer den Startbildschirm nach der Anmeldung."""
+    d = DATEN / "plasma" / "look-and-feel" / "de.biblix.splash"
+    s = d / "contents" / "splash"
+    s.mkdir(parents=True, exist_ok=True)
+    (d / "metadata.json").write_text(json.dumps({
+        "KPackageStructure": "Plasma/LookAndFeel",
+        "KPlugin": {"Id": "de.biblix.splash", "Name": "Biblix", "Description": "Biblix-Startbildschirm",
+                    "Authors": [{"Name": "Biblix"}], "License": "GPL", "Version": "2.0"},
+        "X-Plasma-APIVersion": "2"}, indent=1), encoding="utf-8")
+    vorlage = (DESIGN / "splash" / "Splash.qml").read_text(encoding="utf-8")
+    ersetzen = {"@GRUND@": p["grund"], "@FLAECHE@": p["flaeche"], "@TEXT@": p["text"], "@AKZENT@": p["akzent"],
+                "@LEISE@": p["leise"], "@STIL@": e["ladeanimation"], "@KARTE@": p["karte"]}
+    for a, b in ersetzen.items():
+        vorlage = vorlage.replace(a, b)
+    (s / "Splash.qml").write_text(vorlage, encoding="utf-8")
+    bilder = s / "images"
+    bilder.mkdir(exist_ok=True)
+    (bilder / "logo.svg").write_text(grafik.svg(
+        f'<rect width="120" height="120" rx="26" fill="{p["karte"]}"/>'
+        + grafik.prompt_b_form(p["text"], p["akzent"], 7, cursor=False)), encoding="utf-8")
+    (bilder / "mutter.svg").write_text(grafik.schrauben_b(p), encoding="utf-8")
+    kconf("ksplashrc", "KSplash", "Theme", "de.biblix.splash")
+    kconf("ksplashrc", "KSplash", "Engine", "KSplashQML")
+
+
+def konsole(p, e):
+    d = DATEN / "konsole"
+    d.mkdir(parents=True, exist_ok=True)
+    if e["terminal_farben"]:
+        (d / "Biblix.colorscheme").write_text(terminal.farbschema(p, "Biblix"), encoding="utf-8")
+        (d / "Biblix.profile").write_text(terminal.profil("Biblix"), encoding="utf-8")
+        kconf("konsolerc", "Desktop Entry", "DefaultProfile", "Biblix.profile")
+    else:
+        kconf("konsolerc", "Desktop Entry", "DefaultProfile", None)
+    bashrc = Path.home() / ".bashrc"
+    try:
+        text = bashrc.read_text(encoding="utf-8") if bashrc.exists() else ""
+    except OSError:
+        return
+    zeilen = [z for z in text.splitlines() if "# Biblix-Prompt" not in z]
+    if e["terminal_prompt"]:
+        zeilen.append(PROMPT_ZEILE)
+    neu = "\n".join(zeilen) + "\n"
+    if neu != text:
+        bashrc.write_text(neu, encoding="utf-8")
+
+
+def firefox(p, e):
+    seite = DATEN / "biblix" / "startseite" / "index.html"
+    if e["firefox_startseite"]:
+        seite.parent.mkdir(parents=True, exist_ok=True)
+        vorlage = (DESIGN / "startseite" / "index.html").read_text(encoding="utf-8")
+        for k in ("grund", "flaeche", "karte", "rand", "text", "leise", "akzent", "akzent2", "auf_akzent"):
+            vorlage = vorlage.replace(f"@{k.upper()}@", p[k])
+        try:
+            sprueche = (DESIGN / "sprueche.txt").read_text(encoding="utf-8").splitlines()
+        except OSError:
+            sprueche = ["AUF BIBLIX GEHT DAS."]
+        sprueche = [s.strip() for s in sprueche if s.strip() and not s.startswith("#")]
+        vorlage = vorlage.replace("@SPRUECHE@", json.dumps(sprueche, ensure_ascii=False))
+        seite.write_text(vorlage, encoding="utf-8")
+    profile = Path.home() / ".mozilla" / "firefox"
+    if not profile.exists():
+        return
+    for prefs in profile.glob("*/prefs.js"):
+        user = prefs.parent / "user.js"
+        try:
+            text = user.read_text(encoding="utf-8") if user.exists() else ""
+        except OSError:
+            continue
+        zeilen = [z for z in text.splitlines() if "biblix-startseite" not in z]
+        if e["firefox_startseite"]:
+            zeilen.append(f'user_pref("browser.startup.homepage", "file://{seite}"); // biblix-startseite')
+            zeilen.append('user_pref("browser.startup.page", 1); // biblix-startseite')
+        user.write_text("\n".join(zeilen) + ("\n" if zeilen else ""), encoding="utf-8")
+
+
+def system_teile(p, e, warten=True):
+    """Bootmenue, Startbildschirm und Anmeldung: braucht Admin-Rechte (pkexec, einmal Passwort)."""
+    auftrag = {"palette": {k: p[k] for k in kern.FARBNAMEN}, "name": p["name"], "dunkel": p["dunkel"],
+               "hintergrund": e["hintergrund"], "bootmenue": e["bootmenue_mitfaerben"]}
+    if not Path(SYSTEM_HELFER).exists():
+        return "Bootmenü: Helfer fehlt"
+    if os.geteuid() == 0:
+        r = _lauf(SYSTEM_HELFER, eingabe=json.dumps(auftrag))
+    else:
+        r = _lauf("pkexec", SYSTEM_HELFER, eingabe=json.dumps(auftrag))
+    return "Bootmenü und Startbildschirm: " + ("übernommen" if r == 0 else "nicht geändert")
+
+
+# ================================================================ Alles
+
+def palette_schreiben(p):
+    PALETTE.parent.mkdir(parents=True, exist_ok=True)
+    PALETTE.write_text(json.dumps(p, indent=1, ensure_ascii=False), encoding="utf-8")
+
+
+def alles(e=None, system=True, melden=print):
+    """Wendet alles an. melden(text) wird nach jedem Schritt aufgerufen (Fortschritt in der App)."""
+    e = e or kern.laden()
+    p = kern.palette(e)
+    try:
+        akt = json.loads(AKTUELL.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        akt = {}
+    alt_system = akt.get("system")
+    schritte = [
+        ("Farben", lambda: farben(p, akt)),
+        ("Fensterrahmen", lambda: rahmen(p, e, akt)),
+        ("Symbole", lambda: symbol_thema(p, e, akt)),
+        ("Mauszeiger", lambda: mauszeiger(p, e, akt)),
+        ("Hintergrund", lambda: hintergrund(p, e)),
+        ("Animationen", lambda: effekte(e)),
+        ("Klänge", lambda: klaenge(e)),
+        ("Taskleiste", lambda: taskleiste(e, p)),
+        ("Sperrbildschirm", lambda: sperrbildschirm(e)),
+        ("Ladebildschirm", lambda: ladebildschirm(p, e)),
+        ("Terminal", lambda: konsole(p, e)),
+        ("Firefox", lambda: firefox(p, e)),
+    ]
+    for name, f in schritte:
+        try:
+            r = f()
+            melden(r if isinstance(r, str) else name)
+        except Exception as fehler:  # ein Teil darf die anderen nicht aufhalten
+            melden(f"{name}: Fehler ({fehler})")
+    kwin_neu_laden()
+    palette_schreiben(p)
+    # Systemteile nur, wenn sich Farben oder Hintergrund geaendert haben (Passwort nur dann)
+    neu_system = json.dumps([p[k] for k in kern.FARBNAMEN] + [e["hintergrund"], e["bootmenue_mitfaerben"]])
+    if system and e["bootmenue_mitfaerben"] and neu_system != alt_system:
+        r = system_teile(p, e)
+        melden(r)
+        if "übernommen" in r:
+            akt["system"] = neu_system
+    AKTUELL.parent.mkdir(parents=True, exist_ok=True)
+    AKTUELL.write_text(json.dumps(akt), encoding="utf-8")
+    melden("Fertig")
+    return p

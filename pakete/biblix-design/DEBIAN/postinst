@@ -12,24 +12,42 @@ starter() {
     return 0
 }
 
+# Bootmenue, Startbildschirm und Anmeldung im Biblix-Standard (Bibi Tech), solange der Nutzer noch nichts gewaehlt hat
+system_standard() {
+    [ -e /var/lib/biblix/design/sddm/hintergrund.png ] && return 1
+    python3 - <<'EOF' | /usr/lib/biblix/biblix-design-system || true
+import json, sys
+sys.path.insert(0, "/usr/share/biblix/design/lib")
+from biblix_design import kern
+e = dict(kern.STANDARD)
+p = kern.palette(e, "dunkel")
+print(json.dumps({"palette": {k: p[k] for k in kern.FARBNAMEN}, "name": p["name"], "dunkel": True,
+                  "hintergrund": e["hintergrund"], "bootmenue": True}))
+EOF
+    return 0
+}
+
 case "$1" in
     configure)
         update-alternatives --install /usr/share/desktop-base/active-theme desktop-theme $T 100
-        # Erstinstallation: Biblix-Design aktivieren. Spaeter nicht ueberstimmen, falls der Nutzer etwas anderes waehlt.
         if [ -z "$2" ]; then
             update-alternatives --set desktop-theme $T
-            plymouth-set-default-theme biblix 2>/dev/null || true
         fi
         starter
+        /usr/lib/biblix/biblix-sperrbildschirm einrichten || true
+        systemctl --global enable biblix-design-tagnacht.timer >/dev/null 2>&1 || true
         gtk-update-icon-cache -q -f /usr/share/icons/hicolor 2>/dev/null || true
-        # Neue Bilder fuer Bootanimation und Bootmenue uebernehmen
-        update-initramfs -u >/dev/null 2>&1 || true
-        if [ -e /boot/grub/grub.cfg ] && command -v update-grub >/dev/null; then
-            update-grub >/dev/null 2>&1 || true
+        if ! system_standard; then
+            # Nutzer hat schon ein Design: nur Bilder des Grund-Themas uebernehmen
+            update-initramfs -u >/dev/null 2>&1 || true
+            if [ -e /boot/grub/grub.cfg ] && command -v update-grub >/dev/null; then
+                update-grub >/dev/null 2>&1 || true
+            fi
         fi
         ;;
     triggered)
         starter
+        /usr/lib/biblix/biblix-sperrbildschirm einrichten || true
         ;;
 esac
 exit 0

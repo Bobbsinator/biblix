@@ -1,0 +1,15 @@
+{
+    "KPackageStructure": "KWin/Effect",
+    "KPlugin": {
+        "Authors": [{ "Name": "Biblix" }],
+        "Category": "Window Management",
+        "Description": "Biblix: Fenster beim Minimieren sanft ausblenden",
+        "EnabledByDefault": false,
+        "Id": "biblix_minimieren",
+        "License": "GPL",
+        "Name": "Biblix Minimieren (Ausblenden)"
+    },
+    "X-KDE-Ordering": 60,
+    "X-KWin-Exclusive-Category": "minimize",
+    "X-Plasma-API": "javascript"
+}

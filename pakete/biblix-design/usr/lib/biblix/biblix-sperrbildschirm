@@ -1,0 +1,167 @@
+#!/usr/bin/python3
+"""Biblix-Sperrbildschirm: ergänzt den KDE-Sperrbildschirm (große Uhr, Bibi-Spruch, Terminal-Stil).
+
+  biblix-sperrbildschirm einrichten   (postinst und Trigger nach Plasma-Updates)
+  biblix-sperrbildschirm entfernen    (prerm): KDE-Original wiederherstellen
+
+Die Originaldateien werden per dpkg-divert beiseitegelegt. Die Biblix-Fassung wird aus dem
+Original erzeugt. Findet der Anpasser seine Ankerstellen nicht (neue Plasma-Version), bleibt
+das KDE-Original unverändert im Einsatz.
+"""
+import json
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+ORDNER = Path("/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen")
+DATEIEN = ["LockScreenUi.qml", "config.xml"]
+SPRUECHE = Path("/usr/share/biblix/design/sprueche.txt")
+PAKET = "biblix-design"
+
+
+def original(datei):
+    return ORDNER / (datei + ".biblix-original")
+
+
+def umleiten(datei):
+    ziel = ORDNER / datei
+    r = subprocess.run(["dpkg-divert", "--listpackage", str(ziel)], capture_output=True, text=True)
+    if r.stdout.strip() != PAKET:
+        subprocess.run(["dpkg-divert", "--quiet", "--package", PAKET, "--rename",
+                        "--divert", str(original(datei)), "--add", str(ziel)], check=True)
+
+
+def sprueche():
+    try:
+        z = [s.strip() for s in SPRUECHE.read_text(encoding="utf-8").splitlines()]
+        z = [s for s in z if s and not s.startswith("#")]
+    except OSError:
+        z = []
+    return z or ["AUF BIBLIX GEHT DAS."]
+
+
+BLOCK = '''
+        // ---- Biblix: Bibi-Spruch unter der Uhr
+        Text {
+            id: biblixSpruch
+            readonly property var sprueche: @SPRUECHE@
+            visible: config.biblixStil === "bibi" && clock.visible
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: clock.bottom
+            anchors.topMargin: Kirigami.Units.gridUnit * 1.5
+            width: Math.min(parent.width * 0.8, implicitWidth)
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.WordWrap
+            color: Kirigami.Theme.textColor
+            opacity: lockScreenRoot.uiVisible ? 0.5 : 0.9
+            Behavior on opacity { OpacityAnimator { duration: Kirigami.Units.longDuration } }
+            font.family: "DejaVu Sans Mono"
+            font.pointSize: 14
+            font.letterSpacing: 1
+            style: Text.Raised
+            styleColor: "#90000000"
+            text: sprueche[Math.floor(Math.random() * sprueche.length)]
+        }
+
+        // ---- Biblix: Terminal-Stil
+        Column {
+            visible: config.biblixStil === "terminal"
+            opacity: lockScreenRoot.uiVisible ? 0 : 1
+            Behavior on opacity { OpacityAnimator { duration: Kirigami.Units.longDuration } }
+            anchors.centerIn: parent
+            spacing: Kirigami.Units.largeSpacing
+            Text {
+                text: "Biblix · " + kscreenlocker_userName + "@biblix"
+                color: Kirigami.Theme.disabledTextColor
+                font.family: "DejaVu Sans Mono"
+                font.pointSize: 14
+            }
+            Row {
+                spacing: 0
+                Text {
+                    text: "biblix login: " + kscreenlocker_userName + "\\nPasswort: "
+                    color: Kirigami.Theme.textColor
+                    font.family: "DejaVu Sans Mono"
+                    font.pointSize: 26
+                }
+                Rectangle {
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 6
+                    width: 18
+                    height: 6
+                    color: Kirigami.Theme.highlightColor
+                    SequentialAnimation on opacity {
+                        loops: Animation.Infinite
+                        NumberAnimation { to: 0; duration: 450 }
+                        NumberAnimation { to: 1; duration: 450 }
+                    }
+                }
+            }
+            Text {
+                text: "Taste drücken, um anzumelden. DEIN SYSTEM. DEIN PROBLEM."
+                color: Kirigami.Theme.disabledTextColor
+                font.family: "DejaVu Sans Mono"
+                font.pointSize: 11
+            }
+        }
+'''
+
+
+def anpassen_ui(text):
+    anker_uhr = "            id: clock\n"
+    anker_schatten = "            id: clockShadow\n"
+    anker_nutzer = "        ListModel {\n            id: users\n"
+    if not all(a in text for a in (anker_uhr, anker_schatten, anker_nutzer)) or "biblixSpruch" in text:
+        return None
+    text = text.replace(anker_uhr, anker_uhr + '            scale: config.biblixStil === "bibi" ? 1.4 : 1.0\n'
+                                                 '            transformOrigin: Item.Bottom\n', 1)
+    text = text.replace(anker_schatten, anker_schatten + "            scale: clock.scale\n"
+                                                         "            transformOrigin: Item.Bottom\n", 1)
+    block = BLOCK.replace("@SPRUECHE@", json.dumps(sprueche(), ensure_ascii=False))
+    return text.replace(anker_nutzer, block.lstrip("\n") + "\n" + anker_nutzer, 1)
+
+
+def anpassen_config(text):
+    anker = "  </group>"
+    if anker not in text or "biblixStil" in text:
+        return None
+    eintrag = ('    <entry name="biblixStil" type="String">\n'
+               '      <label>Biblix: bibi, terminal oder schlicht</label>\n'
+               '      <default>bibi</default>\n'
+               '    </entry>\n')
+    return text.replace(anker, eintrag + anker, 1)
+
+
+def einrichten():
+    if not ORDNER.exists():
+        return
+    for datei in DATEIEN:
+        if not (ORDNER / datei).exists() and not original(datei).exists():
+            return
+    for datei in DATEIEN:
+        umleiten(datei)
+    ui = anpassen_ui(original("LockScreenUi.qml").read_text(encoding="utf-8"))
+    cfg = anpassen_config(original("config.xml").read_text(encoding="utf-8"))
+    if ui is None or cfg is None:
+        # Plasma hat sich geändert: KDE-Original verwenden
+        for datei in DATEIEN:
+            shutil.copy2(original(datei), ORDNER / datei)
+        print("biblix-sperrbildschirm: Plasma-Version unbekannt, KDE-Sperrbildschirm bleibt")
+        return
+    (ORDNER / "LockScreenUi.qml").write_text(ui, encoding="utf-8")
+    (ORDNER / "config.xml").write_text(cfg, encoding="utf-8")
+
+
+def entfernen():
+    for datei in DATEIEN:
+        ziel = ORDNER / datei
+        r = subprocess.run(["dpkg-divert", "--listpackage", str(ziel)], capture_output=True, text=True)
+        if r.stdout.strip() == PAKET:
+            ziel.unlink(missing_ok=True)
+            subprocess.run(["dpkg-divert", "--quiet", "--package", PAKET, "--rename",
+                            "--divert", str(original(datei)), "--remove", str(ziel)], check=True)
+
+
+if __name__ == "__main__":
+    {"einrichten": einrichten, "entfernen": entfernen}[sys.argv[1] if len(sys.argv) > 1 else "einrichten"]()

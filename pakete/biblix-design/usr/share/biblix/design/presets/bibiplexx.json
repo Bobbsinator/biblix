@@ -1,0 +1,15 @@
+{
+  "id": "bibiplexx",
+  "name": "Bibiplexx",
+  "beschreibung": "Kino-Schwarz, Lila, Pink, Orange",
+  "logo": "bibiplexx.svg",
+  "klang": "kino",
+  "dunkel": {
+    "grund": "#07070c", "flaeche": "#120d1f", "karte": "#1a1030", "rand": "#2f2050",
+    "text": "#f2e9ff", "leise": "#a898c8", "akzent": "#ff4d9d", "akzent2": "#ff8a00", "gefahr": "#ff5a6a"
+  },
+  "hell": {
+    "grund": "#efe6fb", "flaeche": "#f8f3ff", "karte": "#ffffff", "rand": "#d8c8f0",
+    "text": "#1a1030", "leise": "#6a5a8a", "akzent": "#7b2cbf", "akzent2": "#ff4d9d", "gefahr": "#d02c4a"
+  }
+}

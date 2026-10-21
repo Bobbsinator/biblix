@@ -1,0 +1,4 @@
+File=wuerfelconfig.kcfg
+ClassName=WuerfelConfig
+Singleton=true
+Mutators=true

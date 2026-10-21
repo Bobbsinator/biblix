@@ -1,0 +1,15 @@
+{
+  "id": "bibi-mac",
+  "name": "Bibi Mac",
+  "beschreibung": "Knallrot, Hellgelb und Weiß",
+  "logo": "bibi-mac.svg",
+  "klang": "mac",
+  "dunkel": {
+    "grund": "#2a0d0d", "flaeche": "#3a1313", "karte": "#4b1a1a", "rand": "#6e2a2a",
+    "text": "#fff4dc", "leise": "#e0b8a8", "akzent": "#ffc72c", "akzent2": "#e63131", "gefahr": "#ff6b6b"
+  },
+  "hell": {
+    "grund": "#fff1d6", "flaeche": "#fff8ea", "karte": "#ffffff", "rand": "#f0d2a0",
+    "text": "#3a1010", "leise": "#8a5a50", "akzent": "#e63131", "akzent2": "#f2a900", "gefahr": "#b81f1f"
+  }
+}

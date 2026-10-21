@@ -13,8 +13,8 @@ HIER=$(pwd)
 NAME="Biblix Paketquelle"
 case "${QUELLE_URL:-https://$GITHUB_USER.github.io/}" in *@NOCH_OFFEN@*) echo "GitHub-Benutzer fehlt in pakete/quelle.conf"; exit 1 ;; esac
 [ -f biblix-archive-keyring.gpg ] || { echo "Erst bash pakete/schluessel-erzeugen.sh ausfuehren"; exit 1; }
-for t in dpkg-deb apt-ftparchive gpg rsync rsvg-convert grub-mkfont curl python3; do
-    command -v $t >/dev/null || { echo "$t fehlt (apt install dpkg-dev apt-utils gnupg rsync librsvg2-bin grub-common fonts-dejavu-core curl python3)"; exit 1; }
+for t in dpkg-deb apt-ftparchive gpg rsync rsvg-convert grub-mkfont curl python3 oggenc; do
+    command -v $t >/dev/null || { echo "$t fehlt (apt install dpkg-dev apt-utils gnupg rsync librsvg2-bin grub-common fonts-dejavu-core curl python3 vorbis-tools)"; exit 1; }
 done
 
 QUELLE=$(mkdir -p "${QUELLE_DIR:-../paketquelle}" && cd "${QUELLE_DIR:-../paketquelle}" && pwd)
@@ -26,7 +26,8 @@ gebaut=0
 for d in */DEBIAN; do
     name=${d%/DEBIAN}
     VERSION=$(tr -d ' \r\n' < "$name/VERSION")
-    DEB="${name}_${VERSION}_all.deb"
+    ARCH=$(sed -n 's/^Architecture: *//p' "$name/DEBIAN/control" | tr -d ' \r\n')
+    DEB="${name}_${VERSION}_${ARCH:-all}.deb"
     if [ -f "$QUELLE/$DEB" ]; then
         echo "= $name $VERSION (unveraendert)"
     else
@@ -42,10 +43,14 @@ for d in */DEBIAN; do
         done
         sed -i "s/@VERSION@/$VERSION/" "$P/DEBIAN/control"
         [ -f "$name/vorbereiten.sh" ] && bash "$name/vorbereiten.sh" "$P"
+        # Python-Module pruefen
+        find "$P" -name '*.py' -print0 | xargs -0 -r python3 -m py_compile
+        find "$P" -name __pycache__ -type d -prune -exec rm -rf {} +
         # Skripte pruefen, bevor irgendetwas veroeffentlicht wird
         for f in "$P"/usr/bin/* "$P"/usr/lib/biblix/* "$P"/DEBIAN/preinst "$P"/DEBIAN/postinst "$P"/DEBIAN/prerm "$P"/DEBIAN/postrm; do
             [ -f "$f" ] || continue
             head -1 "$f" | grep -qE '^#!.*(ba)?sh' && bash -n "$f"
+            head -1 "$f" | grep -qE '^#!.*python3' && python3 -m py_compile "$f" && rm -rf "$(dirname "$f")/__pycache__"
         done
         dpkg-deb --root-owner-group -Zxz --build "$P" "$QUELLE/$DEB" >/dev/null
         gebaut=1

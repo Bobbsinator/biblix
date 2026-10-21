@@ -112,6 +112,27 @@ QProgressBar::chunk { background: #3fd0ee; border-radius: 4px; }
 QComboBox { background: #13242e; border: 1px solid #1f3946; border-radius: 8px; padding: 5px 10px; color: #e3f3f8; }
 """
 
+# Farben folgen dem aktuellen Biblix-Design (App "Biblix Design" schreibt ~/.config/biblix/palette.json).
+# Ohne Design bleiben die klassischen S-Launcher-Farben.
+DESIGN_FARBEN = {
+    "#0b1820": "grund", "#e3f3f8": "text", "#8fb0bf": "leise", "#3fd0ee": "akzent_hell", "#ffd23f": "akzent2",
+    "#071118": "grund", "#1f3946": "rand", "#cfe6ee": "text", "#13323f": "auswahl", "#10242e": "karte",
+    "#0d1f28": "flaeche", "#13242e": "karte", "#1f4a5a": "rand", "#18404f": "auswahl", "#5d7a86": "leise",
+    "#10202a": "karte", "#1a2f3a": "rand", "#0aa5c6": "akzent", "#001319": "auf_akzent", "#1b1500": "auf_akzent2",
+    "#0f222c": "karte", "#0f6e86": "akzent_dunkel", "#072a36": "grund",
+}
+
+
+def design_stil(text):
+    try:
+        pal = json.loads((Path.home() / ".config/biblix/palette.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return text
+    for alt, schluessel in DESIGN_FARBEN.items():
+        if schluessel in pal:
+            text = text.replace(alt, pal[schluessel])
+    return text
+
 
 def alive(obj):
     return obj is not None and not sip.isdeleted(obj)
@@ -500,7 +521,7 @@ class GameCard(QFrame):
         self.img = QLabel()
         self.img.setFixedSize(230, 107)
         self.img.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.img.setStyleSheet("background:#072a36; border-top-left-radius:12px; border-top-right-radius:12px;")
+        self.img.setStyleSheet(design_stil("background:#072a36; border-top-left-radius:12px; border-top-right-radius:12px;"))
         self.img.setText(game["name"])
         lay.addWidget(self.img)
         row = QHBoxLayout()
@@ -612,7 +633,7 @@ class Main(QMainWindow):
         outer.addWidget(bar)
 
         self.setCentralWidget(root)
-        self.setStyleSheet(STYLE)
+        self.setStyleSheet(design_stil(STYLE))
 
         # Flathub fuer Benutzerinstallationen sicherstellen (ohne Passwortabfrage)
         QProcess.startDetached("flatpak", ["remote-add", "--user", "--if-not-exists", "flathub", FLATHUB_REPO])

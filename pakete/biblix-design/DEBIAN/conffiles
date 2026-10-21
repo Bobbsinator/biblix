@@ -2,3 +2,4 @@
 /etc/sddm.conf.d/biblix.conf
 /etc/xdg/fastfetch/config.jsonc
 /etc/skel/.config/MangoHud/MangoHud.conf
+/etc/xdg/autostart/de.biblix.Design.Anmeldung.desktop

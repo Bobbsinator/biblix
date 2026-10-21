@@ -1,3 +1,42 @@
+Package: biblix-design
+Architecture: all
+Version: 1.0.0
+Priority: optional
+Section: x11
+Maintainer: Biblix <biblix@localhost>
+Depends: desktop-base, plymouth, grub-common
+Recommends: sddm-theme-breeze, fastfetch
+Filename: ./biblix-design_1.0.0_all.deb
+Size: 2944744
+MD5sum: 1d6a32cf1bd27479b6a3096fb4030983
+SHA1: d1462b4f38143283caf396d1847bcceac0cc12c5
+SHA256: 8cb4848a081b7369a9b6f0460cd791a88c8e8eb390f833167cb1861e452908f7
+SHA512: b6e5df00db5b81fa5c135b9b30b23e6debca000eb42101430245aa482159670ab9dd8e1988cab8b1872d1d880bb3463ce11f99367b796af937dc03603083865a
+Description: Biblix-Design: Hintergrund, Bootmenue, Bootanimation, Icons
+ Das Aussehen von Biblix: Hintergrundbild, Anmeldebildschirm, Bootmenue
+ ("Wohin heute?"), Bootanimation, Icons, Farben und die Taskleiste mit
+ S-Launcher. Kommt als Update, ohne Neuinstallation.
+
+Package: biblix-system
+Architecture: all
+Version: 1.0.0
+Priority: optional
+Section: admin
+Maintainer: Biblix <biblix@localhost>
+Depends: sudo, base-files
+Recommends: firewalld, power-profiles-daemon, systemd-zram-generator, gamemode, mpv, firefox-esr, nvidia-vaapi-driver, bash-completion
+Filename: ./biblix-system_1.0.0_all.deb
+Size: 6672
+MD5sum: 3ed64610b8ad39670326123bd9c5d84e
+SHA1: 61d15879673fef34fc5f0b30e73d49008f0520cb
+SHA256: deab99f4eee892cc7aa0d4381cd95e99fcc35e0a7003adb80e5125fe73c56c5e
+SHA512: f2102a3b0d0ba1a026ee67d78c14a1beaf74857ac8f77755795cda57eb03d0f7c68c7746e2d1acec9503a284fb56633514f02aac197c25a315e9f865f14b2c8a
+Description: Biblix-System: Leistung, Treiber-Einstellungen, Sicherheit
+ Systemeinstellungen von Biblix: Spiele-Kernelwerte, zram, I/O-Scheduler,
+ NVIDIA- und AMD-Optionen, Bootparameter, Firewall, Paketquelle (Backports),
+ Firefox-Videobeschleunigung, mpv in Hochqualitaet, Standard-Apps,
+ der Admin-Befehl "bibi" und der Systemname Biblix.
+
 Package: biblix-tools
 Architecture: all
 Version: 1.0.0
@@ -18,4 +57,60 @@ Description: Biblix-Werkzeuge: S-Launcher und Systemhelfer
  Neustart in Windows sowie die Paketquelle fuer kuenftige Biblix-Updates.
  .
  AUF BIBLIX GEHT DAS.
+
+Package: biblix-tools
+Architecture: all
+Version: 1.1.0
+Priority: optional
+Section: admin
+Maintainer: Biblix <biblix@localhost>
+Depends: python3, python3-pyqt6, flatpak, pciutils, pkexec, polkitd, libnotify-bin, kdialog, efibootmgr, konsole, curl
+Recommends: mokutil, onedrive, dkms, libarchive-tools, gamemode, power-profiles-daemon, vulkan-tools
+Filename: ./biblix-tools_1.1.0_all.deb
+Size: 20888
+MD5sum: 5b68fe5388278090bfc5dce2bdef1e6d
+SHA1: b4c16e7aa148a4285799e6cec85c93ff3ed3c9cf
+SHA256: 81083ab6b9be530cb00b82001025be0635841a78001bc25ae45734b920e29fdf
+SHA512: fe012f46f665c9d4a713a11f1ddf140eb129f0993ea1c0cd502e81c6ce7189f557e4d0d4f153c6e2383147aa2e180b5a2b0d3aafe3b7eeb63c9f384be97ba7b4
+Description: Biblix-Werkzeuge: S-Launcher und Systemhelfer
+ S-Launcher (App-Browser und Spielezentrale), biblix-gpu (Grafik- und CPU-Check),
+ Update-Benachrichtigungen, Secure-Boot-, OneDrive- und Xbox-Funkadapter-Helfer,
+ Neustart in Windows sowie die Paketquelle fuer kuenftige Biblix-Updates.
+ .
+ AUF BIBLIX GEHT DAS.
+
+Package: biblix-xbox
+Architecture: all
+Version: 1.0.0
+Priority: optional
+Section: kernel
+Maintainer: Biblix <biblix@localhost>
+Depends: dkms, linux-headers-amd64 | linux-headers
+Recommends: bluez, libarchive-tools, curl
+Filename: ./biblix-xbox_1.0.0_all.deb
+Size: 91172
+MD5sum: 4f17e93f8542ded00ab6ddc4cc5110f0
+SHA1: f19ffb2318b15a322e4c4130fa3438ec7ecdd81b
+SHA256: 1ac97808d62f9f6705cee50b046117216f98de66098ab0cf0eeedbf75d5f7be2
+SHA512: 3a5d88af4ce2470d3cdecbcb1410ce54e2bf0cfca1942575179ed0e06e1d8ecc869bc86aa7f58e776f7f3da90be839a9637b536096754fa97f7a0b0163a6b68e
+Description: Biblix: Treiber fuer Xbox-Controller
+ xone (Xbox-Funkadapter und Kabel) und xpadneo (Bluetooth) als DKMS-Module,
+ die bei jedem Kernel-Update automatisch neu gebaut werden. Firmware fuer den
+ Funkadapter: bibi biblix-xbox-funkadapter
+
+Package: biblix
+Architecture: all
+Version: 1.0.0
+Priority: optional
+Section: metapackages
+Maintainer: Biblix <biblix@localhost>
+Depends: biblix-tools (>= 1.1.0), biblix-system (>= 1.0.0), biblix-design (>= 1.0.0), biblix-xbox (>= 1.0.0)
+Filename: ./biblix_1.0.0_all.deb
+Size: 1008
+MD5sum: 4df56abf41bcb5c367017bd1b727fdf3
+SHA1: 64bbeb5c905a69fed184dd86a5513f4fc31b5039
+SHA256: d15a4f202418e6dedebec5bef6ae8f15edf929ff3f182eb3cf52871fc3c287cf
+SHA512: a427991a6049f37d000405a4a9c32c97f43576dc952c0cb2b5ec26f56162291913fdc07811025ff4426e4abba50c219aedb1816b7a1d4af471a09e9f28c949c0
+Description: Biblix - DEIN SYSTEM. DEIN PROBLEM.
+ Sammelpaket: haelt alle Biblix-Teile aktuell und bringt neue Teile per Update mit.
 

@@ -832,13 +832,14 @@ class Fenster(QMainWindow):
             wahl("Fenster öffnen", "effekt_oeffnen")
             wahl("Fenster schließen", "effekt_schliessen")
             wahl("Minimieren", "effekt_minimieren")
+            wahl("Arbeitsflächen", "arbeitsflaechen")
             wahl("Arbeitsfläche wechseln", "arbeitsflaeche")
             schalter("Wackelnde Fenster beim Verschieben", "wackeln")
             schalter("Fenster beim Verschieben durchsichtig", "durchsichtig_verschieben")
             schalter("Klick-Funken (an/aus mit Meta + *)", "klick_funken")
             hinweis = QLabel("Bei Spielen im Vollbild sind alle Animationen automatisch aus.\n"
-                             "Würfel: dreht sich beim Wechsel der Arbeitsfläche (Strg+F1 … F4). "
-                             "Gibt es nur eine Arbeitsfläche, legt Biblix Design vier an. Meta+C dreht ihn mit der Maus.")
+                             "Arbeitsflächen „Eine“: kein Umschalter in der Taskleiste. Würfel, Gleiten und "
+                             "Überblenden gibt es nur mit „Vier“ (Wechsel mit Strg+F1 … F4, Meta+C dreht den Würfel mit der Maus).")
             hinweis.setObjectName("leise")
             hinweis.setWordWrap(True)
             lay.addWidget(hinweis)

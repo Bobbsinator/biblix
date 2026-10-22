@@ -85,6 +85,13 @@ def main(argv):
             e["_stand"] = 2
             kern.speichern(e, verlauf=False)
             anwenden.taskleiste(e, kern.palette(e))
+        # Einmalig (2.1.0): maximierte Fenster mit gefuellter Titelleiste, nur noch eine Arbeitsflaeche
+        if gespeichert.get("_stand", 0) < 3:
+            e["_stand"] = 3
+            e["arbeitsflaechen"] = "eine"
+            kern.speichern(e, verlauf=False)
+            anwenden.rahmen_erneuern(e)
+            anwenden.arbeitsflaechen(e)
         if e["modus"] == "auto":
             try:
                 import json

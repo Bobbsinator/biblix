@@ -22,7 +22,7 @@ FARBNAMEN = ["grund", "flaeche", "karte", "rand", "text", "leise", "akzent", "ak
 
 # Der Biblix-Standard. Jede Option der Design-App hat hier ihren Platz.
 STANDARD = {
-    "_stand": 2,                    # Stand der Einstellungen (für einmalige Umstellungen nach Updates)
+    "_stand": 3,                    # Stand der Einstellungen (für einmalige Umstellungen nach Updates)
     "preset": "bibi-tech",
     "modus": "dunkel",              # dunkel | hell | auto (Tag hell, Abend dunkel)
     "eigene_farben": None,          # None oder {"dunkel": {...}, "hell": {...}}
@@ -41,6 +41,7 @@ STANDARD = {
     "effekt_schliessen": "zusammenziehen",  # zusammenziehen | wegfallen | abbauen | ausblenden | aus
     "effekt_minimieren": "fliegen", # fliegen | wabern | ausblenden
     "arbeitsflaeche": "wuerfel",    # wuerfel | gleiten | ueberblenden
+    "arbeitsflaechen": "eine",      # eine | vier
     "wackeln": True,
     "durchsichtig_verschieben": False,
     "klick_funken": False,
@@ -83,6 +84,7 @@ WAHL = {
                           ("ausblenden", "Ausblenden"), ("aus", "Aus")],
     "effekt_minimieren": [("fliegen", "In die Taskleiste"), ("wabern", "Wabern"), ("ausblenden", "Ausblenden")],
     "arbeitsflaeche": [("wuerfel", "3D-Würfel"), ("gleiten", "Gleiten"), ("ueberblenden", "Überblenden")],
+    "arbeitsflaechen": [("eine", "Eine"), ("vier", "Vier")],
     "symbole": [("kacheln", "Kacheln"), ("flach", "Flach"), ("linien", "Linien")],
     "zeiger": [("biblix", "Biblix-Zeiger"), ("standard", "Standard")],
     "ladezeiger": [("mutter", "Drehende Mutter"), ("cursor", "Terminal-Cursor"), ("schichten", "Schichten-B")],

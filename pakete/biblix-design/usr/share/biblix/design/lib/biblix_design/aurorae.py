@@ -215,15 +215,17 @@ def rahmen_svg(p, e, titel_h, r):
                 f'<rect x="0" y="0" width="{L}" height="{U}" fill="url(#cbr{z})"/>'
                 f'<path d="{form_br}" fill="{rand}"/>')
 
-    # Maximiert: nur Titelzeile, keine Raender, kein Schatten
+    # Maximiert: nur Titelzeile, keine Raender, kein Schatten.
+    # KWin zeichnet maximiert nur das Mittelstueck (enabledBorders: NoBorder), also muss es gefuellt sein.
     for zustand in ("aktiv", "inaktiv"):
         pre = "decoration-maximized" if zustand == "aktiv" else "decoration-maximized-inactive"
         titel = (p["akzent"] if farbig else p["flaeche"]) if zustand == "aktiv" else p["flaeche"]
         for teil in ("topleft", "top", "topright"):
             ablegen(f"{pre}-{teil}", 2 if teil != "top" else 10, titel_h,
                     f'<rect x="0" y="0" width="{2 if teil != "top" else 10}" height="{titel_h}" fill="{titel}"/>')
-        for teil in ("left", "right", "center", "bottomleft", "bottom", "bottomright"):
-            ablegen(f"{pre}-{teil}", 2 if teil != "center" else 10, 2, "")
+        ablegen(f"{pre}-center", 10, titel_h, f'<rect x="0" y="0" width="10" height="{titel_h}" fill="{titel}"/>')
+        for teil in ("left", "right", "bottomleft", "bottom", "bottomright"):
+            ablegen(f"{pre}-{teil}", 2, 2, "")
 
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{ox}" height="{max(T, U) + 4}">'
             f'<defs>{"".join(defs)}</defs>{"".join(teile)}</svg>')

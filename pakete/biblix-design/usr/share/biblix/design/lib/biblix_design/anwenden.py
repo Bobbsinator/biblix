@@ -4,6 +4,7 @@ Jeder Schritt ist einzeln abgesichert: faellt einer aus (z. B. ohne laufendes Pl
 laufen die anderen trotzdem. Rueckgabe: Liste von Meldungen fuer die App.
 """
 import json
+import re
 import os
 import shutil
 import subprocess
@@ -124,6 +125,19 @@ def rahmen(p, e, akt):
     return "Fensterrahmen: " + dict(kern.WAHL["knoepfe"])[e["knoepfe"]]
 
 
+def rahmen_erneuern(e):
+    """Nur den Fensterrahmen neu erzeugen (z. B. nach einem Update mit geaendertem Rahmen)."""
+    try:
+        akt = json.loads(AKTUELL.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        akt = {}
+    r = rahmen(kern.palette(e), e, akt)
+    AKTUELL.parent.mkdir(parents=True, exist_ok=True)
+    AKTUELL.write_text(json.dumps(akt), encoding="utf-8")
+    kwin_neu_laden()
+    return r
+
+
 def mauszeiger(p, e, akt):
     if e["zeiger"] == "standard":
         _lauf("plasma-apply-cursortheme", "breeze_cursors")
@@ -234,8 +248,6 @@ def effekte(e):
     if w == "wuerfel" and not wuerfel_da:
         w = "gleiten"
     kconf("kwinrc", pl, "biblix_wuerfelEnabled", an and w == "wuerfel")
-    if an and w == "wuerfel":
-        arbeitsflaechen_sicherstellen(4)
     kconf("kwinrc", pl, "slideEnabled", an and w == "gleiten")
     kconf("kwinrc", pl, "fadedesktopEnabled", an and w == "ueberblenden")
     kconf("kwinrc", pl, "wobblywindowsEnabled", an and e["wackeln"])
@@ -255,6 +267,25 @@ def effekte(e):
         if zustand[name]:
             dbus("org.kde.KWin", "/Effects", "org.kde.kwin.Effects", "reconfigureEffect", name)
     return "Animationen: " + ("an" if an else "aus")
+
+
+def arbeitsflaechen(e):
+    """Eine Arbeitsfläche (Standard) oder vier für Würfel und Co. Bei einer fliegt die Arbeitsflächen-Anzeige
+    (Pager) aus der Taskleiste; Fenster der entfernten Flächen landet KWin auf der verbleibenden."""
+    if e["arbeitsflaechen"] == "vier":
+        arbeitsflaechen_sicherstellen(4)
+        return "Arbeitsflächen: vier"
+    try:
+        r = subprocess.run(["gdbus", "call", "--session", "--dest", "org.kde.KWin", "--object-path", "/VirtualDesktopManager",
+                            "--method", "org.freedesktop.DBus.Properties.Get", "org.kde.KWin.VirtualDesktopManager", "desktops"],
+                           capture_output=True, text=True, timeout=10)
+        ids = re.findall(r"\((?:uint32 )?\d+, '([^']+)'", r.stdout)
+    except (OSError, subprocess.TimeoutExpired):
+        ids = []
+    for i in ids[1:]:
+        dbus("org.kde.KWin", "/VirtualDesktopManager", "org.kde.KWin.VirtualDesktopManager", "removeDesktop", i)
+    plasma_skript('panels().forEach(function (p) { p.widgets("org.kde.plasma.pager").forEach(function (w) { w.remove(); }); });')
+    return "Arbeitsflächen: eine"
 
 
 def arbeitsflaechen_sicherstellen(anzahl):
@@ -529,6 +560,7 @@ def alles(e=None, system=True, melden=print):
         ("Animationen", lambda: effekte(e)),
         ("Klänge", lambda: klaenge(e)),
         ("Taskleiste", lambda: taskleiste(e, p)),
+        ("Arbeitsflächen", lambda: arbeitsflaechen(e)),
         ("Sperrbildschirm", lambda: sperrbildschirm(e)),
         ("Ladebildschirm", lambda: ladebildschirm(p, e)),
         ("Terminal", lambda: konsole(p, e)),

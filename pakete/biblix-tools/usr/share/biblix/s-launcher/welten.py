@@ -38,7 +38,7 @@ def gold_text(f):
     """Gold fuer Schrift: auf hellem Grund dunkler, sonst zu blass."""
     return GOLD if f.get("dunkel", True) else "#8a6510"
 
-STANDARD = {"welt": "auto", "animationen": "voll", "klaenge": True}
+STANDARD = {"welt": "auto", "animationen": "voll", "klaenge": False, "_stand": 1}
 
 # Klassische S-Launcher-Farben, falls Biblix Design noch nichts geschrieben hat
 GRUNDFARBEN = {
@@ -75,7 +75,7 @@ WELTEN = {
         "installieren": "Installieren", "laeuft": "Fährt …",
         "auftrag": "Lastenaufzug bringt {name} nach oben", "fertig_text": "Angekommen: {name} ist jetzt im Haus.",
         "bereit": "Aufzug bereit.",
-        "klaenge": {"seite": "aufzug-ding.wav", "start": None, "fertig": "tower-fertig.wav"},
+        "klaenge": {"seite": None, "start": None, "fertig": "tower-fertig.wav"},
     },
     "theke": {
         "name": "Bestelltheke", "info": "Bibi Mac · mit Kassa", "fertig": True,
@@ -111,6 +111,10 @@ def laden():
         gespeichert = {}
     if isinstance(gespeichert, dict):
         e.update({k: v for k, v in gespeichert.items() if k in STANDARD})
+        # Seit 1.3.2: Klaenge standardmaessig aus (waren zu laut und zu oft)
+        if gespeichert.get("_stand", 0) < 1:
+            e["klaenge"] = False
+            e["_stand"] = 1
     if e["welt"] != "auto" and not WELTEN.get(e["welt"], {}).get("fertig"):
         e["welt"] = "auto"
     if e["animationen"] not in ("voll", "dezent", "aus"):
@@ -135,6 +139,147 @@ def farben():
     if isinstance(pal, dict):
         f.update({k: v for k, v in pal.items() if k in GRUNDFARBEN})
     return f
+
+
+# ---------------------------------------------------------------- Weltfarben und Weltstil
+
+# Firmenfarben der Welten (wie die Presets in Biblix Design), damit eine Welt immer gleich aussieht
+WELT_PRESETS = {
+    "tower": {
+        "dunkel": {"grund": "#0f141c", "flaeche": "#1a2029", "karte": "#232a35", "rand": "#313a48",
+                   "text": "#e8ecf2", "leise": "#8b95a5", "akzent": "#378add", "akzent2": "#ffd400"},
+        "hell": {"grund": "#e9edf2", "flaeche": "#f7f9fb", "karte": "#ffffff", "rand": "#d3d9e1",
+                 "text": "#18202b", "leise": "#5b6575", "akzent": "#1f6fc2", "akzent2": "#d9a400"},
+    },
+    "theke": {
+        "dunkel": {"grund": "#2a0d0d", "flaeche": "#3a1313", "karte": "#4b1a1a", "rand": "#6e2a2a",
+                   "text": "#fff4dc", "leise": "#e0b8a8", "akzent": "#ffc72c", "akzent2": "#e63131"},
+        "hell": {"grund": "#fff1d6", "flaeche": "#fff8ea", "karte": "#ffffff", "rand": "#f0d2a0",
+                 "text": "#3a1010", "leise": "#8a5a50", "akzent": "#e63131", "akzent2": "#f2a900"},
+    },
+}
+
+
+def _text_auf(c):
+    q = QColor(c)
+    hell = 0.2126 * q.redF() + 0.7152 * q.greenF() + 0.0722 * q.blueF()
+    return "#0b0d12" if hell > 0.55 else "#ffffff"
+
+
+def welt_farben(welt_id, design):
+    """Palette fuer den S-Launcher: Tower und Theke bringen ihre eigenen Farben mit,
+    das Schaufenster nimmt die Farben aus Biblix Design. Hell/Dunkel folgt immer Biblix Design."""
+    vorlage = WELT_PRESETS.get(welt_id)
+    if not vorlage:
+        return dict(design)
+    f = dict(vorlage["dunkel" if design.get("dunkel", True) else "hell"])
+    f["dunkel"] = design.get("dunkel", True)
+    f["preset"] = design.get("preset", "")
+    f["akzent_hell"] = mischen(f["akzent"], "#ffffff", 0.25).name()
+    f["akzent_dunkel"] = mischen(f["akzent"], "#000000", 0.25).name()
+    f["auf_akzent"] = _text_auf(f["akzent"])
+    f["auf_akzent2"] = _text_auf(f["akzent2"])
+    f["auswahl"] = mischen(f["flaeche"], f["akzent"], 0.35).name()
+    return f
+
+
+def muster(welt_id, f):
+    """Kachelbares Hintergrundmuster je Welt als PNG im Cache (fuer das Stylesheet)."""
+    if welt_id not in ("tower", "theke"):
+        return None
+    ziel = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "biblix" / "s-launcher"
+    datei = ziel / f"muster-v1-{welt_id}-{f['grund'].lstrip('#')}.png"
+    if datei.is_file():
+        return datei
+    try:
+        ziel.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        return None
+    if welt_id == "tower":
+        # Bauplan-Raster: feine Linien, jede vierte kraeftiger
+        pm = QPixmap(96, 96)
+        pm.fill(QColor(f["grund"]))
+        p = QPainter(pm)
+        for i in range(0, 96, 24):
+            p.setPen(QPen(mit_alpha(f["akzent"], 46 if i == 0 else 20), 1))
+            p.drawLine(i, 0, i, 96)
+            p.drawLine(0, i, 96, i)
+        p.end()
+    else:
+        # Diner-Boden: grosse Karos, kaum sichtbar
+        pm = QPixmap(80, 80)
+        pm.fill(QColor(f["grund"]))
+        p = QPainter(pm)
+        karo = mischen(f["grund"], "#000000" if f["dunkel"] else "#c06030", 0.14 if f["dunkel"] else 0.07)
+        p.fillRect(0, 0, 40, 40, karo)
+        p.fillRect(40, 40, 40, 40, karo)
+        p.end()
+    return datei if pm.save(str(datei)) else None
+
+
+MONO = '"DejaVu Sans Mono", "Noto Sans Mono", monospace'
+
+
+def zusatz_stil(welt_id, f):
+    """Stylesheet, das eine Welt ueber den ganzen S-Launcher legt (wird an den Grundstil angehaengt)."""
+    bild = muster(welt_id, f)
+    hinter = f'background-image: url("{bild.as_posix()}");' if bild else ""
+    if welt_id == "tower":
+        return f"""
+#page {{ background-color: {f['grund']}; {hinter} }}
+QLabel#h1 {{ font-family: {MONO}; font-size: 21pt; font-weight: 800; color: {f['akzent2']}; }}
+QLabel#h2 {{ font-family: {MONO}; color: {f['akzent_hell']}; }}
+QLabel#brand {{ font-family: {MONO}; color: {f['akzent2']}; }}
+QLabel#weltname {{ font-family: {MONO}; }}
+#sidebar {{ background: {f['grund']}; border-right: 3px solid {f['rand']}; }}
+QListWidget#nav::item {{ font-family: {MONO}; padding: 9px 10px; margin: 3px 10px; border-radius: 3px;
+    border: 1px solid {f['rand']}; background: {f['karte']}; }}
+QListWidget#nav::item:hover {{ border-color: {f['akzent']}; background: {f['flaeche']}; }}
+QListWidget#nav::item:selected {{ background: {f['auswahl']}; color: {f['akzent2']}; border: 1px solid {f['akzent2']}; }}
+#topbar {{ background: {f['grund']}; border-bottom: 2px solid {f['rand']}; }}
+QLineEdit {{ border-radius: 3px; font-family: {MONO}; }}
+QPushButton {{ border-radius: 3px; font-family: {MONO}; }}
+QFrame#card {{ border-radius: 4px; border: 1px solid {f['rand']}; border-top: 3px solid {f['akzent']}; }}
+QFrame#card:hover {{ border-color: {f['akzent2']}; border-top: 3px solid {f['akzent2']}; }}
+QFrame#panel {{ border-radius: 4px; border-left: 4px solid {f['akzent']}; }}
+QFrame#hero {{ border-radius: 4px; }}
+#statusbar {{ background: #05070a; border-top: 2px solid {f['rand']}; }}
+#statusbar QLabel {{ color: {f['akzent2']}; font-family: {MONO}; }}
+QProgressBar::chunk {{ background: {f['akzent2']}; border-radius: 0; }}
+"""
+    if welt_id == "theke":
+        rot, gelb, creme, braun = "#e63131", "#ffc72c", "#fff4dc", "#3a1010"
+        titel = gelb if f["dunkel"] else rot
+        return f"""
+#page {{ background-color: {f['grund']}; {hinter} }}
+QLabel#h1 {{ font-size: 25pt; font-weight: 900; color: {titel}; }}
+QLabel#h2 {{ font-size: 14pt; font-weight: 900; color: {titel}; }}
+QLabel#brand {{ color: {gelb}; font-weight: 900; }}
+QLabel#slogan {{ color: {creme}; }}
+QLabel#weltname {{ color: #ffd9c0; }}
+#sidebar {{ background: {rot}; border-right: 4px solid {gelb}; }}
+#sidebar QLabel#muted {{ color: #ffd9c0; }}
+QListWidget#nav {{ color: {creme}; }}
+QListWidget#nav::item {{ padding: 10px 14px; margin: 3px 10px; border-radius: 19px; font-weight: 700; color: {creme}; }}
+QListWidget#nav::item:hover {{ background: #c92424; }}
+QListWidget#nav::item:selected {{ background: {gelb}; color: {braun}; }}
+#topbar {{ background: {rot}; border-bottom: 4px solid {gelb}; }}
+#topbar QPushButton {{ background: #c92424; color: {creme}; border-color: #ff6b5e; }}
+QLineEdit {{ border-radius: 19px; padding: 7px 16px; background: {creme}; color: {braun}; border: 2px solid {gelb}; }}
+QPushButton {{ border-radius: 16px; font-weight: 700; }}
+QPushButton#primary {{ background: {gelb}; border-color: {gelb}; color: {braun}; border-radius: 16px; }}
+QPushButton#primary:hover {{ background: #ffd65c; }}
+QPushButton#yellow {{ background: {gelb}; border-color: {gelb}; color: {braun}; }}
+QFrame#card {{ border-radius: 20px; border: 2px solid {f['rand']}; background: {f['karte']}; }}
+QFrame#card:hover {{ border-color: {gelb}; }}
+QFrame#panel {{ border-radius: 20px; border: 2px solid {f['rand']}; }}
+QFrame#hero {{ border-radius: 22px; }}
+#statusbar {{ background: {creme}; border-top: 3px dashed {rot}; }}
+#statusbar QLabel {{ color: {braun}; font-family: {MONO}; }}
+QProgressBar {{ background: #f0d2a0; }}
+QProgressBar::chunk {{ background: {rot}; }}
+"""
+    return ""
 
 
 def welt_fuer(e, f):
@@ -269,14 +414,14 @@ def etagen_symbol(text, f, groesse=22):
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
     p.scale(2, 2)
     p.setPen(QPen(QColor(f["rand"]), 1))
-    p.setBrush(mischen(f["grund"], "#000000", 0.35))
+    p.setBrush(QColor("#0b0f14"))
     p.drawRoundedRect(QRectF(0.5, 0.5, groesse - 1, groesse - 1), 5, 5)
     schrift = QFont()
     schrift.setFamilies(["DejaVu Sans Mono", "Consolas", "monospace"])
     schrift.setBold(True)
     schrift.setPixelSize(round(groesse * (0.5 if len(text) < 2 else 0.42)))
     p.setFont(schrift)
-    p.setPen(QColor(f["akzent2"]))
+    p.setPen(QColor("#ffd400"))
     p.drawText(QRectF(0, 0, groesse, groesse), Qt.AlignmentFlag.AlignCenter, text)
     p.end()
     pm.setDevicePixelRatio(2)
@@ -511,14 +656,14 @@ class Stockwerk(QWidget):
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         r = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
         p.setPen(QPen(QColor(self.f["rand"]), 1))
-        p.setBrush(mischen(self.f["grund"], "#000000", 0.45))
+        p.setBrush(QColor("#0b0f14"))
         p.drawRoundedRect(r, 8, 8)
         schrift = QFont()
         schrift.setFamilies(["DejaVu Sans Mono", "Consolas", "monospace"])
         schrift.setBold(True)
         schrift.setPixelSize(17)
         p.setFont(schrift)
-        p.setPen(QColor(self.f["akzent2"]))
+        p.setPen(QColor("#ffd400"))
         p.drawText(r.adjusted(10, 0, 0, 0), Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, self.pfeil or "■")
         p.drawText(r.adjusted(0, 0, -12, 0), Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight, self.text)
         p.end()
@@ -693,7 +838,6 @@ class Buehne(QFrame):
         col.addLayout(self.knoepfe)
         lay.addLayout(col, 1)
         lay.addStretch(1)
-        self.eff = QGraphicsOpacityEffect(self.titel)
         self._zeigen(0)
 
         self.uhr = QTimer(self)
@@ -916,15 +1060,22 @@ class HausmarkeKopf(QFrame):
         self.f = f
         self.titel, self.untertitel = titel, untertitel
         self.zeit = 0.0
+        self.animiert = animiert
         self.setFixedHeight(150)
         self.uhr = QTimer(self)
         self.uhr.timeout.connect(self._tick)
-        if animiert:
-            self.uhr.start(40)
 
     def _tick(self):
         self.zeit += 0.04
         self.update()
+
+    # Nur animieren, solange die Seite zu sehen ist (spart Rechenzeit im Hintergrund)
+    def showEvent(self, _):
+        if self.animiert:
+            self.uhr.start(40)
+
+    def hideEvent(self, _):
+        self.uhr.stop()
 
     def paintEvent(self, _):
         p = QPainter(self)
@@ -1053,10 +1204,16 @@ class HausmarkeKarte(QFrame):
         lay.addLayout(col, 1)
         self.oeffnen = oeffnen
 
+        self.animiert = self.in_arbeit and animiert
         self.uhr = QTimer(self)
         self.uhr.timeout.connect(self._tick)
-        if self.in_arbeit and animiert:
+
+    def showEvent(self, _):
+        if self.animiert:
             self.uhr.start(50)
+
+    def hideEvent(self, _):
+        self.uhr.stop()
 
     def _tick(self):
         self.versatz = (self.versatz + 0.6) % 24
@@ -1162,7 +1319,7 @@ class WeltMenue(QFrame):
             reihe.addWidget(b)
             self.anim_knoepfe[key] = b
         lay.addLayout(reihe)
-        self.klaenge = QCheckBox("Klänge (Aufzug-Ding, Kassa, Fertig-Ton)")
+        self.klaenge = QCheckBox("Klänge (leise: Kassa und Fertig-Ton)")
         self.klaenge.setChecked(bool(self.e["klaenge"]))
         self.klaenge.toggled.connect(lambda an: self._setzen("klaenge", an))
         lay.addWidget(self.klaenge)

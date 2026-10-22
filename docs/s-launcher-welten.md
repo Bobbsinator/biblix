@@ -23,3 +23,12 @@ Geplant per späterem Update: Lieferung (Delivery), Kino (Bibiplexx), Tresor (Bu
 
 Code: `pakete/biblix-tools/usr/share/biblix/s-launcher/welten.py`; Klänge werden beim Bauen in
 `vorbereiten.sh` synthetisiert (WAV, abgespielt mit `pw-play`/`paplay`).
+
+## Nachtrag 1.3.2 (22.10.2026, Rückmeldung vom echten PC)
+
+- **Welt = ganzes Aussehen**, nicht nur der Kopf: Tower bringt immer die Bibi-Tech-Farben, die Theke die
+  Bibi-Mac-Farben (hell/dunkel folgt Biblix Design), dazu eigener Stil über den ganzen S-Launcher
+  (`welten.zusatz_stil`): Tower mit Bauplan-Raster, Mono-Schrift, eckigen Karten und Leuchtanzeigen;
+  Theke mit roter Speisekarten-Leiste, runden Karten, Diner-Karos und Kassenbon-Statusleiste.
+- **Klänge** waren zu laut und zu oft: jetzt standardmäßig aus (einmalige Umstellung), etwa 13 dB leiser,
+  kein Aufzug-Ding mehr beim Seitenwechsel.

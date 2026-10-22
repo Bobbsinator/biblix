@@ -37,3 +37,10 @@ Standbilder erzeugt `ffmpeg` (12 % der Laufzeit) nach `~/.cache/bibiplexx/plakat
 
 Nur vorhandene Lore genutzt: „Reihe sieben." im Intro, „BEREITS REFERENZPEGEL." beim Versuch, über 100 %
 zu drehen. **Kein süßes Popcorn**, nirgends, auch nicht als Option.
+
+## 1.0.1 (22.10.2026, Prüfung)
+
+- Schlaf-Timer „nach der Folge" beendet auch dann, wenn Countdown oder „Nächste Folge" weiterschalten.
+- Während des Vorhangs wird die gespeicherte Stelle nicht mehr mit 0 überschrieben.
+- Jahreszahlen: die letzte plausible zählt („Blade.Runner.2049.2017" → „Blade Runner 2049", 2017).
+- Nach dem Film zurück zur gleichen Serie; beim Schließen wird das Einlesen sauber beendet.

@@ -136,15 +136,16 @@ DESIGN_FARBEN = {
 }
 
 
-def design_stil(text):
-    try:
-        pal = json.loads(welten.PALETTE.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return text
-    for alt, schluessel in DESIGN_FARBEN.items():
-        if schluessel in pal:
-            text = text.replace(alt, pal[schluessel])
-    return text
+def design_stil(text, pal=None):
+    """Klassische Farben im Stylesheet durch die Palette ersetzen (Welt oder Biblix Design)."""
+    if pal is None:
+        try:
+            pal = json.loads(welten.PALETTE.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return text
+    # In einem Durchgang ersetzen, damit eine neue Farbe nicht selbst wieder ersetzt wird
+    muster = re.compile("|".join(re.escape(a) for a in DESIGN_FARBEN))
+    return muster.sub(lambda m: pal.get(DESIGN_FARBEN[m.group(0)], m.group(0)), text)
 
 
 def alive(obj):
@@ -535,7 +536,7 @@ class GameCard(QFrame):
         self.img = QLabel()
         self.img.setFixedSize(230, 107)
         self.img.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.img.setStyleSheet(design_stil("background:#072a36; border-top-left-radius:12px; border-top-right-radius:12px;"))
+        self.img.setStyleSheet(design_stil("background:#072a36; border-top-left-radius:12px; border-top-right-radius:12px;", main.farben))
         self.img.setText(game["name"])
         lay.addWidget(self.img)
         row = QHBoxLayout()
@@ -581,9 +582,11 @@ class Main(QMainWindow):
         self.bestell_nr = random.randint(100, 899)
         self.einblend_nr = 0
         self.einst = welten.laden()
-        self.farben = welten.farben()
-        self.welt_id = welten.welt_fuer(self.einst, self.farben)
+        design = welten.farben()
+        self.welt_id = welten.welt_fuer(self.einst, design)
         self.welt = welten.WELTEN[self.welt_id]
+        self.farben = welten.welt_farben(self.welt_id, design)
+        self.stil = ""
 
         self.jobs.changed.connect(self.on_jobs_changed)
         self.jobs.line.connect(lambda t: self.status_line.setText(t))
@@ -693,11 +696,13 @@ class Main(QMainWindow):
 
     def welt_anwenden(self, neu_bauen=True):
         """Farben, Woerter, Symbole und Anzeigen der aktuellen Welt setzen."""
-        self.farben = welten.farben()
-        self.welt_id = welten.welt_fuer(self.einst, self.farben)
+        design = welten.farben()
+        self.welt_id = welten.welt_fuer(self.einst, design)
         self.welt = welten.WELTEN[self.welt_id]
-        f = self.farben
-        self.setStyleSheet(design_stil(STYLE))
+        # Die Welt bestimmt das ganze Aussehen: eigene Farben (Tower, Theke) und eigener Stil
+        self.farben = f = welten.welt_farben(self.welt_id, design)
+        self.stil = design_stil(STYLE, f) + welten.zusatz_stil(self.welt_id, f)
+        self.setStyleSheet(self.stil)
         animiert = self.einst["animationen"] == "voll"
 
         if self.logo is not None:
@@ -713,7 +718,8 @@ class Main(QMainWindow):
             item.setToolTip(welten.NAV_KLAR[key])
             if key == "hausmarke":
                 item.setIcon(welten.hausmarke_symbol())
-                item.setForeground(QColor(welten.gold_text(f)))
+                # In der roten Theke-Leiste waere Gold schlecht lesbar
+                item.setForeground(QColor("#fff4dc" if self.welt_id == "theke" else welten.gold_text(f)))
             elif etagen:
                 item.setIcon(welten.etagen_symbol(etagen[key], f))
             else:
@@ -752,7 +758,7 @@ class Main(QMainWindow):
 
     def welt_menue(self):
         menue = welten.WeltMenue(self, self.einst, self.farben)
-        menue.setStyleSheet(design_stil(STYLE))
+        menue.setStyleSheet(self.stil)
         menue.geaendert.connect(self.welt_geaendert)
         menue.adjustSize()
         pos = self.welt_knopf.mapToGlobal(self.welt_knopf.rect().bottomRight())

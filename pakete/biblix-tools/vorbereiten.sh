@@ -39,7 +39,7 @@ def glocke(buf, start, freq, dauer, laut, abkling=6.0, obertoene=((1, 1.0), (2.7
 
 def schreiben(name, buf):
     spitze = max(1e-6, max(abs(x) for x in buf))
-    faktor = min(1.0, 0.9 / spitze)
+    faktor = min(1.0, 0.22 / spitze)   # leise: etwa -13 dB
     with wave.open(f"{ziel}/{name}", "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)

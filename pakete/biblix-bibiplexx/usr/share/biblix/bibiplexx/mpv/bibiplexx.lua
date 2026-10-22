@@ -81,6 +81,9 @@ end
 
 local function stand_schreiben(fertig)
     if not aktuell.pfad or aktuell.dauer <= 0 then return end
+    -- Noch nichts abgespielt (z. B. waehrend des Vorhangs): nichts ueberschreiben,
+    -- sonst ginge die gespeicherte Stelle verloren
+    if not fertig and aktuell.pos < 1 then return end
     local d = stand_lesen()
     local ende = fertig or (aktuell.pos / aktuell.dauer) > 0.93
     d[aktuell.pfad] = { pos = ende and 0 or math.floor(aktuell.pos), dauer = math.floor(aktuell.dauer),
@@ -265,6 +268,17 @@ local function countdown_rest()
     return nil
 end
 
+-- Zur naechsten Folge, ausser der Schlaf-Timer sagt "nach dieser Folge ist Schluss"
+local function naechste_folge()
+    if schlaf == "folge" then
+        schlaf = "aus"
+        stand_schreiben(true)
+        mp.commandv("quit")
+        return
+    end
+    mp.commandv("playlist-next")
+end
+
 local function pille(l, x, y, bw, bh, aktion, beschriftung, s, gefuellt)
     local hov = maus_ueber(x, y, bw, bh)
     table.insert(knoepfe, { x = x, y = y, w = bw, h = bh, aktion = aktion })
@@ -295,7 +309,7 @@ local function zusatz_zeichnen(l, w, h, s, leiste)
         pille(l, x + math.floor(275 * s), y + ph - bh - math.floor(20 * s), math.floor(200 * s), bh, "countdown_weg", "Abbrechen", s, false)
         if rest <= 0 and abspann_ab then
             countdown_abgebrochen = mp.get_property("path")
-            mp.commandv("playlist-next")
+            naechste_folge()
         end
     end
 end
@@ -404,7 +418,7 @@ local function ausfuehren(aktion, mx)
     if aktion == "pause" then mp.commandv("cycle", "pause")
     elseif aktion == "zurueck" then mp.commandv("seek", "-10")
     elseif aktion == "vor" then mp.commandv("seek", "10")
-    elseif aktion == "naechste" then mp.commandv("playlist-next")
+    elseif aktion == "naechste" then naechste_folge()
     elseif aktion == "untertitel" then mp.commandv("cycle", "sub")
     elseif aktion == "ton" then mp.commandv("cycle", "audio")
     elseif aktion == "lauter" then lauter(10)
@@ -415,7 +429,7 @@ local function ausfuehren(aktion, mx)
         mp.commandv("af", "toggle", NACHT_FILTER)
         melden(nacht_an() and "Nachtmodus an: leise Stellen lauter, laute leiser" or "Nachtmodus aus", 2.2)
     elseif aktion == "intro_weg" then mp.commandv("add", "chapter", "1")
-    elseif aktion == "jetzt_weiter" then mp.commandv("playlist-next")
+    elseif aktion == "jetzt_weiter" then naechste_folge()
     elseif aktion == "countdown_weg" then countdown_abgebrochen = mp.get_property("path")
     elseif aktion == "spulen" then
         for _, k in ipairs(knoepfe) do

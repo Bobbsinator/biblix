@@ -18,6 +18,14 @@ case "$1" in
             # Dual-Boot: Hardware-Uhr in Ortszeit wie Windows
             printf '0.0 0 0.0\n0\nLOCAL\n' > /etc/adjtime
         fi
+        # Flatpak-Apps: Wayland erlauben (Electron-Apps nativ, schaerfer, volle Bildrate) und
+        # fuer Steam mit NVIDIA: DLSS/Reflex in Proton und grosser Shader-Cache
+        if command -v flatpak >/dev/null; then
+            flatpak override --system --socket=wayland --env=ELECTRON_OZONE_PLATFORM_HINT=auto >/dev/null 2>&1 || true
+            if lspci -n 2>/dev/null | grep -qE " 03[0-9a-f]{2}: 10de:"; then
+                flatpak override --system --env=PROTON_ENABLE_NVAPI=1 --env=__GL_SHADER_DISK_CACHE_SIZE=12000000000                     --env=__GL_SHADER_DISK_CACHE_SKIP_CLEANUP=1 com.valvesoftware.Steam >/dev/null 2>&1 || true
+            fi
+        fi
         # Neue Werte sofort wirksam machen (Rest beim naechsten Neustart)
         sysctl --system >/dev/null 2>&1 || true
         udevadm control --reload >/dev/null 2>&1 || true

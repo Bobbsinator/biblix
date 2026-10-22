@@ -14,6 +14,12 @@ id="$1"
 [[ "$id" =~ ^[a-z0-9-]{1,32}$ ]] || { echo "Ungueltige Kennung" >&2; exit 2; }
 grep -q "^$id|" "$CONF" || { echo "Spiel '$id' steht nicht in $CONF" >&2; exit 2; }
 [ -d "$EFIVARS" ] || { echo "Kein UEFI-Speicher gefunden (BIOS-Modus?)" >&2; exit 3; }
+# Ist efivarfs nicht eingehaengt, ist der Ordner nur eine leere Huelle: vorher einhaengen
+if [ -z "${BIBLIX_EFIVARS:-}" ] && ! mountpoint -q "$EFIVARS"; then
+    modprobe efivarfs 2>/dev/null || true
+    mount -t efivarfs efivarfs "$EFIVARS" 2>/dev/null || true
+    mountpoint -q "$EFIVARS" || { echo "Die UEFI-Variablen sind nicht erreichbar (efivarfs)." >&2; exit 3; }
+fi
 
 # Vorhandenen Auftrag ersetzen (efivarfs schuetzt Variablen gegen versehentliches Loeschen)
 if [ -e "$VAR" ]; then

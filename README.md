@@ -306,6 +306,16 @@ Der S-Launcher passt sich dem Design an: **Tower** (Bibi Tech, Stockwerke und Au
 Animationen und Klänge stellt man über die Schraubenmutter oben rechts ein. Die Kategorie
 **Hausmarke Bibi** zeigt alle Apps, die für Biblix gebaut wurden.
 
+### Flüssig auf 240 Hz (ab biblix-tools 1.3.2 / biblix-system 1.1.0)
+
+- Jeder neue Bildschirm wird einmal automatisch auf die **höchste Bildrate** gestellt (z. B. 240 Hz) und
+  Adaptive Sync auf „automatisch“. Danach gilt deine Wahl in den Systemeinstellungen.
+  Prüfen: `biblix-bildschirme`, nochmal alle hochstellen: `biblix-bildschirme --jetzt`.
+- Spiele: großer NVIDIA-Shader-Cache (weniger Nachladeruckler), DLSS/Reflex in Proton (Steam), Maus und
+  Tastatur gehen nie in den USB-Stromsparmodus.
+- Flatpak-Apps dürfen Wayland nutzen; Electron-Apps wie Discord laufen nativ (schärfer, volle Bildrate).
+- Videos öffnen standardmäßig mit Bibiplexx (Haruna bleibt als Ausweich).
+
 ## Bibiplexx (Filme und Serien)
 
 **Bibiplexx** sammelt Filme und Serien aus deinen Ordnern (Standard `~/Videos`, weitere in den

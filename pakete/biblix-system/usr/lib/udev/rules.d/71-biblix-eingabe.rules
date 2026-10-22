@@ -1,0 +1,3 @@
+# Biblix: Maus, Tastatur und Controller nie in den USB-Stromsparmodus schicken
+# (sonst verschluckt die Maus nach einer Pause die erste Bewegung oder ruckelt kurz).
+ACTION=="add", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_interface", ATTR{bInterfaceClass}=="03", RUN+="/bin/sh -c 'echo on > /sys%p/../power/control'"

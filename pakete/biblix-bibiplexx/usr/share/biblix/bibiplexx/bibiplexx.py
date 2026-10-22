@@ -166,7 +166,7 @@ def dauer_text(sek):
 SERIE = re.compile(r"^(?P<name>.*?)[ ._\-\[\(]*[Ss](?P<s>\d{1,2})[ ._\-]*[Ee](?P<e>\d{1,3})(?P<rest>.*)$")
 SERIE_X = re.compile(r"^(?P<name>.*?)[ ._\-]+(?P<s>\d{1,2})x(?P<e>\d{2,3})(?P<rest>.*)$")
 STAFFEL_ORDNER = re.compile(r"^(staffel|season|s)[ ._\-]*\d+$", re.I)
-JAHR = re.compile(r"[ ._\(\[]((?:19|20)\d{2})(?:[\)\]]|[ ._]|$)")
+JAHR = re.compile(r"[ ._\(\[]((?:19|20)\d{2})(?=[\)\]]|[ ._]|$)")
 MARKEN = re.compile(r"[ ._\-\[\(](2160p|1080p|720p|576p|480p|4k|uhd|hdr10?|dv|x264|x265|h\.?264|h\.?265|hevc|avc|bluray|blu-ray|"
                     r"web-?dl|webrip|web|dvdrip|bdrip|hdtv|german|deutsch|dl|ac3|eac3|dts|aac|multi|remux|proper|repack|"
                     r"internal|complete|extended|uncut)(?=$|[ ._\-\]\)]).*$", re.I)
@@ -194,8 +194,10 @@ def verstehen(pfad: Path):
         return {"art": "serie", "serie": name or "Unbekannte Serie", "staffel": int(m.group("s")),
                 "folge": int(m.group("e")), "titel": aufraeumen(m.group("rest"))}
     jahr = None
-    j = JAHR.search(stamm)
-    if j and j.start() > 0:
+    grenze = time.localtime().tm_year + 1
+    treffer = [j for j in JAHR.finditer(stamm) if j.start() > 0 and int(j.group(1)) <= grenze]
+    if treffer:
+        j = treffer[-1]
         jahr, stamm = j.group(1), stamm[:j.start()]
     return {"art": "film", "titel": aufraeumen(stamm) or pfad.stem, "jahr": jahr}
 
@@ -934,6 +936,7 @@ class Haupt(QMainWindow):
         for e in [f for f in folgen if f["staffel"] == staffel]:
             s.body.addWidget(self.folgen_zeile(e, folgen))
         self.aktuell = "serie"
+        self.serie_offen = (name, staffel)
         for b in self.nav.values():
             b.setChecked(False)
         self.nav["serien"].setChecked(True)
@@ -1057,7 +1060,10 @@ class Haupt(QMainWindow):
         self.stand_laden()
         if self.blende.isVisible():
             self._blende(0.0)
-        self.zeigen(self.aktuell if self.aktuell in ("saal", "serien", "filme") else "saal")
+        if self.aktuell == "serie" and getattr(self, "serie_offen", None):
+            self.serie_zeigen(*self.serie_offen)
+        else:
+            self.zeigen(self.aktuell if self.aktuell in ("saal", "serien", "filme", "suche") else "saal")
 
     # ---- Rechtsklick auf Karten
 
@@ -1260,6 +1266,13 @@ class Haupt(QMainWindow):
         QMessageBox.information(self, "Bibiplexx", f"Fertig. Deine Filme kommen nach {PLATTE_ORT}/Filme, "
                                 "Serien nach {0}/Serien.\n\nIm Dateimanager heißt die Platte „Bibiplexx“.".format(PLATTE_ORT))
         self.neu_einlesen()
+
+    def closeEvent(self, ev):
+        if self.einleser is not None and self.einleser.isRunning():
+            self.einleser.wait(3000)
+        self.bilder.pool.clear()
+        self.bilder.pool.waitForDone(3000)
+        super().closeEvent(ev)
 
     def changeEvent(self, ev):
         super().changeEvent(ev)

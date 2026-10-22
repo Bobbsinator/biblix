@@ -80,6 +80,11 @@ def main(argv):
             kern.speichern(e, verlauf=False)
             if umstellen:
                 anwenden.taskleiste(e, kern.palette(e))
+        # Einmalig (2.0.2): doppelte Taskleisten aufraeumen
+        if gespeichert.get("_stand", 0) < 2:
+            e["_stand"] = 2
+            kern.speichern(e, verlauf=False)
+            anwenden.taskleiste(e, kern.palette(e))
         if e["modus"] == "auto":
             try:
                 import json

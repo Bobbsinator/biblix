@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Biblix Bildschirme
+Comment=Stellt neue Bildschirme einmal auf die höchste Bildrate (z. B. 240 Hz)
+Exec=biblix-bildschirme --anmeldung
+Terminal=false
+NoDisplay=true
+X-KDE-autostart-phase=2
+OnlyShowIn=KDE;

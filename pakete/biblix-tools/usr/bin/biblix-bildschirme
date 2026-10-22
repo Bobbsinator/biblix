@@ -1,0 +1,108 @@
+#!/usr/bin/python3
+"""Biblix: jeden Bildschirm auf die hoechste Bildrate stellen (z. B. 240 Hz) und Adaptive Sync einschalten.
+
+KDE nimmt beim ersten Anschliessen oft nur 60 Hz. Biblix stellt jeden Bildschirm EINMAL auf die
+hoechste Bildrate bei gleicher Aufloesung; danach gilt, was du in den Systemeinstellungen waehlst.
+
+    biblix-bildschirme              Liste: Bildschirme, aktuelle und hoechste Bildrate
+    biblix-bildschirme --jetzt      alle Bildschirme jetzt auf die hoechste Bildrate stellen
+    biblix-bildschirme --anmeldung  beim Anmelden (Autostart): nur neue Bildschirme
+"""
+import json
+import shutil
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+MERKER = Path.home() / ".config/biblix/bildschirme.json"
+
+
+def ausgaenge():
+    """Angeschlossene, eingeschaltete Bildschirme aus kscreen-doctor (leer, wenn KDE noch startet)."""
+    try:
+        out = subprocess.run(["kscreen-doctor", "-j"], capture_output=True, text=True, timeout=15).stdout
+        daten = json.loads(out[out.index("{"):]) if "{" in out else {}
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return []
+    return [o for o in daten.get("outputs", []) if o.get("connected") and o.get("enabled") and o.get("modes")]
+
+
+def bester_modus(o):
+    """(aktueller Modus, Modus mit der hoechsten Bildrate bei gleicher Aufloesung)."""
+    modi = {str(m.get("id")): m for m in o["modes"]}
+    jetzt = modi.get(str(o.get("currentModeId")))
+    if not jetzt:
+        return None, None
+    groesse = (jetzt.get("size") or {}).get("width"), (jetzt.get("size") or {}).get("height")
+    gleich = [m for m in o["modes"] if ((m.get("size") or {}).get("width"), (m.get("size") or {}).get("height")) == groesse]
+    return jetzt, max(gleich, key=lambda m: float(m.get("refreshRate") or 0))
+
+
+def hz(m):
+    return float((m or {}).get("refreshRate") or 0)
+
+
+def merker_lesen():
+    try:
+        d = json.loads(MERKER.read_text(encoding="utf-8"))
+        return d if isinstance(d, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def einstellen(nur_neue):
+    erledigt = merker_lesen().get("erledigt", [])
+    befehle, geaendert = [], []
+    liste = ausgaenge()
+    for o in liste:
+        name = o.get("name", "")
+        if not name or (nur_neue and name in erledigt):
+            continue
+        jetzt, best = bester_modus(o)
+        if best and hz(best) > hz(jetzt) + 0.5:
+            befehle.append(f"output.{name}.mode.{best['id']}")
+            geaendert.append(f"{name}: {hz(jetzt):.0f} → {hz(best):.0f} Hz")
+        # Adaptive Sync (FreeSync/G-Sync) automatisch: nur bei Vollbild-Spielen und Videos aktiv
+        if "vrrPolicy" in o:
+            befehle.append(f"output.{name}.vrrpolicy.automatic")
+        if name not in erledigt:
+            erledigt.append(name)
+    if befehle:
+        subprocess.run(["kscreen-doctor", *befehle], capture_output=True, timeout=30)
+    try:
+        MERKER.parent.mkdir(parents=True, exist_ok=True)
+        MERKER.write_text(json.dumps({"erledigt": erledigt}, indent=1), encoding="utf-8")
+    except OSError:
+        pass
+    if geaendert and shutil.which("notify-send"):
+        subprocess.run(["notify-send", "-a", "Biblix", "-i", "video-display", "Bildschirm auf volle Bildrate gestellt",
+                        "\n".join(geaendert) + "\nÄndern: Systemeinstellungen → Anzeige."], timeout=10)
+    return liste, geaendert
+
+
+def main(argv):
+    if not shutil.which("kscreen-doctor"):
+        print("kscreen-doctor fehlt (Paket libkscreen-bin / kscreen).")
+        return 1
+    if "--anmeldung" in argv:
+        # Direkt nach dem Anmelden kennt KDE die Bildschirme evtl. noch nicht
+        for _ in range(20):
+            if ausgaenge():
+                break
+            time.sleep(1)
+        einstellen(nur_neue=True)
+        return 0
+    if "--jetzt" in argv:
+        _, geaendert = einstellen(nur_neue=False)
+        print("\n".join(geaendert) if geaendert else "Alle Bildschirme laufen schon mit der höchsten Bildrate.")
+        return 0
+    for o in ausgaenge():
+        jetzt, best = bester_modus(o)
+        print(f"{o.get('name')}: jetzt {hz(jetzt):.0f} Hz, möglich {hz(best):.0f} Hz"
+              f"{'  (Adaptive Sync einstellbar)' if 'vrrPolicy' in o else ''}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

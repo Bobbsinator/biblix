@@ -7,6 +7,7 @@ import json
 import os
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 from . import kern, farbschema, aurorae, zeiger, symbole, terminal, hintergruende, grafik
@@ -277,8 +278,25 @@ def kwin_neu_laden():
 
 # ---------------------------------------------------------------- Taskleiste und Startmenue
 
+def plasma_bereit(sekunden=25):
+    """Direkt nach dem Anmelden kennt Plasma die Bildschirme der Leisten erst nach ein paar Sekunden.
+    Vorher eingreifen fuehrt zu doppelten Taskleisten, also warten (hoechstens `sekunden`)."""
+    if not shutil.which("gdbus"):
+        return True
+    ende = time.time() + sekunden
+    while time.time() < ende:
+        out = plasma_skript('var ok = screenCount > 0 && panels().every(function (p) { return p.screen >= 0; });'
+                            ' print(ok ? "PLASMA-BEREIT" : "PLASMA-WARTET");')
+        if "PLASMA-BEREIT" in out:
+            return True
+        time.sleep(1)
+    return False
+
+
 def taskleiste(e, p):
     """Panels per Plasma-Skript einrichten. Biblix-Startmenue rein, Kickoff raus (oder umgekehrt)."""
+    if not plasma_bereit():
+        return "Taskleiste: Plasma war noch nicht bereit, nichts verändert"
     menue = {"bibi": "de.biblix.startmenue", "vollbild": "de.biblix.startmenue", "klassisch": "org.kde.plasma.kickoff"}[e["startmenue"]]
     stil = "vollbild" if e["startmenue"] == "vollbild" else "panel"
     deckkraft = {"milchglas": 2, "undurchsichtig": 1, "adaptiv": 0}[e["transparenz"]]
@@ -287,13 +305,22 @@ def taskleiste(e, p):
 var menueTyp = "{menue}";
 var umgebaut = false;
 var starter = ["org.kde.plasma.kickoff", "org.kde.plasma.kicker", "org.kde.plasma.kickerdash", "de.biblix.startmenue"];
+// Doppelte Leisten aufraeumen: hoechstens eine Leiste pro Bildschirm und Rand
+// (entstand, wenn Plasma beim Anmelden die Bildschirme noch nicht kannte)
+var gesehen = {{}};
+panels().forEach(function (p) {{
+    var k = p.screen + "/" + p.location;
+    if (p.screen >= 0 && gesehen[k]) {{ p.remove(); }} else {{ gesehen[k] = true; }}
+}});
 var ps = panels();
 // Monitore: Taskleiste auf jedem Bildschirm (oder nur auf dem Hauptmonitor)
 var modus = "{e['monitore']}";
 var vorhanden = {{}};
-ps.forEach(function (p) {{ vorhanden[p.screen] = p; }});
+var bekannt = true;
+ps.forEach(function (p) {{ vorhanden[p.screen] = p; if (p.screen < 0) bekannt = false; }});
 if (modus != "haupt") {{
-    for (var s = 0; s < screenCount; s++) {{
+    // Nur ergaenzen, wenn Plasma alle Bildschirme schon kennt, sonst entstehen doppelte Leisten
+    for (var s = 0; bekannt && s < screenCount; s++) {{
         if (!vorhanden[s]) {{
             var n = new Panel("org.kde.panel");
             n.location = "bottom";

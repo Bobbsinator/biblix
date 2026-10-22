@@ -1,2 +1,3 @@
 /etc/apt/sources.list.d/biblix.sources
 /etc/biblix/windows-spiele.conf
+/etc/xdg/autostart/de.biblix.Bildschirme.desktop

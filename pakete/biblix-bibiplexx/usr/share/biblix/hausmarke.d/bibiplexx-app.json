@@ -1,0 +1,9 @@
+{
+  "id": "bibiplexx",
+  "name": "Bibiplexx",
+  "beschreibung": "Deine Filme und Serien im Bibiplexx-Saal. Mit Vorhang, Gong und Weiterschauen.",
+  "symbol": "de.biblix.Bibiplexx",
+  "befehl": ["bibiplexx"],
+  "status": "fertig",
+  "reihenfolge": 20
+}

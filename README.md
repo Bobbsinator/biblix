@@ -299,6 +299,26 @@ biblix-design zuruecksetzen
 
 Weitere Befehle: `biblix-design presets`, `biblix-design anwenden bibi-mac --hell`.
 
+### S-Launcher-Welten
+
+Der S-Launcher passt sich dem Design an: **Tower** (Bibi Tech, Stockwerke und Aufzugtüren),
+**Bestelltheke** (Bibi Mac, Bestellnummer und Abholanzeige), sonst **Schaufenster**. Welt,
+Animationen und Klänge stellt man über die Schraubenmutter oben rechts ein. Die Kategorie
+**Hausmarke Bibi** zeigt alle Apps, die für Biblix gebaut wurden.
+
+## Bibiplexx (Filme und Serien)
+
+**Bibiplexx** sammelt Filme und Serien aus deinen Ordnern (Standard `~/Videos`, weitere in den
+Einstellungen) und spielt sie mit mpv im Bibiplexx-Look: Vorhang und Gong beim Start
+(Kinomodus), eigene Steuerleiste, Weiterschauen, nächste Folge automatisch, HDR und
+Hardware-Dekodierung. Serien werden an `S01E02` oder `1x02` im Dateinamen erkannt.
+Dazu: Intro überspringen, „Nächste Folge in …", Schlaf-Timer, Nachtmodus, Untertitel nur bei fremder
+Sprache, „Überrasch mich" und ein Rechtsklick-Menü (gesehen markieren usw.).
+
+Eine **leere** zweite Platte richtet Bibiplexx auf Wunsch als Filmplatte ein
+(Einstellungen → „Leere Platte einrichten", Ordner `/media/bibiplexx` mit `Filme/` und `Serien/`).
+Platten mit Partitionen oder Daten werden dabei nie angefasst.
+
 ---
 
 ## Biblix-Updates (eigene Paketquelle)

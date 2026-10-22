@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Bibiplexx
+GenericName=Filme und Serien
+Comment=Deine Filme und Serien im Bibiplexx-Saal
+Exec=bibiplexx %F
+Icon=de.biblix.Bibiplexx
+Terminal=false
+Categories=AudioVideo;Video;Player;
+MimeType=video/mp4;video/x-matroska;video/webm;video/x-msvideo;video/quicktime;video/mpeg;video/x-m4v;video/mp2t;video/x-ms-wmv;video/x-flv;video/ogg;
+Keywords=Film;Serie;Video;Kino;Player;

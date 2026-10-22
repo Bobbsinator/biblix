@@ -1,0 +1,34 @@
+#!/bin/sh
+# Richtet eine LEERE Platte als Bibiplexx-Filmplatte ein (GPT, eine ext4-Partition "Bibiplexx",
+# fester Ordner /media/bibiplexx mit Filme/ und Serien/). Laeuft als root ueber pkexec.
+# Bricht ab, sobald auf der Platte irgendetwas ist (Partitionen, Dateisystem, Signaturen).
+set -eu
+ORT=/media/bibiplexx
+dev="${1:-}"
+case "$dev" in
+    /dev/sd[a-z]|/dev/sd[a-z][a-z]|/dev/nvme[0-9]n[0-9]|/dev/nvme[0-9][0-9]n[0-9]|/dev/vd[a-z]) ;;
+    *) echo "Ungültige Platte: $dev" >&2; exit 2 ;;
+esac
+[ -b "$dev" ] || { echo "$dev gibt es nicht." >&2; exit 2; }
+[ "$(lsblk -dn -o TYPE "$dev")" = disk ] || { echo "$dev ist keine ganze Platte." >&2; exit 2; }
+[ "$(lsblk -n -o NAME "$dev" | wc -l)" -eq 1 ] || { echo "Auf $dev sind Partitionen. Abbruch, es wird nichts verändert." >&2; exit 3; }
+[ -z "$(lsblk -dn -o FSTYPE,PTTYPE "$dev" | tr -d ' ')" ] || { echo "Auf $dev ist ein Dateisystem. Abbruch." >&2; exit 3; }
+[ -z "$(wipefs -n "$dev" 2>/dev/null | tail -n +2)" ] || { echo "Auf $dev wurden Daten-Signaturen gefunden. Abbruch." >&2; exit 3; }
+grep -q "^[^#].*[[:space:]]$ORT[[:space:]]" /etc/fstab && { echo "$ORT ist schon eingerichtet." >&2; exit 4; }
+
+parted -s "$dev" mklabel gpt mkpart Bibiplexx ext4 1MiB 100%
+udevadm settle
+teil=$(lsblk -lnp -o NAME,TYPE "$dev" | awk '$2=="part"{print $1; exit}')
+[ -b "$teil" ] || { echo "Partition wurde nicht gefunden." >&2; exit 5; }
+mkfs.ext4 -q -F -L Bibiplexx -m 0 "$teil"
+uuid=$(blkid -s UUID -o value "$teil")
+mkdir -p "$ORT"
+printf '\n# Bibiplexx-Filmplatte\nUUID=%s %s ext4 defaults,nofail,x-systemd.device-timeout=10s 0 2\n' "$uuid" "$ORT" >> /etc/fstab
+systemctl daemon-reload 2>/dev/null || true
+mount "$ORT"
+mkdir -p "$ORT/Filme" "$ORT/Serien"
+if [ -n "${PKEXEC_UID:-}" ]; then
+    gruppe=$(id -g "$PKEXEC_UID")
+    chown "$PKEXEC_UID:$gruppe" "$ORT" "$ORT/Filme" "$ORT/Serien"
+fi
+echo "Eingerichtet: $teil -> $ORT"

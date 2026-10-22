@@ -1,0 +1,14 @@
+Package: biblix-bibiplexx
+Version: @VERSION@
+Architecture: all
+Section: video
+Priority: optional
+Maintainer: Biblix <biblix@localhost>
+Depends: python3, python3-pyqt6, mpv, ffmpeg, pkexec, polkitd, parted, e2fsprogs, util-linux, fonts-dejavu-core
+Recommends: pipewire-bin
+Description: Bibiplexx: Filme und Serien auf Biblix
+ Eigene Filmsammlung (Saal, Serien, Filme, Weiterschauen) mit Bibiplexx-Player
+ auf mpv-Basis: Kinomodus mit Vorhang und Gong, eigene Steuerleiste, HDR und
+ Hardware-Dekodierung. Richtet auf Wunsch eine leere Platte als Filmplatte ein.
+ .
+ Reihe sieben.

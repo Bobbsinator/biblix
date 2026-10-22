@@ -99,4 +99,4 @@ Technik-Entscheidungen:
 
 - **Bibiplexx-App:** eigener Video-/Filmplayer im Bibiplexx-Stil. **Gewählt: A**, eigene App auf mpv-Basis
   (libmpv, HDR, NVIDIA-Decoding) mit eigener Oberfläche (Filmsammlung, Kinomodus, „Reihe sieben"). Lore-Regel beachten:
-  kein süßes Popcorn, nicht einmal als UI-Option.
+  kein süßes Popcorn, nicht einmal als UI-Option. **Gebaut am 22.10.2026 als biblix-bibiplexx 1.0.0**, siehe `docs/bibiplexx.md`.

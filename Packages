@@ -1,3 +1,24 @@
+Package: biblix-bibiplexx
+Architecture: all
+Version: 1.0.0
+Priority: optional
+Section: video
+Maintainer: Biblix <biblix@localhost>
+Depends: python3, python3-pyqt6, mpv, ffmpeg, pkexec, polkitd, parted, e2fsprogs, util-linux, fonts-dejavu-core
+Recommends: pipewire-bin
+Filename: ./biblix-bibiplexx_1.0.0_all.deb
+Size: 154504
+MD5sum: 6fe7ac588885038793266e365cffa57d
+SHA1: 6782920c70fe6c0f0446c9b178d44919771db418
+SHA256: c37a4f486e1455bd8c9330c74cf7d48491095ea24f18133637b9674c1cebc9e4
+SHA512: 965ec4cc91e0b2de99216a5f8f89e38aa1e40b9780b7b344e962991305f398bd95c30122dc16606ea0105bc0d5db11ba015670780edec099dd472b6c177303f8
+Description: Bibiplexx: Filme und Serien auf Biblix
+ Eigene Filmsammlung (Saal, Serien, Filme, Weiterschauen) mit Bibiplexx-Player
+ auf mpv-Basis: Kinomodus mit Vorhang und Gong, eigene Steuerleiste, HDR und
+ Hardware-Dekodierung. Richtet auf Wunsch eine leere Platte als Filmplatte ein.
+ .
+ Reihe sieben.
+
 Package: biblix-design
 Architecture: all
 Version: 1.0.0
@@ -295,6 +316,22 @@ MD5sum: e410f61d4a2d344f0b4ea3ace533f488
 SHA1: 332f686f53c02685b37c41eac01c937987fbe1d6
 SHA256: 364fd40c3e23931268ba0342398cdee67d47a4b5827f343b815a6643de75a604
 SHA512: 8ddc074f56c6ae336776f3ac831fed832caf0c904c0c2b08a3e431dddad561a73b3a92781d06b1f1206e1b05bc613540f03314104c8107ed114986c3aa5a2f3d
+Description: Biblix - DEIN SYSTEM. DEIN PROBLEM.
+ Sammelpaket: haelt alle Biblix-Teile aktuell und bringt neue Teile per Update mit.
+
+Package: biblix
+Architecture: all
+Version: 1.2.0
+Priority: optional
+Section: metapackages
+Maintainer: Biblix <biblix@localhost>
+Depends: biblix-tools (>= 1.3.1), biblix-system (>= 1.0.1), biblix-design (>= 2.0.0), biblix-xbox (>= 1.0.0), biblix-kwin-wuerfel (>= 1.0.0), biblix-bibiplexx (>= 1.0.0)
+Filename: ./biblix_1.2.0_all.deb
+Size: 1032
+MD5sum: 73594fe0e71f5e4df904f1af18342c58
+SHA1: d4c3bd27e21067e6134b9f98162a8738cffa6138
+SHA256: 3418620d3fa6f4fc18763b02aa290c61dae7cbd7b0efa36e0c54c563eb6fceb0
+SHA512: b55a3183793889417f411a5b6f0c4a074fea99edeb46748066cc20cbf4236d2852e76998b0a5eaf8fe5d30f3126a6ad2242d444a444e2fb3665d341ddb27aa1d
 Description: Biblix - DEIN SYSTEM. DEIN PROBLEM.
  Sammelpaket: haelt alle Biblix-Teile aktuell und bringt neue Teile per Update mit.
 

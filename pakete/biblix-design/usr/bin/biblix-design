@@ -66,6 +66,20 @@ def main(argv):
             anwenden.alles(e, system=False, melden=lambda t: None)
             return 0
         e = kern.laden()
+        # Einmalige Umstellung (2.0.1): Milchglas war der alte Standard, jetzt ist undurchsichtig Standard
+        try:
+            import json
+            gespeichert = json.loads(kern.EINSTELLUNGEN.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            gespeichert = {}
+        if gespeichert.get("_stand", 0) < 1:
+            umstellen = e.get("transparenz") == "milchglas"
+            e["_stand"] = 1
+            if umstellen:
+                e["transparenz"] = "undurchsichtig"
+            kern.speichern(e, verlauf=False)
+            if umstellen:
+                anwenden.taskleiste(e, kern.palette(e))
         if e["modus"] == "auto":
             try:
                 import json

@@ -22,6 +22,7 @@ FARBNAMEN = ["grund", "flaeche", "karte", "rand", "text", "leise", "akzent", "ak
 
 # Der Biblix-Standard. Jede Option der Design-App hat hier ihren Platz.
 STANDARD = {
+    "_stand": 1,                    # Stand der Einstellungen (für einmalige Umstellungen nach Updates)
     "preset": "bibi-tech",
     "modus": "dunkel",              # dunkel | hell | auto (Tag hell, Abend dunkel)
     "eigene_farben": None,          # None oder {"dunkel": {...}, "hell": {...}}
@@ -29,7 +30,7 @@ STANDARD = {
     "startmenue_position": "links", # links | mitte
     "startknopf": "biblix",         # biblix | firma
     "taskleiste": "schwebend",      # schwebend | fest | dock
-    "transparenz": "milchglas",     # milchglas | undurchsichtig | adaptiv
+    "transparenz": "undurchsichtig", # undurchsichtig | milchglas | adaptiv
     "monitore": "beide",            # beide | haupt | gleich
     "titelleiste": "nahtlos",       # nahtlos | farbig | schlank
     "knoepfe": "schrauben",         # schrauben | punkte | terminal | klammern | kapsel | balken
@@ -70,7 +71,7 @@ WAHL = {
     "startmenue_position": [("links", "Links"), ("mitte", "Mitte")],
     "startknopf": [("biblix", "Biblix-Logo"), ("firma", "Firmenlogo")],
     "taskleiste": [("schwebend", "Schwebend"), ("fest", "Fest"), ("dock", "Dock")],
-    "transparenz": [("milchglas", "Milchglas"), ("undurchsichtig", "Undurchsichtig"), ("adaptiv", "Adaptiv")],
+    "transparenz": [("undurchsichtig", "Undurchsichtig"), ("milchglas", "Milchglas"), ("adaptiv", "Adaptiv")],
     "monitore": [("beide", "Beide, eigene Fenster"), ("haupt", "Nur Hauptmonitor"), ("gleich", "Beide gleich")],
     "titelleiste": [("nahtlos", "Nahtlos"), ("farbig", "Farbig"), ("schlank", "Schlank")],
     "knoepfe": [("schrauben", "Schrauben"), ("punkte", "Punkte"), ("terminal", "Terminal"),

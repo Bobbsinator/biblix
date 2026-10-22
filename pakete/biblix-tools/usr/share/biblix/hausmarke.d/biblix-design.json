@@ -1,0 +1,9 @@
+{
+  "id": "biblix-design",
+  "name": "Biblix Design",
+  "beschreibung": "Farben, Fenster, Startmenü, Hintergründe und Klänge: Biblix nach deinem Geschmack.",
+  "symbol": "de.biblix.Design",
+  "befehl": ["biblix-design"],
+  "status": "fertig",
+  "reihenfolge": 10
+}

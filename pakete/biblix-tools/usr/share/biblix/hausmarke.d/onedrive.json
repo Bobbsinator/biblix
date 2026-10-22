@@ -1,0 +1,10 @@
+{
+  "id": "onedrive",
+  "name": "OneDrive einrichten",
+  "beschreibung": "Deinen OneDrive-Ordner mit Biblix verbinden.",
+  "symbol": "folder-cloud",
+  "befehl": ["konsole", "--hold", "-e", "biblix-onedrive"],
+  "pruefen": "biblix-onedrive",
+  "status": "fertig",
+  "reihenfolge": 60
+}

@@ -5,7 +5,7 @@ Section: admin
 Priority: optional
 Maintainer: Biblix <biblix@localhost>
 Depends: python3, python3-pyqt6, flatpak, pciutils, pkexec, polkitd, libnotify-bin, kdialog, efibootmgr, konsole, curl
-Recommends: mokutil, onedrive, dkms, libarchive-tools, gamemode, power-profiles-daemon, vulkan-tools
+Recommends: mokutil, onedrive, pipewire-bin, dkms, libarchive-tools, gamemode, power-profiles-daemon, vulkan-tools
 Description: Biblix-Werkzeuge: S-Launcher und Systemhelfer
  S-Launcher (App-Browser und Spielezentrale), biblix-gpu (Grafik- und CPU-Check),
  Update-Benachrichtigungen, Secure-Boot-, OneDrive- und Xbox-Funkadapter-Helfer,

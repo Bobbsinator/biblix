@@ -1,0 +1,10 @@
+{
+  "id": "grafik-check",
+  "name": "Grafik-Check",
+  "beschreibung": "Prüft Grafikkarte, Treiber und Prozessor und sagt, was zu tun ist.",
+  "symbol": "video-display",
+  "befehl": ["konsole", "--hold", "-e", "biblix-gpu"],
+  "pruefen": "biblix-gpu",
+  "status": "fertig",
+  "reihenfolge": 40
+}

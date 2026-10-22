@@ -1,0 +1,9 @@
+{
+  "id": "neustart-windows",
+  "name": "Neustart in Windows",
+  "beschreibung": "Einmal direkt in Windows starten. Danach startet wieder Biblix.",
+  "symbol": "system-reboot",
+  "befehl": ["biblix-neustart-windows"],
+  "status": "fertig",
+  "reihenfolge": 50
+}

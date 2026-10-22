@@ -8,6 +8,7 @@ dazu GameMode, MangoHud und Energieprofile.
     s-launcher --spiele   startet direkt im Spielebereich
 """
 import json
+import random
 import re
 import shutil
 import subprocess
@@ -17,13 +18,15 @@ from urllib.parse import quote
 
 from PyQt6 import sip
 from PyQt6.QtCore import QObject, QPoint, QProcess, QRect, QSize, Qt, QUrl, pyqtSignal
-from PyQt6.QtGui import QGuiApplication, QIcon, QPixmap
+from PyQt6.QtGui import QColor, QGuiApplication, QIcon, QPixmap
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PyQt6.QtWidgets import (
     QApplication, QComboBox, QFrame, QHBoxLayout, QLabel, QLayout, QLineEdit,
     QListWidget, QListWidgetItem, QMainWindow, QProgressBar, QPushButton,
     QScrollArea, QSizePolicy, QStackedWidget, QVBoxLayout, QWidget,
 )
+
+import welten
 
 VERSION = "1.0"
 API = "https://flathub.org/api/v2"
@@ -110,6 +113,16 @@ QScrollArea > QWidget > QWidget { background: transparent; }
 QProgressBar { background: #13242e; border: none; border-radius: 4px; max-height: 8px; }
 QProgressBar::chunk { background: #3fd0ee; border-radius: 4px; }
 QComboBox { background: #13242e; border: 1px solid #1f3946; border-radius: 8px; padding: 5px 10px; color: #e3f3f8; }
+QCheckBox { color: #e3f3f8; }
+QLabel#weltname { color: #8fb0bf; font-size: 8.5pt; padding: 0 14px 10px 14px; }
+QPushButton#gold { background: #d4a73c; border-color: #d4a73c; color: #2a1f05; font-weight: 700; }
+QPushButton#gold:hover { background: #e2bb58; }
+QFrame#weltmenue { background: #0f222c; border: 1px solid #3fd0ee; border-radius: 6px; }
+QPushButton#weltwahl { text-align: left; padding: 6px 12px; }
+QPushButton#weltwahl:checked { background: #0aa5c6; color: #001319; border-color: #0aa5c6; }
+QToolButton#weltknopf { background: transparent; border: none; border-radius: 8px; }
+QToolButton#weltknopf:hover { background: #13323f; }
+QFrame#meldung { background: #0f222c; border: 1px solid #3fd0ee; border-radius: 12px; }
 """
 
 # Farben folgen dem aktuellen Biblix-Design (App "Biblix Design" schreibt ~/.config/biblix/palette.json).
@@ -125,7 +138,7 @@ DESIGN_FARBEN = {
 
 def design_stil(text):
     try:
-        pal = json.loads((Path.home() / ".config/biblix/palette.json").read_text(encoding="utf-8"))
+        pal = json.loads(welten.PALETTE.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return text
     for alt, schluessel in DESIGN_FARBEN.items():
@@ -483,6 +496,7 @@ class AppCard(QFrame):
         main.net.pixmap(app.get("icon"), self.set_icon)
         main.state_changed.connect(self.update_state)
         self.update_state()
+        main.einblenden(self)
 
     def set_icon(self, pm):
         if alive(self.icon):
@@ -493,7 +507,7 @@ class AppCard(QFrame):
             return
         state = self.main.state(self.app["app_id"])
         self.btn.setEnabled(state != "busy")
-        self.btn.setText({"busy": "Läuft …", "installed": "Öffnen", "none": "Installieren"}[state])
+        self.btn.setText(self.main.knopf_text(state))
         self.btn.setObjectName("" if state == "installed" else "primary")
         self.btn.style().unpolish(self.btn)
         self.btn.style().polish(self.btn)
@@ -545,6 +559,7 @@ class Main(QMainWindow):
     state_changed = pyqtSignal()
 
     NAV = [
+        ("hausmarke", "Hausmarke Bibi", None),
         ("discover", "Entdecken", "go-home"),
         ("games", "Spiele", "applications-games"),
         ("categories", "Kategorien", "view-list-icons"),
@@ -562,6 +577,13 @@ class Main(QMainWindow):
         self.jobs = Jobs()
         self.installed = Flatpak.installed()
         self.history = []
+        self.auftraege = {}
+        self.bestell_nr = random.randint(100, 899)
+        self.einblend_nr = 0
+        self.einst = welten.laden()
+        self.farben = welten.farben()
+        self.welt_id = welten.welt_fuer(self.einst, self.farben)
+        self.welt = welten.WELTEN[self.welt_id]
 
         self.jobs.changed.connect(self.on_jobs_changed)
         self.jobs.line.connect(lambda t: self.status_line.setText(t))
@@ -578,16 +600,30 @@ class Main(QMainWindow):
         # Seitenleiste
         side = QWidget()
         side.setObjectName("sidebar")
-        side.setFixedWidth(220)
+        side.setFixedWidth(230)
         sl = QVBoxLayout(side)
         sl.setContentsMargins(0, 6, 0, 10)
-        sl.addWidget(label("S-Launcher", "brand"))
-        sl.addWidget(label("AUF BIBLIX GEHT DAS.", "slogan"))
+        sl.setSpacing(0)
+        self.logo_platz = QHBoxLayout()
+        self.logo_platz.setContentsMargins(14, 12, 8, 2)
+        self.logo_platz.setSpacing(10)
+        self.logo = None
+        brand = label("S-Launcher", "brand")
+        brand.setStyleSheet("padding: 0;")
+        self.logo_platz.addWidget(brand)
+        self.logo_platz.addStretch(1)
+        sl.addLayout(self.logo_platz)
+        slogan = label("AUF BIBLIX GEHT DAS.", "slogan")
+        slogan.setStyleSheet("padding: 6px 14px 2px 14px;")
+        sl.addWidget(slogan)
+        self.welt_label = label("", "weltname")
+        sl.addWidget(self.welt_label)
         self.nav = QListWidget()
         self.nav.setObjectName("nav")
-        self.nav.setIconSize(QSize(20, 20))
-        for key, text, icon in self.NAV:
-            item = QListWidgetItem(QIcon.fromTheme(icon), text)
+        self.nav.setIconSize(QSize(22, 22))
+        self.nav.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        for key, text, _icon in self.NAV:
+            item = QListWidgetItem(text)
             item.setData(Qt.ItemDataRole.UserRole, key)
             self.nav.addItem(item)
         self.nav.currentItemChanged.connect(self.on_nav)
@@ -601,7 +637,7 @@ class Main(QMainWindow):
         top = QWidget()
         top.setObjectName("topbar")
         tl = QHBoxLayout(top)
-        tl.setContentsMargins(16, 10, 16, 10)
+        tl.setContentsMargins(16, 10, 12, 10)
         self.back_btn = button("‹ Zurück", cb=self.go_back)
         self.back_btn.setEnabled(False)
         tl.addWidget(self.back_btn)
@@ -610,17 +646,28 @@ class Main(QMainWindow):
         self.search.setClearButtonEnabled(True)
         self.search.returnPressed.connect(self.do_search)
         tl.addWidget(self.search, 1)
+        # Platz fuer die Anzeige der Welt (Stockwerk, Abholbildschirm) und den Welt-Knopf
+        self.anzeige_platz = QHBoxLayout()
+        self.anzeige_platz.setContentsMargins(0, 0, 0, 0)
+        tl.addLayout(self.anzeige_platz)
+        self.anzeige = None
+        self.knopf_platz = QHBoxLayout()
+        self.knopf_platz.setContentsMargins(0, 0, 0, 0)
+        tl.addLayout(self.knopf_platz)
+        self.welt_knopf = None
         content.addWidget(top)
         self.stack = QStackedWidget()
         content.addWidget(self.stack, 1)
         middle.addLayout(content, 1)
+        self.uebergang = welten.Uebergang(self.stack)
 
         # Statusleiste fuer laufende Installationen
         bar = QWidget()
         bar.setObjectName("statusbar")
+        self.statusbar = bar
         bl = QHBoxLayout(bar)
         bl.setContentsMargins(16, 7, 16, 7)
-        self.job_label = label("Bereit.")
+        self.job_label = label("")
         bl.addWidget(self.job_label)
         self.progress = QProgressBar()
         self.progress.setRange(0, 0)
@@ -633,13 +680,100 @@ class Main(QMainWindow):
         outer.addWidget(bar)
 
         self.setCentralWidget(root)
-        self.setStyleSheet(design_stil(STYLE))
+        self.meldung = welten.Meldung(root)
+        self.welt_anwenden(neu_bauen=False)
 
         # Flathub fuer Benutzerinstallationen sicherstellen (ohne Passwortabfrage)
         QProcess.startDetached("flatpak", ["remote-add", "--user", "--if-not-exists", "flathub", FLATHUB_REPO])
 
         keys = [k for k, _, _ in self.NAV]
-        self.nav.setCurrentRow(keys.index(start) if start in keys else 0)
+        self.nav.setCurrentRow(keys.index(start) if start in keys else 1)
+
+    # ---- Welt
+
+    def welt_anwenden(self, neu_bauen=True):
+        """Farben, Woerter, Symbole und Anzeigen der aktuellen Welt setzen."""
+        self.farben = welten.farben()
+        self.welt_id = welten.welt_fuer(self.einst, self.farben)
+        self.welt = welten.WELTEN[self.welt_id]
+        f = self.farben
+        self.setStyleSheet(design_stil(STYLE))
+        animiert = self.einst["animationen"] == "voll"
+
+        if self.logo is not None:
+            self.logo.deleteLater()
+        self.logo = welten.LogoB(f, blinken=animiert)
+        self.logo_platz.insertWidget(0, self.logo)
+        self.welt_label.setText(f"Welt: {self.welt['name']}" + (" · auto" if self.einst["welt"] == "auto" else ""))
+
+        etagen = self.welt.get("etagen")
+        for i, (key, _, icon) in enumerate(self.NAV):
+            item = self.nav.item(i)
+            item.setText(self.welt["nav"][key])
+            item.setToolTip(welten.NAV_KLAR[key])
+            if key == "hausmarke":
+                item.setIcon(welten.hausmarke_symbol())
+                item.setForeground(QColor(welten.gold_text(f)))
+            elif etagen:
+                item.setIcon(welten.etagen_symbol(etagen[key], f))
+            else:
+                item.setIcon(QIcon.fromTheme(icon))
+
+        if self.anzeige is not None:
+            self.anzeige.deleteLater()
+            self.anzeige = None
+        if self.welt_id == "tower":
+            self.anzeige = welten.Stockwerk(f)
+            cur = self.nav.currentItem()
+            if cur:
+                self.anzeige.setzen(etagen[cur.data(Qt.ItemDataRole.UserRole)])
+        elif self.welt_id == "theke":
+            self.anzeige = welten.Abholanzeige(f)
+        if self.anzeige is not None:
+            self.anzeige_platz.addWidget(self.anzeige)
+
+        if self.welt_knopf is not None:
+            self.welt_knopf.deleteLater()
+        self.welt_knopf = welten.WeltKnopf(f)
+        self.welt_knopf.clicked.connect(self.welt_menue)
+        self.knopf_platz.addWidget(self.welt_knopf)
+
+        if not self.jobs.current:
+            self.job_label.setText(self.welt["bereit"])
+        self.state_changed.emit()
+        item = self.nav.currentItem()
+        if neu_bauen and item is not None:
+            for p in self.history:
+                self._drop(p)
+            self.history.clear()
+            self.einblend_nr = 0
+            page = getattr(self, "page_" + item.data(Qt.ItemDataRole.UserRole))()
+            self.set_page(page, remember=False, art="blende")
+
+    def welt_menue(self):
+        menue = welten.WeltMenue(self, self.einst, self.farben)
+        menue.setStyleSheet(design_stil(STYLE))
+        menue.geaendert.connect(self.welt_geaendert)
+        menue.adjustSize()
+        pos = self.welt_knopf.mapToGlobal(self.welt_knopf.rect().bottomRight())
+        menue.move(pos.x() - menue.width(), pos.y() + 6)
+        menue.show()
+
+    def welt_geaendert(self, e):
+        alt = self.welt_id
+        self.einst = e
+        welten.speichern(e)
+        self.welt_anwenden()
+        if self.welt_id != alt:
+            welten.klang(self.welt["klaenge"].get("fertig"), self.einst)
+
+    def knopf_text(self, state):
+        return {"busy": self.welt["laeuft"], "installed": "Öffnen", "none": self.welt["installieren"]}[state]
+
+    def einblenden(self, w):
+        if self.einst["animationen"] == "voll":
+            welten.einblenden(w, min(self.einblend_nr, 14) * 35)
+            self.einblend_nr += 1
 
     # ---- Zustand
 
@@ -649,10 +783,18 @@ class Main(QMainWindow):
         return "installed" if app_id in self.installed else "none"
 
     def install(self, app):
-        self.jobs.add(app["app_id"], f"Installiere {app['name']}", Flatpak.install_argv(app["app_id"]))
+        if self.jobs.busy(app["app_id"]):
+            return
+        self.bestell_nr += 1
+        nr = self.bestell_nr
+        self.auftraege[app["app_id"]] = ("install", app["name"], nr)
+        welten.klang(self.welt["klaenge"].get("start"), self.einst)
+        self.jobs.add(app["app_id"], self.welt["auftrag"].format(name=app["name"], nr=f"{nr:04d}"),
+                      Flatpak.install_argv(app["app_id"]))
 
     def remove(self, app_id, name):
         inst = self.installed.get(app_id, {}).get("installation", "user")
+        self.auftraege[app_id] = ("remove", name, None)
         self.jobs.add(app_id, f"Entferne {name}", Flatpak.remove_argv(app_id, inst))
 
     def on_jobs_changed(self):
@@ -660,12 +802,34 @@ class Main(QMainWindow):
         self.progress.setVisible(busy)
         if busy:
             self.job_label.setText(self.jobs.title())
+            art, _, nr = self.auftraege.get(self.jobs.current[0], (None, None, None))
+            if art == "install" and isinstance(self.anzeige, welten.Abholanzeige):
+                self.anzeige.zubereiten(nr)
         self.state_changed.emit()
 
     def on_job_finished(self, key, ok):
         self.installed = Flatpak.installed()
-        self.job_label.setText("Fertig. AUF BIBLIX GEHT DAS." if ok else "Hat nicht geklappt.")
-        if not ok:
+        art, name, nr = self.auftraege.pop(key, (None, key, None))
+        if ok:
+            self.job_label.setText(self.welt["bereit"] + "  AUF BIBLIX GEHT DAS.")
+            self.status_line.setText("")
+            if art == "install":
+                text = self.welt["fertig_text"].format(name=name, nr=f"{nr:04d}")
+            elif art == "remove":
+                text = f"{name} wurde entfernt."
+            else:
+                text = "Fertig. AUF BIBLIX GEHT DAS."
+            animiert = self.einst["animationen"] != "aus"
+            symbol = QIcon.fromTheme("edit-delete") if art == "remove" else welten.hausmarke_symbol(28)
+            self.meldung.zeigen(text, symbol, self.statusbar.height(), animiert)
+            if art == "install":
+                welten.klang(self.welt["klaenge"].get("fertig"), self.einst)
+                if isinstance(self.anzeige, welten.Abholanzeige):
+                    self.anzeige.fertig(nr, blinken=animiert)
+        else:
+            self.job_label.setText("Hat nicht geklappt.")
+            if isinstance(self.anzeige, welten.Abholanzeige):
+                self.anzeige.frei()
             self.status_line.setText("Details siehe letzte Meldung. Internet und Speicherplatz prüfen.")
         self.state_changed.emit()
         page = self.stack.currentWidget()
@@ -674,15 +838,33 @@ class Main(QMainWindow):
 
     # ---- Navigation
 
-    def set_page(self, page, remember=True):
-        old = self.stack.currentWidget()
-        if remember and old is not None:
-            self.history.append(old)
-        elif old is not None:
-            self._drop(old)
-        self.stack.addWidget(page)
-        self.stack.setCurrentWidget(page)
-        self.back_btn.setEnabled(bool(self.history))
+    def wechsel(self, tausch, art=None, beschriftung="", richtung=1):
+        """Seitenwechsel mit der Animation der Welt (oder ohne)."""
+        modus = self.einst["animationen"]
+        if art == "keine" or modus == "aus" or not self.isVisible() or self.stack.currentWidget() is None:
+            self.uebergang.abschliessen()
+            tausch()
+            return
+        art = art or self.welt.get("uebergang", "blende")
+        dauer = 1.0
+        if modus == "dezent":
+            art, dauer = "blende", 0.7
+        self.uebergang.starten(art, tausch, self.farben, dauer, beschriftung, richtung)
+
+    def set_page(self, page, remember=True, art=None, beschriftung="", richtung=1):
+        def tausch():
+            old = self.stack.currentWidget()
+            if remember and old is not None:
+                self.history.append(old)
+            elif old is not None:
+                self._drop(old)
+            self.stack.addWidget(page)
+            self.stack.setCurrentWidget(page)
+            self.back_btn.setEnabled(bool(self.history))
+        if art is None and remember:
+            # Innerhalb eines Bereichs: die Theke schiebt, sonst eine kurze Blende
+            art = "schieben" if self.welt_id == "theke" else "blende"
+        self.wechsel(tausch, art, beschriftung, richtung)
 
     def _drop(self, page):
         # Fokus vorher rausholen, sonst springt er auf ein Feld der neuen Seite
@@ -696,25 +878,47 @@ class Main(QMainWindow):
     def go_back(self):
         if not self.history:
             return
-        cur = self.stack.currentWidget()
-        prev = self.history.pop()
-        self.stack.setCurrentWidget(prev)
-        self._drop(cur)
-        self.back_btn.setEnabled(bool(self.history))
 
-    def on_nav(self, item, _prev=None):
+        def tausch():
+            cur = self.stack.currentWidget()
+            prev = self.history.pop()
+            self.stack.setCurrentWidget(prev)
+            self._drop(cur)
+            self.back_btn.setEnabled(bool(self.history))
+        self.wechsel(tausch, "schieben" if self.welt_id == "theke" else "blende", richtung=-1)
+
+    def nav_zu(self, key):
+        keys = [k for k, _, _ in self.NAV]
+        self.nav.setCurrentRow(keys.index(key))
+
+    def on_nav(self, item, prev=None):
         if item is None:
             return
+        self.uebergang.abschliessen()
         for p in self.history:
             self._drop(p)
         self.history.clear()
-        builder = getattr(self, "page_" + item.data(Qt.ItemDataRole.UserRole))
-        self.set_page(builder(), remember=False)
+        key = item.data(Qt.ItemDataRole.UserRole)
+        self.einblend_nr = 0
+        page = getattr(self, "page_" + key)()
+        beschriftung = ""
+        if isinstance(self.anzeige, welten.Stockwerk):
+            etagen = self.welt["etagen"]
+            if prev is not None:
+                # Haustechnik liegt im Keller, also unter allem
+                keys = [k for k, _, _ in self.NAV]
+                hoehe = {k: (-1 if k == "updates" else i) for i, k in enumerate(keys)}
+                beschriftung = etagen[key]
+                self.anzeige.fahren(etagen[key], hoehe[key] > hoehe[prev.data(Qt.ItemDataRole.UserRole)])
+                welten.klang(self.welt["klaenge"].get("seite"), self.einst)
+            else:
+                self.anzeige.setzen(etagen[key])
+        self.set_page(page, remember=False, art=None if prev is not None else "keine", beschriftung=beschriftung)
 
     def rebuild_current(self):
         item = self.nav.currentItem()
         if item and not self.history:
-            self.set_page(getattr(self, "page_" + item.data(Qt.ItemDataRole.UserRole))(), remember=False)
+            self.set_page(getattr(self, "page_" + item.data(Qt.ItemDataRole.UserRole))(), remember=False, art="keine")
 
     # ---- Hilfen fuer Seiten
 
@@ -745,22 +949,84 @@ class Main(QMainWindow):
 
     # ---- Seiten
 
+    def oeffnen_hausmarke(self, eintrag):
+        befehl = eintrag.get("befehl") or []
+        if befehl:
+            QProcess.startDetached(befehl[0], befehl[1:])
+
+    def hausmarke_flow(self, page, eintraege):
+        flow = page.flow()
+        animiert = self.einst["animationen"] == "voll"
+        for e in eintraege:
+            karte = welten.HausmarkeKarte(self.farben, e, animiert, self.oeffnen_hausmarke)
+            flow.addWidget(karte)
+            self.einblenden(karte)
+        return flow
+
+    def page_hausmarke(self):
+        p = Page()
+        p.body.addWidget(welten.HausmarkeKopf(
+            self.farben, self.einst["animationen"] == "voll", "Hausmarke Bibi",
+            "Apps, die für Biblix gebaut wurden. Neue Bibi-Apps kommen automatisch per Update dazu."))
+        eintraege = welten.hausmarke()
+        if not eintraege:
+            p.body.addWidget(label("Noch keine Bibi-Apps gefunden.", "muted"))
+            return p
+        fertig = [e for e in eintraege if e.get("status") == "fertig"]
+        bald = [e for e in eintraege if e.get("status") != "fertig"]
+        if fertig:
+            p.body.addWidget(label("Im Regal", "h2"))
+            self.hausmarke_flow(p, fertig)
+        if bald:
+            p.body.addWidget(label("In Arbeit", "h2"))
+            p.body.addWidget(label("Wird gerade gebaut. Sobald es fertig ist, steht es hier im Regal.", "muted"))
+            self.hausmarke_flow(p, bald)
+        return p
+
+    def buehne_eintraege(self):
+        """Wechselnde Eintraege fuer den grossen Kopf der Startseite."""
+        kicker = {
+            "tower": ("EG · Hausmarke Bibi", "2. Stock · Spiele", "Baustelle · Demnächst"),
+            "theke": ("Empfehlung des Hauses", "Menü des Tages", "Bald auf der Karte"),
+        }.get(self.welt_id, ("Hausmarke Bibi", "Spielen", "Demnächst"))
+        eintraege = []
+        hm = {e["id"]: e for e in welten.hausmarke()}
+        design = hm.get("biblix-design")
+        if design and design.get("status") == "fertig" and welten.hausmarke_da(design):
+            eintraege.append({
+                "kicker": kicker[0], "titel": "Biblix Design",
+                "text": "Farben, Fenster, Startmenü und Hintergründe nach deinem Geschmack. Der S-Launcher zieht mit.",
+                "knoepfe": [("Öffnen", "gold", lambda: self.oeffnen_hausmarke(design)),
+                            ("Alle Bibi-Apps", "", lambda: self.nav_zu("hausmarke"))]})
+        eintraege.append({
+            "kicker": kicker[1], "titel": "Spielen auf Biblix",
+            "text": "Steam mit Proton, GameMode und MangoHud. NVIDIA und AMD sind schon eingerichtet.",
+            "knoepfe": [("Zu den Spielen", "yellow", lambda: self.nav_zu("games"))]})
+        plexx = hm.get("bibiplexx")
+        if plexx and plexx.get("status") != "fertig":
+            eintraege.append({
+                "kicker": kicker[2], "titel": "Bibiplexx",
+                "text": "Filme und Serien im Bibiplexx-Stil. Wird gerade gebaut und kommt per Update.",
+                "knoepfe": [("Zur Hausmarke", "", lambda: self.nav_zu("hausmarke"))]})
+        return eintraege
+
     def page_discover(self):
         p = Page()
-        p.body.addWidget(label("Entdecken", "h1"))
-        p.body.addWidget(label("Tausende Apps von Flathub. Ein Klick, fertig.", "muted"))
-        hero = QFrame()
-        hero.setObjectName("hero")
-        hl = QHBoxLayout(hero)
-        hl.setContentsMargins(24, 20, 24, 20)
-        col = QVBoxLayout()
-        t = label("Spielen auf Biblix")
-        t.setStyleSheet("font-size: 16pt; font-weight: 800;")
-        col.addWidget(t)
-        col.addWidget(label("Steam mit Proton, GameMode und MangoHud. NVIDIA und AMD sind schon eingerichtet.", wrap=True))
-        hl.addLayout(col, 1)
-        hl.addWidget(button("Zu den Spielen", "yellow", lambda: self.nav.setCurrentRow(1)))
-        p.body.addWidget(hero)
+        p.body.addWidget(label(self.welt["nav"]["discover"], "h1"))
+        p.body.addWidget(label(self.welt["untertitel"], "muted"))
+        p.body.addWidget(welten.Buehne(self.welt_id, self.farben, self.einst["animationen"] == "voll",
+                                       self.buehne_eintraege()))
+        hm = welten.hausmarke()
+        if hm:
+            kopf = QHBoxLayout()
+            titel = label("Hausmarke Bibi", "h2")
+            titel.setStyleSheet(f"color: {welten.gold_text(self.farben)};")
+            kopf.addWidget(titel)
+            kopf.addStretch(1)
+            alle = button("Alle ansehen ›", cb=lambda: self.nav_zu("hausmarke"))
+            kopf.addWidget(alle, 0, Qt.AlignmentFlag.AlignBottom)
+            p.body.addLayout(kopf)
+            self.hausmarke_flow(p, hm[:3])
         p.body.addWidget(label("Für den Alltag", "h2"))
         everyday = p.flow()
         for app_id in EVERYDAY:
@@ -772,7 +1038,7 @@ class Main(QMainWindow):
 
     def page_categories(self):
         p = Page()
-        p.body.addWidget(label("Kategorien", "h1"))
+        p.body.addWidget(label(self.welt["nav"]["categories"], "h1"))
         flow = p.flow()
         for cat, name, icon in CATEGORIES:
             # "&" waere auf Knoepfen ein Tastenkuerzel, "&&" zeigt es an
@@ -802,7 +1068,7 @@ class Main(QMainWindow):
         self.installed = Flatpak.installed()
         p = Page()
         p.refresh_on_job = True
-        p.body.addWidget(label("Installiert", "h1"))
+        p.body.addWidget(label(self.welt["nav"]["installed"], "h1"))
         if not self.installed:
             p.body.addWidget(label("Noch keine Flatpak-Apps installiert.", "muted"))
             return p
@@ -828,7 +1094,7 @@ class Main(QMainWindow):
 
     def page_accessories(self):
         p = Page()
-        p.body.addWidget(label("Zubehör", "h1"))
+        p.body.addWidget(label(self.welt["nav"]["accessories"], "h1"))
         p.body.addWidget(label("Was unter Windows die Hersteller-Programme machen, übernehmen hier diese Apps.", "muted", wrap=True))
         panel = QFrame()
         panel.setObjectName("panel")
@@ -855,7 +1121,7 @@ class Main(QMainWindow):
 
     def page_updates(self):
         p = Page()
-        p.body.addWidget(label("Updates", "h1"))
+        p.body.addWidget(label(self.welt["nav"]["updates"], "h1"))
         panel = QFrame()
         panel.setObjectName("panel")
         pl = QVBoxLayout(panel)
@@ -889,7 +1155,7 @@ class Main(QMainWindow):
         self.installed = Flatpak.installed()
         p = Page()
         p.refresh_on_job = True
-        p.body.addWidget(label("Spiele", "h1"))
+        p.body.addWidget(label(self.welt["nav"]["games"], "h1"))
 
         hero = QFrame()
         hero.setObjectName("hero")
@@ -1010,7 +1276,7 @@ class Main(QMainWindow):
                 return
             state = self.state(app["app_id"])
             main_btn.setEnabled(state != "busy")
-            main_btn.setText({"busy": "Läuft …", "installed": "Öffnen", "none": "Installieren"}[state])
+            main_btn.setText(self.knopf_text(state))
             rem_btn.setVisible(state == "installed")
 
         def act():

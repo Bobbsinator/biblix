@@ -2,8 +2,46 @@
 # Setzt den naechsten Start (nur einmal) auf den Windows Boot Manager.
 # Laeuft als root ueber pkexec (Policy de.biblix.bootnext-windows), nimmt keine Argumente.
 #   --pruefen   nur nachsehen, ob es einen Windows-Eintrag gibt
+# Gibt es mehrere Windows-Eintraege (z. B. altes Windows auf einer zweiten SSD), zaehlen nur
+# Eintraege, deren EFI-Partition wirklich da ist und den Windows-Bootloader enthaelt.
 set -e
-id=$(efibootmgr | sed -n 's/^Boot\([0-9A-Fa-f]\{4\}\)\*\{0,1\} \{1,\}Windows Boot Manager.*/\1/p' | head -n1)
+EFIVARS=/sys/firmware/efi/efivars
+if [ -d /sys/firmware/efi ] && ! mountpoint -q "$EFIVARS"; then
+    modprobe efivarfs 2>/dev/null || true
+    mount -t efivarfs efivarfs "$EFIVARS" 2>/dev/null || true
+fi
+if ! mountpoint -q "$EFIVARS"; then
+    echo "Die UEFI-Variablen sind nicht erreichbar (efivarfs)." >&2
+    exit 3
+fi
+
+# Hat diese EFI-Partition (PARTUUID) den Windows-Bootloader?
+hat_windows() {
+    dev=$(readlink -f "/dev/disk/by-partuuid/$1" 2>/dev/null) || return 1
+    [ -b "$dev" ] || return 1
+    ziel=$(findmnt -n -o TARGET --source "$dev" 2>/dev/null | head -n1)
+    if [ -n "$ziel" ]; then
+        [ -n "$(find "$ziel" -maxdepth 4 -ipath '*/efi/microsoft/boot/bootmgfw.efi' 2>/dev/null | head -n1)" ]
+        return
+    fi
+    m=$(mktemp -d)
+    mount -o ro "$dev" "$m" 2>/dev/null || { rmdir "$m"; return 1; }
+    gefunden=$(find "$m" -maxdepth 4 -ipath '*/efi/microsoft/boot/bootmgfw.efi' 2>/dev/null | head -n1)
+    umount "$m"; rmdir "$m"
+    [ -n "$gefunden" ]
+}
+
+id=""
+kandidaten=$(efibootmgr -v | sed -n 's/^Boot\([0-9A-Fa-f]\{4\}\)\*\{0,1\} \{1,\}Windows Boot Manager.*HD([0-9]*,GPT,\([0-9A-Fa-f-]*\),.*/\1 \2/p')
+for k in $(echo "$kandidaten" | tr ' ' ':'); do
+    nr=${k%%:*}; puuid=$(echo "${k#*:}" | tr 'A-F' 'a-f')
+    if hat_windows "$puuid"; then
+        id=$nr
+        break
+    fi
+done
+# Notloesung: erster Windows-Eintrag (falls efibootmgr keine Pfade zeigt)
+[ -n "$id" ] || id=$(efibootmgr | sed -n 's/^Boot\([0-9A-Fa-f]\{4\}\)\*\{0,1\} \{1,\}Windows Boot Manager.*/\1/p' | head -n1)
 if [ -z "$id" ]; then
     echo "Kein Windows-Eintrag im UEFI gefunden." >&2
     exit 2

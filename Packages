@@ -40,6 +40,27 @@ Description: Bibiplexx: Filme und Serien auf Biblix
  .
  Reihe sieben.
 
+Package: biblix-browser
+Architecture: all
+Version: 1.0.0
+Priority: optional
+Section: web
+Maintainer: Biblix <biblix@localhost>
+Depends: python3, firefox-esr, firefox-esr-l10n-de
+Recommends: biblix-design
+Filename: ./biblix-browser_1.0.0_all.deb
+Size: 4537408
+MD5sum: eb98299277424dc276f11b057a992ee6
+SHA1: 629b0d5ef83efb3506644496a959ea1560af2004
+SHA256: 2f5180d25deb8747c057d3d60ece6b8637fa33a222f9899a45c6e96468564db3
+SHA512: fb57d5fbb62d7a95835316117aaeb6556791a422fd3ef38f36841333446bdf1e587107d04b3cc42d4d39c90d9bc1b6c0abbcfa98315474972ce43e94a84ed70d
+Description: Bibi Browser: Firefox im Biblix-Look
+ Firefox ESR mit eigenem Profil: Leisten, Tabs und Fensterknoepfe im Biblix-Design
+ (folgt dem gewaehlten Preset), Bibi-Startseite, uBlock Origin, Datenschutz ohne
+ Telemetrie, HTTPS-Modus und Streaming (Widevine) ohne Rueckfrage.
+ .
+ AUF BIBLIX GEHT DAS.
+
 Package: biblix-design
 Architecture: all
 Version: 1.0.0
@@ -232,6 +253,26 @@ MD5sum: 2827d8ccbc3707d272e57bdafc85476e
 SHA1: 39232e9500c24b0c407d19d793a7c3f08fc4d16c
 SHA256: 6741b1b3e762724d4c10323c7a5001c27d3501e6b8c3d997d90cca1bd206d545
 SHA512: 16c320ecd60c9b279ab52574d499b5c576115e9e9174db07b611a8f3ca74505af9f1d027be6a9c68438ea215666c19a83cc546828bffc350f31c878958cb58b8
+Description: Biblix-System: Leistung, Treiber-Einstellungen, Sicherheit
+ Systemeinstellungen von Biblix: Spiele-Kernelwerte, zram, I/O-Scheduler,
+ NVIDIA- und AMD-Optionen, Bootparameter, Firewall, Paketquelle (Backports),
+ Firefox-Videobeschleunigung, mpv in Hochqualitaet, Standard-Apps,
+ der Admin-Befehl "bibi" und der Systemname Biblix.
+
+Package: biblix-system
+Architecture: all
+Version: 1.1.1
+Priority: optional
+Section: admin
+Maintainer: Biblix <biblix@localhost>
+Depends: sudo, base-files
+Recommends: firewalld, power-profiles-daemon, systemd-zram-generator, gamemode, mpv, firefox-esr, nvidia-vaapi-driver, bash-completion
+Filename: ./biblix-system_1.1.1_all.deb
+Size: 7552
+MD5sum: 8dbc7dea64e23d8da2ee1edda7aafd95
+SHA1: 20c4f53e485657e0a42c26da147067b45b618a3c
+SHA256: ef3809ba75f57e4e8cbd87bfbf06650cdd87e440c608d2a1daaf4f66687fac8b
+SHA512: 9c3a7509855836f20a3e20bf76f3c00233bf9126bb9f60c298adb1d306399144324a9cd667715b999b2d1baf461561cc7fdbd11295f4cb2bc519728a88b6de7f
 Description: Biblix-System: Leistung, Treiber-Einstellungen, Sicherheit
  Systemeinstellungen von Biblix: Spiele-Kernelwerte, zram, I/O-Scheduler,
  NVIDIA- und AMD-Optionen, Bootparameter, Firewall, Paketquelle (Backports),
@@ -444,6 +485,22 @@ MD5sum: 73594fe0e71f5e4df904f1af18342c58
 SHA1: d4c3bd27e21067e6134b9f98162a8738cffa6138
 SHA256: 3418620d3fa6f4fc18763b02aa290c61dae7cbd7b0efa36e0c54c563eb6fceb0
 SHA512: b55a3183793889417f411a5b6f0c4a074fea99edeb46748066cc20cbf4236d2852e76998b0a5eaf8fe5d30f3126a6ad2242d444a444e2fb3665d341ddb27aa1d
+Description: Biblix - DEIN SYSTEM. DEIN PROBLEM.
+ Sammelpaket: haelt alle Biblix-Teile aktuell und bringt neue Teile per Update mit.
+
+Package: biblix
+Architecture: all
+Version: 1.3.0
+Priority: optional
+Section: metapackages
+Maintainer: Biblix <biblix@localhost>
+Depends: biblix-tools (>= 1.3.2), biblix-system (>= 1.1.1), biblix-design (>= 2.0.2), biblix-xbox (>= 1.0.0), biblix-kwin-wuerfel (>= 1.0.0), biblix-bibiplexx (>= 1.0.1), biblix-browser (>= 1.0.0)
+Filename: ./biblix_1.3.0_all.deb
+Size: 1044
+MD5sum: 511499554fb266498c08206822bd949f
+SHA1: d44d4c2301bbd82c7e8a6b4051ca297b6b5b0a8a
+SHA256: 07a91785597a77d194c33772d6a7e6108db2d46a77de367e411ca876a32b033f
+SHA512: a844ea20d0d810ecbaf5c1c0f6bce4ea25d8d3592f539fe8e62d72000372eb80f224b0cfc7663c96dca860befe7b0efee04a479bdbb2e598f3ff8bb720f794a1
 Description: Biblix - DEIN SYSTEM. DEIN PROBLEM.
  Sammelpaket: haelt alle Biblix-Teile aktuell und bringt neue Teile per Update mit.
 

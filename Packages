@@ -61,6 +61,27 @@ Description: Bibiplexx: Filme und Serien auf Biblix
  .
  Reihe sieben.
 
+Package: biblix-bibiplexx
+Architecture: all
+Version: 1.2.0
+Priority: optional
+Section: video
+Maintainer: Biblix <biblix@localhost>
+Depends: python3, python3-pyqt6, mpv, ffmpeg, pkexec, polkitd, parted, e2fsprogs, util-linux, fonts-dejavu-core
+Recommends: pipewire-bin, python3-evdev, biblix-tools (>= 1.5.0)
+Filename: ./biblix-bibiplexx_1.2.0_all.deb
+Size: 162744
+MD5sum: 56618feb34c4ddf13e9db9cd26cfd4f5
+SHA1: 9a32c8e5d86b196a7fe93f60fc11096d9cbac423
+SHA256: b3e5817ca54f8edd7f6568d10cd09a9915cd3cd69662c09bb9fa171f1b6b95c2
+SHA512: 3312b741a4e408780fae6a0cddfe8d8cef3dd8a0c1d952669f558ba728e96bc15cf185d9ab8361a04370bda7cfab7a21c2fa6ff84a32698269bd925d6eed1b31
+Description: Bibiplexx: Filme und Serien auf Biblix
+ Eigene Filmsammlung (Saal, Serien, Filme, Weiterschauen) mit Bibiplexx-Player
+ auf mpv-Basis: Kinomodus mit Vorhang und Gong, eigene Steuerleiste, HDR und
+ Hardware-Dekodierung. Richtet auf Wunsch eine leere Platte als Filmplatte ein.
+ .
+ Reihe sieben.
+
 Package: biblix-browser
 Architecture: all
 Version: 1.0.0
@@ -96,6 +117,27 @@ MD5sum: 40cb086c756e0ca1d56caa598a51ec89
 SHA1: 9e17d9950c37bde85bd5f624409545ec124c61ef
 SHA256: 2c00417b7b6e3df7098681b8bf83a4b1f73a0d2fd323df93ad45b6d45427798d
 SHA512: c47354ff86a6701c451da9b7ce1c257d979594f3a11d5f2d775aa93d2919743252aa9398a2cabfe216b1d695368e09b33dd6d09d276bf881aed8517b3b23b457
+Description: Bibi Browser: Firefox im Biblix-Look
+ Firefox ESR mit eigenem Profil: Leisten, Tabs und Fensterknoepfe im Biblix-Design
+ (folgt dem gewaehlten Preset), Bibi-Startseite, uBlock Origin, Datenschutz ohne
+ Telemetrie, HTTPS-Modus und Streaming (Widevine) ohne Rueckfrage.
+ .
+ AUF BIBLIX GEHT DAS.
+
+Package: biblix-browser
+Architecture: all
+Version: 1.0.2
+Priority: optional
+Section: web
+Maintainer: Biblix <biblix@localhost>
+Depends: python3, firefox-esr, firefox-esr-l10n-de
+Recommends: biblix-design
+Filename: ./biblix-browser_1.0.2_all.deb
+Size: 4537780
+MD5sum: bbe76df1013f73a217e5e4e570836519
+SHA1: c8cc05893a74e9808fff0cd1125f65861ed28e69
+SHA256: 6d4d72239af018e54f54dcf558a82277d0e61af0b746892aa19b513df29c8545
+SHA512: b331272c6bbf9650f1fe48ba0d25d887065eb08857b59cd6790456ae6faab9fa4c82fb257596867e0fc1dbfbef542686485abb433a23842d7c9a3d8b9472ace9
 Description: Bibi Browser: Firefox im Biblix-Look
  Firefox ESR mit eigenem Profil: Leisten, Tabs und Fensterknoepfe im Biblix-Design
  (folgt dem gewaehlten Preset), Bibi-Startseite, uBlock Origin, Datenschutz ohne
@@ -247,6 +289,56 @@ Description: Biblix-Design: Konfigurator, Firmen-Designs, Bibi-Startmenü, Anima
  viele Hintergründe, Sperrbildschirm, Startbildschirm und Bootmenü.
  Alles einzeln mischbar. Kommt als Update, ohne Neuinstallation.
 
+Package: biblix-design
+Architecture: all
+Version: 2.2.1
+Priority: optional
+Section: x11
+Maintainer: Biblix <biblix@localhost>
+Depends: desktop-base, plymouth, grub-common, python3, python3-pyqt6, python3-pyqt6.qtsvg, librsvg2-bin,
+ x11-apps, pkexec, kde-cli-tools, libkf6config-bin, libglib2.0-bin, plasma-workspace, plasma-desktop,
+ qml6-module-org-kde-ksysguard, qml6-module-org-kde-plasma-plasma5support, qml6-module-org-kde-coreaddons,
+ qml6-module-qtquick-shapes, fonts-dejavu-core
+Recommends: sddm-theme-breeze, fastfetch, pulseaudio-utils, gamemode, biblix-kwin-wuerfel, playerctl
+Filename: ./biblix-design_2.2.1_all.deb
+Size: 1370968
+MD5sum: 57a2f4258f96e0e5addf4265ecee3abf
+SHA1: a2fb9a6102a9519a12dfc6c4298a8f70769da703
+SHA256: 88b291483e21c7d7cdb95252ee94a30b11953e957dceead940f0cc74083ce1c7
+SHA512: 43ad88ce058e1a3138822d37771cf643dde8c5796fd91df3421e67787b22d7988ed19c415978543095c71b279d854d5c64cdd17f178ea91063df3eeaccc85b4e
+Description: Biblix-Design: Konfigurator, Firmen-Designs, Bibi-Startmenü, Animationen
+ Das Aussehen von Biblix und die App "Biblix Design": sechs Firmen-Designs
+ (Bibi Tech, Bibi Budget Bank, Bibi Delivery, Bibi Mac, Nassmacher, Bibiplexx)
+ hell und dunkel, eigene Farben, das Bibi-Startmenü, Fensterrahmen mit
+ Schrauben-Knöpfen, Fenster-Animationen, Mauszeiger, Symbole, Klänge,
+ viele Hintergründe, Sperrbildschirm, Startbildschirm und Bootmenü.
+ Alles einzeln mischbar. Kommt als Update, ohne Neuinstallation.
+
+Package: biblix-design
+Architecture: all
+Version: 2.3.0
+Priority: optional
+Section: x11
+Maintainer: Biblix <biblix@localhost>
+Depends: desktop-base, plymouth, grub-common, python3, python3-pyqt6, python3-pyqt6.qtsvg, librsvg2-bin,
+ x11-apps, pkexec, kde-cli-tools, libkf6config-bin, libglib2.0-bin, plasma-workspace, plasma-desktop,
+ qml6-module-org-kde-ksysguard, qml6-module-org-kde-plasma-plasma5support, qml6-module-org-kde-coreaddons,
+ qml6-module-qtquick-shapes, fonts-dejavu-core
+Recommends: sddm-theme-breeze, fastfetch, pulseaudio-utils, gamemode, biblix-kwin-wuerfel, playerctl, mangohud
+Filename: ./biblix-design_2.3.0_all.deb
+Size: 1372436
+MD5sum: 6fa84864be6d201817d8434d595462bf
+SHA1: 380a5be1c76035b2e97f1f834d48c76eb77c9390
+SHA256: 933d1fabeadb6353e5c3998e4e6bc69200cdb28bde310f354578c4c415b9ea35
+SHA512: 7359b95e23fd6170d7e3831ffb91dd53dfaa5a0c07050f35fc4db0dd90aa466c8a26fd3817cf9c7a3f68a0046d3318a4fa69baef463856d68102bb24f3028f33
+Description: Biblix-Design: Konfigurator, Firmen-Designs, Bibi-Startmenü, Animationen
+ Das Aussehen von Biblix und die App "Biblix Design": sechs Firmen-Designs
+ (Bibi Tech, Bibi Budget Bank, Bibi Delivery, Bibi Mac, Nassmacher, Bibiplexx)
+ hell und dunkel, eigene Farben, das Bibi-Startmenü, Fensterrahmen mit
+ Schrauben-Knöpfen, Fenster-Animationen, Mauszeiger, Symbole, Klänge,
+ viele Hintergründe, Sperrbildschirm, Startbildschirm und Bootmenü.
+ Alles einzeln mischbar. Kommt als Update, ohne Neuinstallation.
+
 Package: biblix-kwin-wuerfel
 Architecture: amd64
 Version: 1.0.0
@@ -360,6 +452,26 @@ MD5sum: d86be881d7f87767ecaf4439cb99a6f1
 SHA1: fa08642aded2bef9a6e315ef7730fda4935e1756
 SHA256: 3ae37b0b95dea1c821d4b21a2bb686cfc8e5eaee52d001962620043de3d1a006
 SHA512: 8dccf79a08378b7c80a8647a9976ae180e2b1e2d1795c4029ec7dd16ef4dfba0e7e77684fcf1bd3230c8c41a89614319bd80cec9a725328fef848bf9c60e4e98
+Description: Biblix-System: Leistung, Treiber-Einstellungen, Sicherheit
+ Systemeinstellungen von Biblix: Spiele-Kernelwerte, zram, I/O-Scheduler,
+ NVIDIA- und AMD-Optionen, Bootparameter, Firewall, Paketquelle (Backports),
+ Firefox-Videobeschleunigung, mpv in Hochqualitaet, Standard-Apps,
+ der Admin-Befehl "bibi" und der Systemname Biblix.
+
+Package: biblix-system
+Architecture: all
+Version: 1.3.0
+Priority: optional
+Section: admin
+Maintainer: Biblix <biblix@localhost>
+Depends: sudo, base-files
+Recommends: firewalld, power-profiles-daemon, systemd-zram-generator, gamemode, mpv, firefox-esr, nvidia-vaapi-driver, bash-completion
+Filename: ./biblix-system_1.3.0_all.deb
+Size: 8004
+MD5sum: d08bc98e1dbd50e64710fdba22477744
+SHA1: be5c3d6181aea96c951dc00f104b24d3e08e86f6
+SHA256: 40ff9c030c269ab3287cd87cf7b27e896e13e45b8e5ae525146f92d914873b3f
+SHA512: 5e044fb5ea8c6c1308152a4e6b0399ee628a2a5d56db27d14d1e441a8ea1e6aef931d37fd545b2b69f286d1e5ad86746ebf8bd8a429006078109a6fd340a5968
 Description: Biblix-System: Leistung, Treiber-Einstellungen, Sicherheit
  Systemeinstellungen von Biblix: Spiele-Kernelwerte, zram, I/O-Scheduler,
  NVIDIA- und AMD-Optionen, Bootparameter, Firewall, Paketquelle (Backports),
@@ -506,6 +618,27 @@ MD5sum: c36d5812f30caa63c6758d5ef05adc14
 SHA1: 5704b4f13ffcbe763e1a486ba4f4a7da29170864
 SHA256: da7920814502d5ced7473879da9fe9d4867e61d75637a6741a095c043ca49f72
 SHA512: 96db4621dd21815e3b8570697205f8f778dc97332c5029107a70710f5cf7cd2ba7031d2d507533c2cda9ecc778e0cd7556597accd1076296ea487e742ce3e271
+Description: Biblix-Werkzeuge: S-Launcher und Systemhelfer
+ S-Launcher (App-Browser und Spielezentrale), biblix-gpu (Grafik- und CPU-Check),
+ Update-Benachrichtigungen, Secure-Boot-, OneDrive- und Xbox-Funkadapter-Helfer,
+ Neustart in Windows sowie die Paketquelle fuer kuenftige Biblix-Updates.
+ .
+ AUF BIBLIX GEHT DAS.
+
+Package: biblix-tools
+Architecture: all
+Version: 1.5.0
+Priority: optional
+Section: admin
+Maintainer: Biblix <biblix@localhost>
+Depends: python3, python3-pyqt6, flatpak, pciutils, pkexec, polkitd, libnotify-bin, kdialog, efibootmgr, konsole, curl
+Recommends: mokutil, onedrive, pipewire-bin, libkscreen-bin, dkms, libarchive-tools, gamemode, power-profiles-daemon, vulkan-tools, kio-admin, python3-pil, parted, openssl, python3-evdev
+Filename: ./biblix-tools_1.5.0_all.deb
+Size: 223740
+MD5sum: 1f4f546eb862025d7cb80829e0f7041d
+SHA1: e91bbd747eebce1bae86205daf98168f8519ab76
+SHA256: bb36a7e77cd55f98c6af2f2c4a8916f3c29b21af8f5c2e428ed05976f72f22f2
+SHA512: 0b311babffc0bebf21bf4c5622de58934e337bc258a6cef5f8f733215e4cb9b6495691f866b08ebf49292d7f9ef5766f912b02b3452e3114c65a3be28a46fb25
 Description: Biblix-Werkzeuge: S-Launcher und Systemhelfer
  S-Launcher (App-Browser und Spielezentrale), biblix-gpu (Grafik- und CPU-Check),
  Update-Benachrichtigungen, Secure-Boot-, OneDrive- und Xbox-Funkadapter-Helfer,

@@ -22,7 +22,7 @@ FARBNAMEN = ["grund", "flaeche", "karte", "rand", "text", "leise", "akzent", "ak
 
 # Der Biblix-Standard. Jede Option der Design-App hat hier ihren Platz.
 STANDARD = {
-    "_stand": 3,                    # Stand der Einstellungen (für einmalige Umstellungen nach Updates)
+    "_stand": 4,                    # Stand der Einstellungen (für einmalige Umstellungen nach Updates)
     "preset": "bibi-tech",
     "modus": "dunkel",              # dunkel | hell | auto (Tag hell, Abend dunkel)
     "eigene_farben": None,          # None oder {"dunkel": {...}, "hell": {...}}
@@ -46,6 +46,7 @@ STANDARD = {
     "durchsichtig_verschieben": False,
     "klick_funken": False,
     "symbole": "kacheln",           # kacheln | flach | linien
+    "tray": "schrauben",            # schrauben | standard (Symbole unten rechts)
     "zeiger": "biblix",             # biblix | standard
     "ladezeiger": "mutter",         # mutter | cursor | schichten
     "klaenge": "preset",            # biblix | preset | retro | ruhig | aus
@@ -86,6 +87,7 @@ WAHL = {
     "arbeitsflaeche": [("wuerfel", "3D-Würfel"), ("gleiten", "Gleiten"), ("ueberblenden", "Überblenden")],
     "arbeitsflaechen": [("eine", "Eine"), ("vier", "Vier")],
     "symbole": [("kacheln", "Kacheln"), ("flach", "Flach"), ("linien", "Linien")],
+    "tray": [("schrauben", "Bibi-Schrauben"), ("standard", "KDE-Standard")],
     "zeiger": [("biblix", "Biblix-Zeiger"), ("standard", "Standard")],
     "ladezeiger": [("mutter", "Drehende Mutter"), ("cursor", "Terminal-Cursor"), ("schichten", "Schichten-B")],
     "klaenge": [("preset", "Firmen-Klänge"), ("biblix", "Biblix"), ("retro", "Retro-Terminal"),

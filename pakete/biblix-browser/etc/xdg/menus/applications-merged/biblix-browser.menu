@@ -1,0 +1,12 @@
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+ "http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd">
+<!-- Biblix: der normale Firefox steht nicht mehr doppelt im Startmenue (der Bibi Browser ist Firefox).
+     Starten geht weiter ueber die Suche oder "firefox-esr". -->
+<Menu>
+  <Name>Applications</Name>
+  <Exclude><Filename>firefox-esr.desktop</Filename></Exclude>
+  <Menu>
+    <Name>Internet</Name>
+    <Exclude><Filename>firefox-esr.desktop</Filename></Exclude>
+  </Menu>
+</Menu>

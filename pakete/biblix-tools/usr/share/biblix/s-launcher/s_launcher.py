@@ -17,12 +17,12 @@ from pathlib import Path
 from urllib.parse import quote
 
 from PyQt6 import sip
-from PyQt6.QtCore import QObject, QPoint, QProcess, QRect, QSize, Qt, QUrl, pyqtSignal
+from PyQt6.QtCore import QObject, QPoint, QProcess, QRect, QSize, Qt, QTimer, QUrl, pyqtSignal
 from PyQt6.QtGui import QColor, QGuiApplication, QIcon, QPixmap
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PyQt6.QtWidgets import (
     QApplication, QComboBox, QFrame, QHBoxLayout, QLabel, QLayout, QLineEdit,
-    QListWidget, QListWidgetItem, QMainWindow, QProgressBar, QPushButton,
+    QListWidget, QListWidgetItem, QMainWindow, QMessageBox, QProgressBar, QPushButton,
     QScrollArea, QSizePolicy, QStackedWidget, QVBoxLayout, QWidget,
 )
 
@@ -828,6 +828,8 @@ class Main(QMainWindow):
             animiert = self.einst["animationen"] != "aus"
             symbol = QIcon.fromTheme("edit-delete") if art == "remove" else welten.hausmarke_symbol(28)
             self.meldung.zeigen(text, symbol, self.statusbar.height(), animiert)
+            if key == "@system-update":
+                QTimer.singleShot(300, self.neustart_fragen)
             if art == "install":
                 welten.klang(self.welt["klaenge"].get("fertig"), self.einst)
                 if isinstance(self.anzeige, welten.Abholanzeige):
@@ -841,6 +843,18 @@ class Main(QMainWindow):
         page = self.stack.currentWidget()
         if getattr(page, "refresh_on_job", False):
             self.rebuild_current()
+
+    def neustart_fragen(self):
+        """Nach dem System-Update: braucht es einen Neustart (Kernel, NVIDIA)? Dann fragen."""
+        grund = run(["biblix-neustart-noetig"]).strip()
+        if not grund:
+            return
+        antwort = QMessageBox.question(
+            self, "Neustart nötig",
+            f"Damit das Update wirkt, muss Biblix neu starten ({grund}).\n\nJetzt neu starten?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if antwort == QMessageBox.StandardButton.Yes:
+            QProcess.startDetached("biblix-neustart-noetig", ["--fragen"])
 
     # ---- Navigation
 

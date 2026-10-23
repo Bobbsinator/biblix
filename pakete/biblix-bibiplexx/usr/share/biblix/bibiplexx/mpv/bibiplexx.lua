@@ -9,7 +9,7 @@ local mp = require "mp"
 local utils = require "mp.utils"
 local options = require "mp.options"
 
-local opts = { kino = true, gong = "", stand = "", countdown = 15, intro_knopf = true }
+local opts = { kino = true, gong = "", stand = "", countdown = 15, intro_knopf = true, qualitaet = "hoechste" }
 options.read_options(opts, "bibiplexx")
 
 local HOME = os.getenv("HOME") or "/tmp"
@@ -235,10 +235,10 @@ local function leiste_zeichnen()
             return text(bx + math.floor(85 * s), cy, "Nächste Folge", math.floor(22 * s), TEXT, 5, true)
         end)
     end
-    -- rechts: Untertitel, Ton, Lautstaerke, Vollbild, Schliessen
+    -- rechts: Schlaf, Nacht, Sprache, Bild, Lautstaerke, Vollbild, Schliessen
     local rechts = {
         { "schlaf", 190, "Schlaf: " .. schlaf_text() }, { "nacht", 120, nacht_an() and "Nacht: an" or "Nacht: aus" },
-        { "untertitel", 70, "UT" }, { "ton", 80, "Ton" },
+        { "menue_sprache", 130, "Sprache" }, { "menue_bild", 90, "Bild" },
         { "lauter", 150, "Lautstärke " .. math.floor(mp.get_property_number("volume", 100)) },
         { "vollbild", 110, mp.get_property_bool("fullscreen") and "Fenster" or "Vollbild" }, { "schliessen", 52, "✕" },
     }
@@ -314,18 +314,178 @@ local function zusatz_zeichnen(l, w, h, s, leiste)
     end
 end
 
+-- ---------------------------------------------------------------- Sprache, Bild, Infos
+
+local panel = nil        -- nil | "sprache" | "bild"
+local info_an = false
+
+local SPRACHEN = {
+    de = "Deutsch", ger = "Deutsch", deu = "Deutsch", en = "Englisch", eng = "Englisch",
+    ja = "Japanisch", jpn = "Japanisch", fr = "Französisch", fre = "Französisch", fra = "Französisch",
+    es = "Spanisch", spa = "Spanisch", it = "Italienisch", ita = "Italienisch", ru = "Russisch", rus = "Russisch",
+    pl = "Polnisch", pol = "Polnisch", tr = "Türkisch", tur = "Türkisch", nl = "Niederländisch", nld = "Niederländisch",
+    dut = "Niederländisch", ko = "Koreanisch", kor = "Koreanisch", zh = "Chinesisch", chi = "Chinesisch",
+    zho = "Chinesisch", pt = "Portugiesisch", por = "Portugiesisch", sv = "Schwedisch", swe = "Schwedisch",
+    da = "Dänisch", dan = "Dänisch", no = "Norwegisch", nor = "Norwegisch", fi = "Finnisch", fin = "Finnisch",
+    cs = "Tschechisch", cze = "Tschechisch", ces = "Tschechisch", hu = "Ungarisch", hun = "Ungarisch",
+}
+
+local function kanaele(n)
+    if not n then return nil end
+    if n >= 8 then return "7.1" elseif n >= 6 then return "5.1" elseif n == 2 then return "Stereo"
+    elseif n == 1 then return "Mono" end
+    return n .. " Kanäle"
+end
+
+local function spur_name(t)
+    local sprache = SPRACHEN[(t.lang or ""):lower()] or (t.lang and t.lang:upper()) or "Unbekannte Sprache"
+    local extra = {}
+    if t.type == "audio" then
+        local k = kanaele(t["demux-channel-count"])
+        if k then table.insert(extra, k) end
+        if t.codec then table.insert(extra, t.codec:upper()) end
+    else
+        if t.forced then table.insert(extra, "nur fremdsprachige Stellen") end
+        if t.codec == "hdmv_pgs_subtitle" or t.codec == "dvd_subtitle" then table.insert(extra, "Bild-Untertitel") end
+    end
+    if t.title and t.title ~= "" then table.insert(extra, t.title) end
+    if #extra > 0 then sprache = sprache .. " · " .. table.concat(extra, " · ") end
+    return sprache
+end
+
+local function an_aus(b) return b and "an" or "aus" end
+
+local function bild_optionen()
+    return {
+        { "bild_glaettung", "Bildglättung (kein Ruckeln)", mp.get_property_bool("interpolation", false) },
+        { "bild_fuellen", "Bild füllen (Zoom ohne Ränder)", (mp.get_property_number("panscan", 0) or 0) > 0 },
+        { "bild_deband", "Debanding (weniger Streifen)", mp.get_property_bool("deband", false) },
+        { "bild_hwdec", "Grafikkarte dekodiert", (mp.get_property("hwdec", "no") or "no") ~= "no" },
+        { "info", "Bild-Infos (Taste I)", info_an },
+    }
+end
+
+local function zeile(l, x, y, bw, zh, aktion, beschriftung, gewaehlt, s)
+    local hov = maus_ueber(x, y, bw, zh)
+    table.insert(knoepfe, { x = x, y = y, w = bw, h = zh, aktion = aktion })
+    if hov then table.insert(l, rund(x, y, bw, zh, 8 * s, PINK, "B0")) end
+    table.insert(l, rund(x + math.floor(14 * s), y + zh / 2 - math.floor(7 * s), math.floor(14 * s), math.floor(14 * s), 7 * s,
+        gewaehlt and ORANGE or "#2f2050"))
+    table.insert(l, text(x + math.floor(40 * s), y + zh / 2, beschriftung, math.floor(22 * s), gewaehlt and TEXT or "#a898c8", 4, gewaehlt))
+end
+
+local function panel_zeichnen(l, w, h, s)
+    if not panel then return end
+    local pw = math.floor(720 * s)
+    local zh = math.floor(46 * s)
+    local eintraege = {}
+    if panel == "sprache" then
+        local spuren = mp.get_property_native("track-list") or {}
+        table.insert(eintraege, { kopf = "TON" })
+        for _, t in ipairs(spuren) do
+            if t.type == "audio" then table.insert(eintraege, { "spur:audio:" .. t.id, spur_name(t), t.selected }) end
+        end
+        table.insert(eintraege, { kopf = "UNTERTITEL" })
+        local sub_an = false
+        for _, t in ipairs(spuren) do
+            if t.type == "sub" then
+                table.insert(eintraege, { "spur:sub:" .. t.id, spur_name(t), t.selected })
+                if t.selected then sub_an = true end
+            end
+        end
+        table.insert(eintraege, { "spur:sub:no", "Aus", not sub_an })
+    else
+        table.insert(eintraege, { kopf = "BILD" })
+        for _, o in ipairs(bild_optionen()) do
+            table.insert(eintraege, { o[1], o[2] .. ": " .. an_aus(o[3]), o[3] })
+        end
+    end
+    -- hoechstens so viele Zeilen, wie ueber die Leiste passen
+    local maxz = math.floor((h - math.floor(330 * s)) / zh)
+    -- zu viele Spuren: hinten kuerzen, aber die letzte Zeile ("Aus") bleibt
+    while #eintraege > maxz and #eintraege > 3 do table.remove(eintraege, #eintraege - 1) end
+    local ph = #eintraege * zh + math.floor(24 * s)
+    local x, y = w - pw - math.floor(40 * s), h - math.floor(170 * s) - ph
+    table.insert(l, rund(x, y, pw, ph, 16 * s, SCHWARZ, "10"))
+    table.insert(l, rechteck(x, y, pw, math.max(2, math.floor(3 * s)), LILA))
+    local yy = y + math.floor(12 * s)
+    for _, e in ipairs(eintraege) do
+        if e.kopf then
+            table.insert(l, text(x + math.floor(22 * s), yy + zh / 2, e.kopf, math.floor(18 * s), ORANGE, 4, true))
+        else
+            zeile(l, x + math.floor(8 * s), yy, pw - math.floor(16 * s), zh, e[1], e[2], e[3], s)
+        end
+        yy = yy + zh
+    end
+end
+
+local function hdr_text()
+    local g = mp.get_property("video-params/gamma", "")
+    if g == "pq" then return "HDR10" elseif g == "hlg" then return "HLG" end
+    local p = mp.get_property("video-params/primaries", "")
+    if p == "bt.2020" then return "SDR (BT.2020)" end
+    return "SDR"
+end
+
+local function aufloesung_text(bw, bh)
+    if not bw or bw == 0 then return "–" end
+    local name = (bw >= 3800 and "4K") or (bw >= 2500 and "1440p") or (bw >= 1900 and "1080p") or (bw >= 1250 and "720p") or "SD"
+    return string.format("%d × %d (%s)", bw, bh, name)
+end
+
+local function info_zeichnen(l, w, h, s)
+    if not info_an then return end
+    local hw = mp.get_property("hwdec-current", "no")
+    local fps = mp.get_property_number("container-fps", 0)
+    local anzeige = mp.get_property_number("display-fps", 0)
+    local bitrate = mp.get_property_number("video-bitrate", 0) or 0
+    local geschaetzt = false
+    if bitrate <= 0 then
+        -- noch keine Messung: Durchschnitt der ganzen Datei (Bild + Ton)
+        local groesse, dauer = mp.get_property_number("file-size", 0) or 0, mp.get_property_number("duration", 0) or 0
+        if groesse > 0 and dauer > 0 then bitrate, geschaetzt = groesse * 8 / dauer, true end
+    end
+    local verloren = (mp.get_property_number("frame-drop-count", 0) or 0) + (mp.get_property_number("decoder-frame-drop-count", 0) or 0)
+    local aid = mp.get_property_native("current-tracks/audio") or {}
+    local zeilen = {
+        { "Auflösung", aufloesung_text(mp.get_property_number("video-params/w"), mp.get_property_number("video-params/h")) },
+        { "Bildrate", (fps > 0 and string.format("%.3g fps", fps) or "–")
+            .. (anzeige > 0 and string.format("  ·  Bildschirm %d Hz", math.floor(anzeige + 0.5)) or "") },
+        { "Bildglättung", an_aus(mp.get_property_bool("interpolation", false)) },
+        { "Codec", (mp.get_property("video-format", "–") or "–"):upper() },
+        { "Dynamik", hdr_text() },
+        { "Dekodierung", (hw and hw ~= "no" and hw ~= "") and ("Grafikkarte (" .. hw .. ")") or "Prozessor" },
+        { "Bitrate", bitrate > 0 and (string.format("%.1f Mbit/s", bitrate / 1e6) .. (geschaetzt and " (Schnitt)" or "")) or "–" },
+        { "Verlorene Bilder", tostring(verloren) },
+        { "Ton", aid.lang and spur_name(aid) or (aid.codec and aid.codec:upper() or "–") },
+        { "Qualität", opts.qualitaet == "ausgewogen" and "Ausgewogen" or "Höchste" },
+    }
+    local zh = math.floor(32 * s)
+    local bw = math.floor(560 * s)
+    local x, y = math.floor(40 * s), math.floor(100 * s)
+    table.insert(l, rund(x, y, bw, #zeilen * zh + math.floor(56 * s), 14 * s, SCHWARZ, "30"))
+    table.insert(l, text(x + math.floor(20 * s), y + math.floor(24 * s), "BILD-INFOS", math.floor(18 * s), ORANGE, 4, true))
+    for i, z in ipairs(zeilen) do
+        local yy = y + math.floor(44 * s) + (i - 1) * zh + zh / 2
+        table.insert(l, text(x + math.floor(20 * s), yy, z[1], math.floor(20 * s), "#a898c8", 4, false))
+        table.insert(l, text(x + math.floor(210 * s), yy, z[2], math.floor(20 * s), TEXT, 4, true))
+    end
+end
+
 local function zeichnen()
     if intro_laeuft then return end
     local w, h, s = groesse()
     local l = {}
     local jetzt = mp.get_time()
-    local leiste = jetzt < sichtbar_bis or mp.get_property_bool("pause", false)
+    local leiste = jetzt < sichtbar_bis or mp.get_property_bool("pause", false) or panel ~= nil
     if leiste then
         l = leiste_zeichnen()
     else
         knoepfe = {}
     end
     zusatz_zeichnen(l, w, h, s, leiste)
+    panel_zeichnen(l, w, h, s)
+    info_zeichnen(l, w, h, s)
     if meldung and jetzt < meldung_bis then
         local mb = math.max(660, #meldung * 21) * s
         table.insert(l, rund(w / 2 - mb / 2, h / 2 - math.floor(50 * s), mb, math.floor(100 * s), 20 * s, SCHWARZ, "30"))
@@ -388,6 +548,14 @@ end)
 mp.register_event("file-loaded", function()
     abspann_ab = nil
     countdown_abgebrochen = nil
+    -- Bildglaettung braucht die Bildrate des Bildschirms; kennt mpv sie nicht, bleibt das Bild sonst schwarz
+    mp.add_timeout(5, function()
+        local fps = mp.get_property_number("display-fps", 0)
+        if mp.get_property_bool("interpolation", false) and not (fps and fps > 1) then
+            mp.set_property_bool("interpolation", false)
+            mp.set_property("video-sync", "audio")
+        end
+    end)
 end)
 
 mp.observe_property("chapter", "number", function()
@@ -419,8 +587,33 @@ local function ausfuehren(aktion, mx)
     elseif aktion == "zurueck" then mp.commandv("seek", "-10")
     elseif aktion == "vor" then mp.commandv("seek", "10")
     elseif aktion == "naechste" then naechste_folge()
-    elseif aktion == "untertitel" then mp.commandv("cycle", "sub")
-    elseif aktion == "ton" then mp.commandv("cycle", "audio")
+    elseif aktion == "menue_sprache" then panel = (panel == "sprache") and nil or "sprache"
+    elseif aktion == "menue_bild" then panel = (panel == "bild") and nil or "bild"
+    elseif aktion:sub(1, 5) == "spur:" then
+        local art, id = aktion:match("^spur:(%a+):(.+)$")
+        if art == "audio" then mp.set_property("aid", id) else mp.set_property("sid", id) end
+    elseif aktion == "info" then info_an = not info_an
+    elseif aktion == "bild_glaettung" then
+        local an = not mp.get_property_bool("interpolation", false)
+        if an and not ((mp.get_property_number("display-fps", 0) or 0) > 1) then
+            -- ohne bekannte Bildschirm-Hz bliebe das Bild schwarz
+            melden("Bildglättung geht hier nicht: Bildschirm-Hz unbekannt", 2.2)
+        else
+            mp.set_property_bool("interpolation", an)
+            mp.set_property("video-sync", an and "display-resample" or "audio")
+            melden("Bildglättung " .. an_aus(an), 1.4)
+        end
+    elseif aktion == "bild_fuellen" then
+        local an = (mp.get_property_number("panscan", 0) or 0) == 0
+        mp.set_property_number("panscan", an and 1.0 or 0)
+        melden("Bild füllen " .. an_aus(an), 1.4)
+    elseif aktion == "bild_deband" then
+        mp.commandv("cycle", "deband")
+        melden("Debanding " .. an_aus(mp.get_property_bool("deband", false)), 1.4)
+    elseif aktion == "bild_hwdec" then
+        local an = (mp.get_property("hwdec", "no") or "no") == "no"
+        mp.set_property("hwdec", an and "auto-safe" or "no")
+        melden("Grafikkarte dekodiert: " .. an_aus(an), 1.4)
     elseif aktion == "lauter" then lauter(10)
     elseif aktion == "vollbild" then mp.commandv("cycle", "fullscreen")
     elseif aktion == "schliessen" then mp.commandv("quit")
@@ -451,6 +644,12 @@ mp.add_forced_key_binding("MBTN_LEFT", "bibiplexx-klick", function()
             return
         end
     end
+    -- Klick daneben schliesst ein offenes Menue (statt zu pausieren)
+    if panel then
+        panel = nil
+        zeigen()
+        return
+    end
     -- Klick ins Bild: Pause
     mp.commandv("cycle", "pause")
     zeigen()
@@ -463,9 +662,13 @@ mp.add_forced_key_binding("*", "bibiplexx-lauter-taste2", function() lauter(2) e
 mp.add_forced_key_binding("9", "bibiplexx-leiser-taste", function() lauter(-2) end, { repeatable = true })
 mp.add_forced_key_binding("/", "bibiplexx-leiser-taste2", function() lauter(-2) end, { repeatable = true })
 mp.add_key_binding("t", "bibiplexx-schlaf", function() ausfuehren("schlaf") end)
+mp.add_forced_key_binding("i", "bibiplexx-info", function() ausfuehren("info") end)
+mp.add_forced_key_binding("l", "bibiplexx-sprache", function() ausfuehren("menue_sprache") end)
+mp.add_forced_key_binding("b", "bibiplexx-bild", function() ausfuehren("menue_bild") end)
 mp.add_key_binding("n", "bibiplexx-nacht", function() ausfuehren("nacht") end)
 mp.add_key_binding("f", "bibiplexx-vollbild", function() ausfuehren("vollbild") end)
 mp.add_forced_key_binding("ESC", "bibiplexx-esc", function()
+    if panel then panel = nil; zeigen(); return end
     if mp.get_property_bool("fullscreen") then mp.set_property_bool("fullscreen", false) else mp.commandv("quit") end
 end)
 mp.observe_property("seeking", "bool", function(_, v) if v then zeigen() end end)

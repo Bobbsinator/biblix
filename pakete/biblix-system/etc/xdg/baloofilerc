@@ -1,0 +1,6 @@
+# Biblix: Dateisuche (Baloo) nur fuer deine Dateien, nicht fuer Spiele, Caches und Browser-Profile.
+# Sonst durchsucht sie z. B. die ganze Steam-Bibliothek (liegt bei Flatpak-Steam unter ~/.var/app)
+# und erzeugt Platten- und CPU-Last, die man beim Spielen als Ruckler merkt.
+[General]
+folders[$e]=$HOME/
+exclude folders[$e]=$HOME/.var/app/,$HOME/.local/share/Steam/,$HOME/.steam/,$HOME/Games/,$HOME/.cache/,$HOME/.local/share/bibi-browser/,$HOME/.local/share/Trash/

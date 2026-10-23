@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Biblix"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "CPU-Last als Stockwerk im Tower, mit Aufzug und Temperatur",
+        "Icon": "cpu",
+        "Id": "de.biblix.tower",
+        "License": "GPL-2.0-or-later",
+        "Name": "Bibi Tech Stockwerk",
+        "Version": "1.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

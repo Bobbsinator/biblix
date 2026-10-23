@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Service
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+MimeType=application/octet-stream;inode/directory;
+Actions=windows;
+X-KDE-Submenu=Bibi
+X-KDE-Priority=TopLevel
+
+[Desktop Action windows]
+Name=Auf Windows-Platte kopieren …
+Icon=biblix-windows-symbolic
+Exec=/usr/lib/biblix/biblix-dateiaktion windows %F

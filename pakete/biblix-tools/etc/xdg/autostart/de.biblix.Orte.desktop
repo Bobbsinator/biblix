@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Biblix Orte
+Comment=Trägt Bibiplexx, Spiele, Daten und OneDrive einmal in die Dolphin-Seitenleiste ein
+Exec=biblix-orte
+Terminal=false
+NoDisplay=true
+X-KDE-autostart-phase=2
+OnlyShowIn=KDE;

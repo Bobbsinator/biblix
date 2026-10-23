@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Biblix"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "Downloads und wartende Updates als Lieferung verfolgen",
+        "Icon": "update-none",
+        "Id": "de.biblix.paketverfolgung",
+        "License": "GPL-2.0-or-later",
+        "Name": "Bibi Delivery Paketverfolgung",
+        "Version": "1.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

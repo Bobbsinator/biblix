@@ -44,3 +44,22 @@ zu drehen. **Kein süßes Popcorn**, nirgends, auch nicht als Option.
 - Während des Vorhangs wird die gespeicherte Stelle nicht mehr mit 0 überschrieben.
 - Jahreszahlen: die letzte plausible zählt („Blade.Runner.2049.2017" → „Blade Runner 2049", 2017).
 - Nach dem Film zurück zur gleichen Serie; beim Schließen wird das Einlesen sauber beendet.
+
+## 1.1.0 (23.10.2026): Bild, Sprache, Qualität
+
+- **Bild-Infos** (Taste I): Auflösung, Bildrate und Bildschirm-Hz, Bildglättung, Codec, HDR10/HLG/SDR,
+  Dekodierung (Grafikkarte/Prozessor), Bitrate, verlorene Bilder, Tonspur, Qualitätsstufe.
+- **Bild-Menü** (Taste B): Bildglättung, Bild füllen (ohne schwarze Ränder), Debanding, Grafikkarten-Dekodierung.
+- **Sprache-Menü** (Taste L): alle Ton- und Untertitelspuren mit Namen („Englisch · 5.1 · AAC · Original").
+- **Automatische Sprache: Englisch** (Ton und Untertitel; Wunsch 23.10.). In den Einstellungen umstellbar auf
+  Deutsch, Japanisch oder Originalton. Untertitel „nur bei fremder Sprache": bei englischem Ton keine.
+- **Qualität „Höchste"** (Standard): `profile=high-quality`, ewa_lanczossharp, Debanding, HDR-Spitzenmessung,
+  Grafikkarten-Dekodierung (auto-safe). „Ausgewogen" = `profile=fast`.
+- **Bildglättung** (Standard an): `video-sync=display-resample` + Interpolation, damit 24/25-fps-Filme auf 240 Hz
+  nicht ruckeln. Kennt mpv die Bildschirmrate nicht, schaltet Bibiplexx die Glättung nach 2 s selbst ab (sonst
+  bliebe das Bild schwarz).
+- Karten und Folgen zeigen die Qualität („1080p · 25 fps", „4K · HDR") per ffprobe.
+- Rechtsklick in Dolphin → Bibi → **In Bibiplexx abspielen** (`usr/share/kio/servicemenus/biblix-video.desktop`).
+- Prüfung: alte Einstellungen (Stand 1, speicherten immer „deutsch") werden einmal auf Englisch umgestellt;
+  Bildglättung lässt sich ohne bekannte Bildschirm-Hz nicht einschalten (Meldung statt schwarzem Bild);
+  Bitrate zeigt bis zur ersten Messung den Schnitt der Datei; bei vielen Untertiteln bleibt „Aus" sichtbar.

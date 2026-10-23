@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Biblix"
+            }
+        ],
+        "Category": "Date and Time",
+        "Description": "Uhrzeit und Datum als Abholnummer auf der Bestelltafel",
+        "Icon": "clock",
+        "Id": "de.biblix.bestelltafel",
+        "License": "GPL-2.0-or-later",
+        "Name": "Bibi Mac Bestelltafel",
+        "Version": "1.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

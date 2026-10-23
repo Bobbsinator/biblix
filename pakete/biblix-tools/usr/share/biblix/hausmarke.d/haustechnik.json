@@ -1,0 +1,9 @@
+{
+  "id": "haustechnik",
+  "name": "Biblix Haustechnik",
+  "beschreibung": "Secure Boot, Bildschirme auf 240 Hz und leere Platten einrichten – ohne Terminal.",
+  "symbol": "de.biblix.Haustechnik",
+  "befehl": ["biblix-haustechnik"],
+  "status": "fertig",
+  "reihenfolge": 30
+}

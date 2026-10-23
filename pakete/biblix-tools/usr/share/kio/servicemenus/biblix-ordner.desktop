@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Service
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+MimeType=inode/directory;
+Actions=admin;
+X-KDE-Submenu=Bibi
+X-KDE-Priority=TopLevel
+
+[Desktop Action admin]
+Name=Als Admin öffnen (bibi)
+Icon=system-run
+Exec=/usr/lib/biblix/biblix-dateiaktion admin %f

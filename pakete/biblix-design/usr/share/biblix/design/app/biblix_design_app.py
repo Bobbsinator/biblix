@@ -853,6 +853,7 @@ class Fenster(QMainWindow):
             wahl("Startknopf", "startknopf", 2)
         elif bid == "symbole":
             wahl("App-Symbole", "symbole")
+            wahl("Symbole unten rechts (Lautstärke, Netzwerk …)", "tray", 2)
             wahl("Mauszeiger", "zeiger", 2)
             wahl("Lade-Zeiger", "ladezeiger")
         elif bid == "uhr":
@@ -951,6 +952,20 @@ class Fenster(QMainWindow):
             x = Schalter(titel, k, self.e[k])
             x.geaendert.connect(self.setzen)
             lay.addWidget(x)
+        lay.addWidget(self._titel("Firmen-Widgets für den Desktop"))
+        for i, (wid, titel) in enumerate((
+                ("de.biblix.tower", "Bibi Tech Stockwerk: CPU-Last als Etage"),
+                ("de.biblix.bestelltafel", "Bibi Mac Bestelltafel: Uhrzeit als Abholnummer"),
+                ("de.biblix.paketverfolgung", "Bibi Delivery Paketverfolgung: Downloads und Updates"),
+                ("de.biblix.kontoauszug", "Bibi Budget Bank Kontoauszug: freier Speicherplatz"),
+                ("de.biblix.pegel", "Nassmacher Pegel: Arbeitsspeicher"),
+                ("de.biblix.leinwand", "Bibiplexx Leinwand: was gerade läuft"))):
+            zeile = QHBoxLayout()
+            zeile.addWidget(QLabel(titel), 1)
+            dazu = QPushButton("Auf den Desktop")
+            dazu.clicked.connect(lambda _=False, w=wid, n=i: self.widget_aufstellen(w, n))
+            zeile.addWidget(dazu)
+            lay.addLayout(zeile)
         lay.addWidget(self._titel("Notfall"))
         notfall = QPushButton("Alles auf Biblix-Standard zurücksetzen")
         notfall.clicked.connect(self.zuruecksetzen)
@@ -960,6 +975,18 @@ class Fenster(QMainWindow):
         lay.addWidget(hinweis)
         lay.addStretch(1)
         self.extras_seite.setWidget(w)
+
+    def widget_aufstellen(self, wid, nr):
+        """Widget auf den Desktop des Hauptbildschirms stellen (versetzt, damit sie nicht aufeinander liegen)."""
+        from biblix_design import anwenden
+        x, y = 60 + (nr % 3) * 330, 80 + (nr // 3) * 320
+        js = (f'var d = desktopForScreen(0) || desktops()[0];'
+              f'if (d) {{ d.addWidget("{wid}", {x}, {y}, 300, 260); print("BIBLIX-OK"); }}')
+        out = anwenden.plasma_skript(js)
+        if "BIBLIX-OK" in out:
+            self.statusBar().showMessage("Widget steht auf dem Desktop. Verschieben: Maus drüber halten und ziehen.", 6000)
+        else:
+            self.statusBar().showMessage("Ging nicht: Rechtsklick auf den Desktop → „Miniprogramme hinzufügen“ → „Bibi …“", 8000)
 
     # ---------------------------------------------------------------- Mischungen und Verlauf
     def mischungen_laden(self):

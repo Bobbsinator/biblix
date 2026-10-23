@@ -42,6 +42,80 @@ def sprueche():
 
 
 BLOCK = '''
+        // ---- Biblix: Schichten-B ueber der Uhr. Baut sich beim Sperren Balken fuer Balken auf,
+        //      beim Entsperren fliegen die Balken weg (danach erst Qt.quit)
+        Item {
+            id: biblixB
+            signal weg()
+            visible: config.biblixStil === "bibi" && clock.visible
+            // mittig unter dem Bibi-Spruch (ueber der Uhr ist bei KDE kein Platz)
+            width: Kirigami.Units.gridUnit * 7
+            height: width
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: biblixSpruch.y + biblixSpruch.height + Kirigami.Units.gridUnit * 1.5
+            opacity: lockScreenRoot.uiVisible ? 0.7 : 1
+            Behavior on opacity { OpacityAnimator { duration: Kirigami.Units.longDuration } }
+            readonly property real s: width / 120
+
+            Rectangle {
+                id: biblixStamm
+                x: 30 * biblixB.s
+                y: 26 * biblixB.s
+                width: 12 * biblixB.s
+                height: 68 * biblixB.s
+                radius: 3 * biblixB.s
+                color: Kirigami.Theme.textColor
+                opacity: 0
+                NumberAnimation on opacity { to: 1; duration: 300; running: true }
+                Connections {
+                    target: biblixB
+                    function onWeg() { biblixStammWeg.start(); }
+                }
+                NumberAnimation { id: biblixStammWeg; target: biblixStamm; property: "opacity"; to: 0; duration: 380 }
+            }
+            Repeater {
+                model: [[46, 26, 30], [46, 42, 38], [46, 58, 44], [46, 74, 40]]
+                Rectangle {
+                    id: biblixBalken
+                    required property var modelData
+                    required property int index
+                    property real versatz: 70 * biblixB.s
+                    x: modelData[0] * biblixB.s + versatz
+                    y: modelData[1] * biblixB.s
+                    width: modelData[2] * biblixB.s
+                    height: 12 * biblixB.s
+                    radius: height / 2
+                    color: index % 2 === 0 ? Kirigami.Theme.highlightColor : Qt.lighter(Kirigami.Theme.highlightColor, 1.35)
+                    opacity: 0
+                    SequentialAnimation {
+                        running: true
+                        PauseAnimation { duration: 250 + biblixBalken.index * 140 }
+                        ParallelAnimation {
+                            NumberAnimation { target: biblixBalken; property: "versatz"; to: 0; duration: 420; easing.type: Easing.OutBack }
+                            NumberAnimation { target: biblixBalken; property: "opacity"; to: 1; duration: 300 }
+                        }
+                    }
+                    ParallelAnimation {
+                        id: biblixBalkenWeg
+                        NumberAnimation { target: biblixBalken; property: "versatz"; to: 160 * biblixB.s; duration: 260 + biblixBalken.index * 40; easing.type: Easing.InCubic }
+                        NumberAnimation { target: biblixBalken; property: "opacity"; to: 0; duration: 260 + biblixBalken.index * 40 }
+                    }
+                    Connections {
+                        target: biblixB
+                        function onWeg() { biblixBalkenWeg.start(); }
+                    }
+                }
+            }
+        }
+        SequentialAnimation {
+            id: biblixWeg
+            ScriptAction { script: biblixB.weg() }
+            PauseAnimation { duration: 420 }
+            ScriptAction { script: Qt.quit() }
+        }
+        // Sicherheit: haengt die Animation, wird trotzdem entsperrt
+        Timer { id: biblixNotAus; interval: 1500; onTriggered: Qt.quit() }
+
         // ---- Biblix: Bibi-Spruch unter der Uhr
         Text {
             id: biblixSpruch
@@ -119,7 +193,15 @@ def anpassen_ui(text):
     text = text.replace(anker_schatten, anker_schatten + "            scale: clock.scale\n"
                                                          "            transformOrigin: Item.Bottom\n", 1)
     block = BLOCK.replace("@SPRUECHE@", json.dumps(sprueche(), ensure_ascii=False))
-    return text.replace(anker_nutzer, block.lstrip("\n") + "\n" + anker_nutzer, 1)
+    text = text.replace(anker_nutzer, block.lstrip("\n") + "\n" + anker_nutzer, 1)
+    # Entsperren: erst die Balken wegfliegen lassen. Fehlt die Stelle (neue Plasma-Version),
+    # entsperrt KDE wie gewohnt sofort, der Rest bleibt.
+    anker_quit = "            if (authenticator.hadPrompt) {\n                Qt.quit();\n"
+    if anker_quit in text:
+        text = text.replace(anker_quit, "            if (authenticator.hadPrompt) {\n"
+                                        "                try { if (biblixB.visible) { biblixNotAus.start(); biblixWeg.start(); return; } } catch (e) {}\n"
+                                        "                Qt.quit();\n", 1)
+    return text
 
 
 def anpassen_config(text):

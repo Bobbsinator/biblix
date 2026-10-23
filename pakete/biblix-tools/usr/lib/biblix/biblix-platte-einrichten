@@ -1,0 +1,53 @@
+#!/bin/sh
+# Richtet eine LEERE Platte ein (GPT, eine ext4-Partition, fester Ordner unter /media).
+# Laeuft als root ueber pkexec (Policy de.biblix.platte-einrichten).
+#   biblix-platte-einrichten /dev/sdX spiele|filme|daten
+#     spiele -> /media/spiele (Steam darf darauf zugreifen; in Steam als Bibliothek hinzufuegen)
+#     filme  -> /media/bibiplexx mit Filme/ und Serien/ (Bibiplexx findet sie von selbst)
+#     daten  -> /media/daten
+# Bricht ab, sobald auf der Platte irgendetwas ist (Partitionen, Dateisystem, Signaturen).
+set -eu
+dev="${1:-}"
+zweck="${2:-}"
+case "$zweck" in
+    spiele) ORT=/media/spiele; NAME=Spiele ;;
+    filme)  ORT=/media/bibiplexx; NAME=Bibiplexx ;;
+    daten)  ORT=/media/daten; NAME=Daten ;;
+    *) echo "Unbekannter Zweck: $zweck (spiele, filme oder daten)" >&2; exit 2 ;;
+esac
+case "$dev" in
+    /dev/sd[a-z]|/dev/sd[a-z][a-z]|/dev/nvme[0-9]n[0-9]|/dev/nvme[0-9][0-9]n[0-9]|/dev/vd[a-z]) ;;
+    *) echo "Ungültige Platte: $dev" >&2; exit 2 ;;
+esac
+[ -b "$dev" ] || { echo "$dev gibt es nicht." >&2; exit 2; }
+[ "$(lsblk -dn -o TYPE "$dev")" = disk ] || { echo "$dev ist keine ganze Platte." >&2; exit 2; }
+[ "$(lsblk -n -o NAME "$dev" | wc -l)" -eq 1 ] || { echo "Auf $dev sind Partitionen. Abbruch, es wird nichts verändert." >&2; exit 3; }
+[ -z "$(lsblk -dn -o FSTYPE,PTTYPE "$dev" | tr -d ' ')" ] || { echo "Auf $dev ist ein Dateisystem. Abbruch." >&2; exit 3; }
+[ -z "$(wipefs -n "$dev" 2>/dev/null | tail -n +2)" ] || { echo "Auf $dev wurden Daten-Signaturen gefunden. Abbruch." >&2; exit 3; }
+if grep -q "^[^#].*[[:space:]]$ORT[[:space:]]" /etc/fstab; then
+    echo "$ORT ist schon eingerichtet." >&2; exit 4
+fi
+
+parted -s "$dev" mklabel gpt mkpart "$NAME" ext4 1MiB 100%
+udevadm settle
+teil=$(lsblk -lnp -o NAME,TYPE "$dev" | awk '$2=="part"{print $1; exit}')
+[ -b "$teil" ] || { echo "Partition wurde nicht gefunden." >&2; exit 5; }
+mkfs.ext4 -q -F -L "$NAME" -m 0 "$teil"
+uuid=$(blkid -s UUID -o value "$teil")
+mkdir -p "$ORT"
+printf '\n# Biblix: %s-Platte\nUUID=%s %s ext4 defaults,nofail,x-systemd.device-timeout=10s 0 2\n' "$NAME" "$uuid" "$ORT" >> /etc/fstab
+systemctl daemon-reload 2>/dev/null || true
+mount "$ORT"
+case "$zweck" in
+    filme) mkdir -p "$ORT/Filme" "$ORT/Serien" ;;
+    spiele)
+        mkdir -p "$ORT/SteamLibrary"
+        # Steam (Flatpak) darf die Platte benutzen
+        command -v flatpak >/dev/null && flatpak override --system --filesystem="$ORT" com.valvesoftware.Steam 2>/dev/null || true
+        ;;
+esac
+if [ -n "${PKEXEC_UID:-}" ]; then
+    gruppe=$(id -g "$PKEXEC_UID")
+    chown -R "$PKEXEC_UID:$gruppe" "$ORT"
+fi
+echo "Eingerichtet: $teil -> $ORT"

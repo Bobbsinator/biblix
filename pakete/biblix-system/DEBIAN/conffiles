@@ -11,3 +11,4 @@
 /etc/sudoers.d/biblix
 /etc/systemd/zram-generator.conf
 /etc/xdg/mimeapps.list
+/etc/xdg/baloofilerc

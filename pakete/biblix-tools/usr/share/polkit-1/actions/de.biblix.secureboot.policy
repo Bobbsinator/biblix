@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Biblix</vendor>
+  <action id="de.biblix.secureboot">
+    <description>Prepare Secure Boot for Biblix</description>
+    <description xml:lang="de">Secure Boot für Biblix einrichten</description>
+    <message>Authentication is required to sign the drivers for Secure Boot.</message>
+    <message xml:lang="de">Zum Signieren der Treiber für Secure Boot ist dein Passwort nötig.</message>
+    <icon_name>security-high</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/biblix-secureboot</annotate>
+  </action>
+  <action id="de.biblix.platte-einrichten">
+    <description>Set up an empty disk</description>
+    <description xml:lang="de">Leere Platte einrichten</description>
+    <message>Authentication is required to set up an empty disk.</message>
+    <message xml:lang="de">Zum Einrichten einer leeren Platte ist dein Passwort nötig.</message>
+    <icon_name>drive-harddisk</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/biblix/biblix-platte-einrichten</annotate>
+  </action>
+</policyconfig>

@@ -1,0 +1,145 @@
+#!/usr/bin/python3
+"""Biblix: Aktionen fuer das Dolphin-Rechtsklickmenue „Bibi“.
+
+    biblix-dateiaktion bild-kleiner DATEI...    Kopie in halber Groesse (name-klein.ext)
+    biblix-dateiaktion bild-als jpg|png|webp DATEI...   Kopie im anderen Format
+    biblix-dateiaktion admin ORDNER              Ordner mit Admin-Rechten in Dolphin (kio-admin)
+    biblix-dateiaktion windows DATEI...          auf eine eingebundene Windows-Platte kopieren
+"""
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+
+def melden(titel, text, fehler=False):
+    if shutil.which("kdialog"):
+        subprocess.run(["kdialog", "--title", titel, "--sorry" if fehler else "--msgbox", text])
+    else:
+        print(f"{titel}: {text}", file=sys.stderr)
+
+
+def frei(ziel: Path):
+    """Freier Dateiname: bild-klein.jpg, bild-klein-2.jpg, ..."""
+    n, kandidat = 2, ziel
+    while kandidat.exists():
+        kandidat = ziel.with_name(f"{ziel.stem}-{n}{ziel.suffix}")
+        n += 1
+    return kandidat
+
+
+def bilder(dateien, wie, format_=None):
+    try:
+        from PIL import Image, ImageOps
+    except ImportError:
+        melden("Bibi", "Für Bildaktionen fehlt python3-pil.\n\nbibi apt install python3-pil", True)
+        return 1
+    fertig, kaputt = 0, []
+    for d in map(Path, dateien):
+        try:
+            with Image.open(d) as quelle:
+                art = {"jpg": "JPEG", "png": "PNG", "webp": "WEBP"}.get(format_ or "") or quelle.format or "PNG"
+                bild = ImageOps.exif_transpose(quelle)  # Handyfotos richtig herum
+                if bild.mode == "CMYK":
+                    bild = bild.convert("RGB")
+                if wie == "kleiner":
+                    bild = bild.resize((max(1, bild.width // 2), max(1, bild.height // 2)), Image.LANCZOS)
+                    ziel = frei(d.with_name(f"{d.stem}-klein{d.suffix}"))
+                else:
+                    ziel = frei(d.with_suffix("." + format_))
+                if art == "JPEG" and bild.mode not in ("RGB", "L"):
+                    # JPG kennt keine Transparenz: auf Weiss legen
+                    rgba = bild.convert("RGBA")
+                    grund = Image.new("RGB", bild.size, "white")
+                    grund.paste(rgba, mask=rgba.split()[-1])
+                    bild = grund
+                optionen = {"JPEG": {"quality": 92, "optimize": True}, "WEBP": {"quality": 90},
+                            "PNG": {"optimize": True}}.get(art, {})
+                bild.save(ziel, art, **optionen)
+                fertig += 1
+        except Exception as e:  # ein kaputtes Bild haelt die anderen nicht auf
+            kaputt.append(f"{d.name}: {e}")
+    if kaputt:
+        melden("Bibi", f"{fertig} fertig, {len(kaputt)} ging nicht:\n\n" + "\n".join(kaputt[:8]), True)
+    return 0 if not kaputt else 1
+
+
+def admin(ordner):
+    if not shutil.which("dolphin"):
+        return 1
+    # Dolphin selbst laeuft absichtlich nie als root; kio-admin fragt per Passwort-Dialog nach
+    if not any(Path("/usr/lib").glob("*/qt6/plugins/kf6/kio/admin.so")):
+        melden("Bibi", "Dafür fehlt das Paket kio-admin.\n\nbibi apt install kio-admin", True)
+        return 1
+    p = Path(ordner)
+    ziel = p if p.is_dir() else p.parent
+    subprocess.Popen(["dolphin", "--new-window", "admin:" + str(ziel)], start_new_session=True)
+    return 0
+
+
+def windows_platten():
+    """Eingebundene Windows-Platten (NTFS) aus findmnt."""
+    try:
+        out = subprocess.run(["findmnt", "-rn", "-t", "ntfs3,ntfs,fuseblk", "-o", "TARGET,LABEL,FSTYPE"],
+                             capture_output=True, text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return []
+    platten = []
+    for zeile in out.splitlines():
+        teile = zeile.split(" ")
+        if teile and teile[0].startswith(("/media", "/run/media", "/mnt")):
+            ziel = teile[0].replace("\\x20", " ")
+            name = (teile[1].replace("\\x20", " ") if len(teile) > 1 and teile[1] else Path(ziel).name)
+            platten.append((ziel, name))
+    return platten
+
+
+def windows(dateien):
+    platten = windows_platten()
+    if not platten:
+        melden("Bibi", "Keine Windows-Platte eingebunden.\n\nIn Dolphin links unter „Geräte“ einmal auf die "
+                       "Windows-Platte klicken, dann noch einmal versuchen.", True)
+        return 1
+    if len(platten) == 1:
+        start = platten[0][0]
+    else:
+        argv = ["kdialog", "--title", "Bibi", "--radiolist", "Auf welche Windows-Platte?"]
+        for i, (ziel, name) in enumerate(platten):
+            argv += [ziel, f"{name}  ({ziel})", "on" if i == 0 else "off"]
+        r = subprocess.run(argv, capture_output=True, text=True)
+        if r.returncode != 0 or not r.stdout.strip():
+            return 0
+        start = r.stdout.strip()
+    r = subprocess.run(["kdialog", "--title", "Bibi: Zielordner auf der Windows-Platte",
+                        "--getexistingdirectory", start], capture_output=True, text=True)
+    ziel = r.stdout.strip()
+    if r.returncode != 0 or not ziel:
+        return 0
+    # kioclient zeigt den normalen KDE-Fortschritt und fragt bei gleichen Namen nach
+    kio = shutil.which("kioclient") or shutil.which("kioclient6")
+    if kio:
+        return subprocess.run([kio, "copy", *dateien, ziel]).returncode
+    for d in map(Path, dateien):
+        (shutil.copytree if d.is_dir() else shutil.copy2)(d, Path(ziel) / d.name)
+    return 0
+
+
+def main(argv):
+    if len(argv) < 2:
+        print(__doc__)
+        return 2
+    aktion, rest = argv[0], argv[1:]
+    if aktion == "bild-kleiner":
+        return bilder(rest, "kleiner")
+    if aktion == "bild-als" and len(rest) >= 2 and rest[0] in ("jpg", "png", "webp"):
+        return bilder(rest[1:], "als", rest[0])
+    if aktion == "admin":
+        return admin(rest[0])
+    if aktion == "windows":
+        return windows(rest)
+    print(__doc__)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

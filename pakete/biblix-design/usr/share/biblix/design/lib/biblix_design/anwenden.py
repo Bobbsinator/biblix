@@ -138,6 +138,18 @@ def rahmen_erneuern(e):
     return r
 
 
+def symbole_erneuern(e):
+    """Nur das Symbol-Thema neu erzeugen (z. B. nach einem Update mit neuen Symbolen)."""
+    try:
+        akt = json.loads(AKTUELL.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        akt = {}
+    r = symbol_thema(kern.palette(e), e, akt)
+    AKTUELL.parent.mkdir(parents=True, exist_ok=True)
+    AKTUELL.write_text(json.dumps(akt), encoding="utf-8")
+    return r
+
+
 def mauszeiger(p, e, akt):
     if e["zeiger"] == "standard":
         _lauf("plasma-apply-cursortheme", "breeze_cursors")
@@ -159,7 +171,7 @@ def symbol_thema(p, e, akt):
     for alt in d.glob("BiblixSymbole?") if d.exists() else []:
         if alt.name != name:
             shutil.rmtree(alt, ignore_errors=True)
-    symbole.erzeugen(p, e["symbole"], d, name)
+    symbole.erzeugen(p, e["symbole"], d, name, mit_tray=e.get("tray", "schrauben") == "schrauben")
     tool = _libexec("plasma-changeicons")
     if tool:
         _lauf(tool, name)

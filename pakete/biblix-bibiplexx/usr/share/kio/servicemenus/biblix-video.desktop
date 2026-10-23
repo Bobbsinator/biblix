@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Service
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+MimeType=video/*;
+Actions=bibiplexx;
+X-KDE-Submenu=Bibi
+X-KDE-Priority=TopLevel
+
+[Desktop Action bibiplexx]
+Name=In Bibiplexx abspielen
+Icon=de.biblix.Bibiplexx
+Exec=bibiplexx %F

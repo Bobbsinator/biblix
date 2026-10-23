@@ -5,6 +5,21 @@
 state="${XDG_CACHE_HOME:-$HOME/.cache}/biblix/updates-gemeldet"
 mkdir -p "$(dirname "$state")"
 
+# Erst: ist nach dem letzten Update ein Neustart faellig? (einmal pro Grund melden)
+neustart="${XDG_CACHE_HOME:-$HOME/.cache}/biblix/neustart-gemeldet"
+if grund=$(biblix-neustart-noetig 2>/dev/null); then
+    if [ ! -f "$neustart" ] || [ "$(cat "$neustart")" != "$grund" ]; then
+        echo "$grund" > "$neustart"
+        # Nicht im Hintergrund: der Dienst endet sonst, bevor man klicken kann
+        a=$(notify-send --app-name="Biblix" --icon=system-reboot --urgency=normal \
+            --action=jetzt="Jetzt neu starten" --action=spaeter="Später" --wait \
+            "Neustart nötig" "Damit das Update wirkt: $grund.")
+        [ "$a" = jetzt ] && biblix-neustart-noetig --fragen >/dev/null
+    fi
+else
+    rm -f "$neustart"
+fi
+
 sys=$(apt list --upgradable 2>/dev/null | grep -F '[upgradable from' || true)
 apps=$(flatpak remote-ls --updates --columns=application 2>/dev/null || true)
 n_sys=$(printf '%s' "$sys" | grep -c . || true)
@@ -33,6 +48,9 @@ if [ -n "$neu" ]; then
             biblix-system) t="Systemeinstellungen" ;;
             biblix-design) t="Aussehen" ;;
             biblix-xbox)   t="Xbox-Treiber" ;;
+            biblix-bibiplexx) t="Bibiplexx" ;;
+            biblix-browser)   t="Bibi Browser" ;;
+            biblix-kwin-wuerfel) t="Würfel-Effekt" ;;
             biblix)        t="Biblix" ;;
             *)             t="$name" ;;
         esac

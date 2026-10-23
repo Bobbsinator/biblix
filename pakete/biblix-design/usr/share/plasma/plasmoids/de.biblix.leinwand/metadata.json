@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Biblix"
+            }
+        ],
+        "Category": "Multimedia",
+        "Description": "Was gerade läuft (Musik oder Video), wie im Kinosaal",
+        "Icon": "video-display",
+        "Id": "de.biblix.leinwand",
+        "License": "GPL-2.0-or-later",
+        "Name": "Bibiplexx Leinwand",
+        "Version": "1.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

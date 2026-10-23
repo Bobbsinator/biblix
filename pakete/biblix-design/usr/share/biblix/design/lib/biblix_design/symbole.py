@@ -4,6 +4,7 @@ from pathlib import Path
 
 from .grafik import prompt_b_form, SECHSECK
 from .kern import mischen, dunkler, text_auf
+from . import tray
 
 # Motive im 24er Raster, als Linien gezeichnet
 MOTIVE = {
@@ -101,7 +102,17 @@ def biblix_symbol(p):
             f'{prompt_b_form(p["text"] if p["dunkel"] else p["karte"], p["akzent"], 8)}</svg>')
 
 
-def erzeugen(p, stil, ziel: Path, name):
+STATUS = """
+[scalable/status]
+Size=22
+MinSize=8
+MaxSize=512
+Type=Scalable
+Context=Status
+"""
+
+
+def erzeugen(p, stil, ziel: Path, name, mit_tray=True):
     d = ziel / name
     if d.exists():
         shutil.rmtree(d)
@@ -125,12 +136,21 @@ def erzeugen(p, stil, ziel: Path, name):
         encoding="utf-8")
     for datei in ("biblix", "start-here", "start-here-kde", "start-here-kde-plasma", "distributor-logo"):
         (apps / f"{datei}.svg").write_text(biblix_symbol(p), encoding="utf-8")
+    # Tray-Symbole (Lautstaerke, Netzwerk, Bluetooth, Benachrichtigungen) im Schrauben-Stil
+    if mit_tray:
+        status = d / "scalable/status"
+        status.mkdir(parents=True)
+        for elemente in tray.belegung().values():
+            for eid, teile in elemente.items():
+                inhalt = tray.einzeln(teile, p)
+                (status / f"{eid}.svg").write_text(inhalt, encoding="utf-8")
+                (status / f"{eid}-symbolic.svg").write_text(inhalt, encoding="utf-8")
     erbt = "breeze-dark" if p["dunkel"] else "breeze"
     (d / "index.theme").write_text(f"""[Icon Theme]
 Name={name}
 Comment=Biblix-Symbole ({p["name"]})
 Inherits={erbt},hicolor
-Directories=scalable/apps,scalable/places
+Directories=scalable/apps,scalable/places{",scalable/status" if mit_tray else ""}
 
 [scalable/apps]
 Size=48
@@ -145,5 +165,5 @@ MinSize=8
 MaxSize=512
 Type=Scalable
 Context=Places
-""", encoding="utf-8")
+{STATUS if mit_tray else ""}""", encoding="utf-8")
     return d

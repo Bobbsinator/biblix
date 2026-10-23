@@ -1,0 +1,99 @@
+#!/usr/bin/python3
+"""Biblix: eigene Orte in der Dolphin-Seitenleiste (Bibiplexx, Spiele, Daten, OneDrive).
+
+Jeder Ort wird nur EINMAL eingetragen und nur, wenn der Ordner existiert. Entfernst du einen
+Ort in Dolphin (Rechtsklick → Entfernen), kommt er nicht wieder.
+
+    biblix-orte          beim Anmelden (Autostart): fehlende Orte eintragen
+    biblix-orte --liste  zeigen, was eingetragen ist bzw. fehlt
+"""
+import json
+import sys
+import xml.etree.ElementTree as ET
+from pathlib import Path
+from urllib.parse import quote
+
+HOME = Path.home()
+XBEL = HOME / ".local/share/user-places.xbel"
+MERKER = HOME / ".config/biblix/orte.json"
+BOOKMARK_NS = "http://www.freedesktop.org/standards/desktop-bookmarks"
+ET.register_namespace("bookmark", BOOKMARK_NS)
+ET.register_namespace("kdepriv", "http://www.kde.org/kdepriv")
+ET.register_namespace("mime", "http://www.freedesktop.org/standards/shared-mime-info")
+
+# (Kennung, Titel, Pfad, Symbol)
+ORTE = [
+    ("bibiplexx", "Bibiplexx", Path("/media/bibiplexx"), "folder-videos"),
+    ("spiele", "Spiele", Path("/media/spiele"), "folder-games"),
+    ("daten", "Daten", Path("/media/daten"), "folder-documents"),
+    ("onedrive", "OneDrive", HOME / "OneDrive", "folder-cloud"),
+]
+
+
+def merker():
+    try:
+        d = json.loads(MERKER.read_text(encoding="utf-8"))
+        return set(d.get("eingetragen", [])) if isinstance(d, dict) else set()
+    except (OSError, ValueError):
+        return set()
+
+
+def lesezeichen(kennung, titel, pfad, symbol):
+    b = ET.Element("bookmark", href="file://" + quote(str(pfad)))
+    ET.SubElement(b, "title").text = titel
+    info = ET.SubElement(b, "info")
+    fd = ET.SubElement(info, "metadata", owner="http://freedesktop.org")
+    ET.SubElement(fd, f"{{{BOOKMARK_NS}}}icon", name=symbol)
+    kde = ET.SubElement(info, "metadata", owner="http://www.kde.org")
+    ET.SubElement(kde, "ID").text = f"biblix-{kennung}"
+    ET.SubElement(kde, "isSystemItem").text = "false"
+    return b
+
+
+def eintragen():
+    # Ohne Datei legt Dolphin beim ersten Start die KDE-Standardorte an; erst danach ergaenzen
+    if not XBEL.exists():
+        return []
+    try:
+        baum = ET.parse(XBEL)
+    except (OSError, ET.ParseError):
+        return []
+    wurzel = baum.getroot()
+    vorhanden = {(b.get("href") or "").rstrip("/") for b in wurzel.iter("bookmark")}
+    erledigt, neu = merker(), []
+    for kennung, titel, pfad, symbol in ORTE:
+        href = "file://" + quote(str(pfad))
+        if kennung in erledigt or not pfad.is_dir():
+            continue
+        if href not in vorhanden:
+            wurzel.append(lesezeichen(kennung, titel, pfad, symbol))
+            neu.append(titel)
+        erledigt.add(kennung)
+    if neu:
+        ET.indent(baum, space=" ")
+        tmp = XBEL.with_suffix(".xbel.biblix")
+        baum.write(tmp, encoding="UTF-8", xml_declaration=True)
+        tmp.replace(XBEL)
+    try:
+        MERKER.parent.mkdir(parents=True, exist_ok=True)
+        MERKER.write_text(json.dumps({"eingetragen": sorted(erledigt)}, indent=1), encoding="utf-8")
+    except OSError:
+        pass
+    return neu
+
+
+def main(argv):
+    if "--liste" in argv:
+        erledigt = merker()
+        for kennung, titel, pfad, _ in ORTE:
+            zustand = "eingetragen" if kennung in erledigt else ("fehlt noch" if pfad.is_dir() else "Ordner gibt es nicht")
+            print(f"{titel:10} {str(pfad):28} {zustand}")
+        return 0
+    neu = eintragen()
+    if neu:
+        print("Neue Orte in Dolphin: " + ", ".join(neu))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

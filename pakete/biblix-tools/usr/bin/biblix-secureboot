@@ -3,8 +3,15 @@
 # selbst gebauten Treiber (NVIDIA, Xbox) damit neu signieren und den Schluessel
 # beim UEFI anmelden. Danach kann Secure Boot an bleiben (wichtig fuer Windows-
 # Spiele mit Anti-Cheat im Dual-Boot).
-#   bibi biblix-secureboot
+#   bibi biblix-secureboot                       im Terminal (fragt das Einmal-Passwort ab)
+#   biblix-secureboot --hash-datei DATEI         aus der Haustechnik-App (Passwort-Hash kommt
+#                                                von "mokutil --generate-hash", keine Rueckfragen)
 set -e
+HASH=""
+if [ "${1:-}" = "--hash-datei" ]; then
+    HASH="${2:-}"
+    [ -f "$HASH" ] || { echo "Hash-Datei fehlt."; exit 2; }
+fi
 if [ "$(id -u)" -ne 0 ]; then
     echo "Bitte mit Admin-Rechten starten: bibi biblix-secureboot"
     exit 1
@@ -35,9 +42,19 @@ fi
 
 # 2. Schluessel beim UEFI anmelden
 echo
-echo "Jetzt ein Einmal-Passwort ausdenken (z. B. 12345678) und zweimal eingeben."
-echo "Das brauchst du nur beim naechsten Neustart, danach nie wieder."
-mokutil --import "$PUB"
+if [ -n "$HASH" ]; then
+    # Schon angemeldet oder schon vorgemerkt? Dann nichts doppelt anmelden
+    if mokutil --test-key "$PUB" 2>/dev/null | grep -qi "already enrolled"; then
+        echo "Der Schluessel ist schon angemeldet."
+    else
+        mokutil --import "$PUB" --hash-file "$HASH"
+        echo "Schluessel fuer den naechsten Neustart vorgemerkt."
+    fi
+else
+    echo "Jetzt ein Einmal-Passwort ausdenken (z. B. 12345678) und zweimal eingeben."
+    echo "Das brauchst du nur beim naechsten Neustart, danach nie wieder."
+    mokutil --import "$PUB"
+fi
 echo
 echo "So geht es weiter:"
 echo "  1. Neu starten. Es erscheint ein blauer Bildschirm (MOK-Verwaltung)."

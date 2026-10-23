@@ -92,6 +92,11 @@ def main(argv):
             kern.speichern(e, verlauf=False)
             anwenden.rahmen_erneuern(e)
             anwenden.arbeitsflaechen(e)
+        # Einmalig (2.2.0): Symbol-Thema neu erzeugen, damit die Tray-Symbole im Schrauben-Stil dazukommen
+        if gespeichert.get("_stand", 0) < 4:
+            e["_stand"] = 4
+            kern.speichern(e, verlauf=False)
+            anwenden.symbole_erneuern(e)
         if e["modus"] == "auto":
             try:
                 import json

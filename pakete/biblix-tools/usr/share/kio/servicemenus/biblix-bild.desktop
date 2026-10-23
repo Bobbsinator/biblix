@@ -1,0 +1,32 @@
+[Desktop Entry]
+Type=Service
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+MimeType=image/jpeg;image/png;image/webp;image/bmp;image/tiff;
+Actions=hintergrund;kleiner;jpg;png;webp;
+X-KDE-Submenu=Bibi
+X-KDE-Priority=TopLevel
+
+[Desktop Action hintergrund]
+Name=Als Hintergrund setzen
+Icon=preferences-desktop-wallpaper
+Exec=plasma-apply-wallpaperimage %f
+
+[Desktop Action kleiner]
+Name=Bild verkleinern (halbe Größe, als Kopie)
+Icon=transform-scale
+Exec=/usr/lib/biblix/biblix-dateiaktion bild-kleiner %F
+
+[Desktop Action jpg]
+Name=Als JPG speichern (Kopie)
+Icon=image-x-generic
+Exec=/usr/lib/biblix/biblix-dateiaktion bild-als jpg %F
+
+[Desktop Action png]
+Name=Als PNG speichern (Kopie)
+Icon=image-x-generic
+Exec=/usr/lib/biblix/biblix-dateiaktion bild-als png %F
+
+[Desktop Action webp]
+Name=Als WebP speichern (Kopie, klein)
+Icon=image-x-generic
+Exec=/usr/lib/biblix/biblix-dateiaktion bild-als webp %F

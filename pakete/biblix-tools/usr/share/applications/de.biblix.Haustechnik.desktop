@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Biblix Haustechnik
+GenericName=Systemhelfer
+Comment=Secure Boot, Bildschirme und leere Platten einrichten – ohne Terminal
+Exec=biblix-haustechnik
+Icon=de.biblix.Haustechnik
+Terminal=false
+Categories=System;Settings;
+Keywords=Secure Boot;Bildschirm;Hz;Platte;SSD;Neustart;

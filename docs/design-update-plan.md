@@ -100,3 +100,15 @@ Technik-Entscheidungen:
 - **Bibiplexx-App:** eigener Video-/Filmplayer im Bibiplexx-Stil. **Gewählt: A**, eigene App auf mpv-Basis
   (libmpv, HDR, NVIDIA-Decoding) mit eigener Oberfläche (Filmsammlung, Kinomodus, „Reihe sieben"). Lore-Regel beachten:
   kein süßes Popcorn, nicht einmal als UI-Option. **Gebaut am 22.10.2026 als biblix-bibiplexx 1.0.0**, siehe `docs/bibiplexx.md`.
+
+## biblix-design 2.2.0 (23.10.2026): Sperr-Animation und Firmen-Widgets
+
+- **Sperrbildschirm (Stil „bibi“):** Schichten-B mittig unter dem Bibi-Spruch, baut sich beim Sperren Balken für Balken auf;
+  beim richtigen Passwort fliegen die Balken weg (0,42 s), dann wird entsperrt. Not-Aus-Timer entsperrt nach 1,5 s, falls die
+  Animation hängt; fehlt die Ankerstelle in einer neuen Plasma-Version, entsperrt KDE wie gewohnt sofort.
+- **Sechs Desktop-Widgets** (Widgets hinzufügen → „Bibi …“), feste Firmenfarben (Design, kein Lore-Kanon):
+  Bibi Tech Stockwerk (CPU-Last als Etage, Aufzug, Temperatur) · Bibi Mac Bestelltafel (Uhrzeit als Abholnummer) ·
+  Bibi Delivery Paketverfolgung (Downloads/Updates, Klick öffnet Updates) · Bibi Budget Bank Kontoauszug (freier Speicher je Platte,
+  „Dispo!“ unter 10 %) · Nassmacher Pegel (RAM als Wasserstand mit Wellen) · Bibiplexx Leinwand (was gerade läuft, über playerctl;
+  Klick: Pause/Weiter bzw. Bibiplexx öffnen).
+

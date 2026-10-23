@@ -1,0 +1,34 @@
+#!/bin/sh
+# Ist nach Updates ein Neustart noetig? Gibt den Grund aus (Exit 0) oder nichts (Exit 1).
+#   biblix-neustart-noetig            nur pruefen
+#   biblix-neustart-noetig --fragen   wenn noetig: KDE-Neustartdialog oeffnen
+grund=""
+laufend=$(uname -r)
+# Neuester installierter Kernel (nur die, zu denen es auch ein Kernel-Abbild gibt)
+neuester=$(ls -1 /boot/vmlinuz-* 2>/dev/null | sed 's#^/boot/vmlinuz-##' | sort -V | tail -n1)
+if [ -n "$neuester" ] && [ "$neuester" != "$laufend" ]; then
+    grund="neuer Kernel $neuester"
+fi
+# NVIDIA: geladener Treiber aelter als der installierte
+if [ -r /sys/module/nvidia/version ]; then
+    geladen=$(cat /sys/module/nvidia/version)
+    installiert=$(/sbin/modinfo -F version nvidia 2>/dev/null)
+    if [ -n "$installiert" ] && [ "$installiert" != "$geladen" ]; then
+        grund="${grund:+$grund, }neuer NVIDIA-Treiber $installiert"
+    fi
+fi
+if [ -z "$grund" ] && [ -e /run/reboot-required ]; then
+    grund="Systemteile wurden erneuert"
+fi
+[ -n "$grund" ] || exit 1
+echo "$grund"
+if [ "$1" = "--fragen" ]; then
+    # KDE-eigener Dialog (mit Countdown und Abbrechen), sonst direkt
+    for q in qdbus6 qdbus; do
+        if command -v "$q" >/dev/null && "$q" org.kde.LogoutPrompt /LogoutPrompt org.kde.LogoutPrompt.promptReboot >/dev/null 2>&1; then
+            exit 0
+        fi
+    done
+    systemctl reboot
+fi
+exit 0

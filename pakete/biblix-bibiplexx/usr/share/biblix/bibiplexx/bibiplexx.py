@@ -125,7 +125,12 @@ def json_schreiben(pfad, daten):
 STANDARD = {
     "ordner": [str(Path.home() / "Videos")],
     "kino": "vorhang_gong",      # vorhang_gong | vorhang | aus
-    "sprache": "deutsch",        # deutsch | original
+    "sprache": "englisch",       # deutsch | englisch | japanisch | original
+    "ut_sprache": "englisch",    # deutsch | englisch
+    "qualitaet": "hoechste",     # hoechste | ausgewogen
+    "glaettung": True,           # Bildrate an den Bildschirm anpassen (kein Ruckeln bei 24 fps auf 240 Hz)
+    "hwdec": True,               # Grafikkarte dekodiert
+    "fuellen": False,            # Zoom ohne schwarze Raender
     "untertitel": "fremd",       # fremd | deutsch | aus
     "ut_groesse": "mittel",      # klein | mittel | gross
     "ut_farbe": "weiss",         # weiss | gelb
@@ -139,7 +144,14 @@ STANDARD = {
 
 def einstellungen():
     e = json.loads(json.dumps(STANDARD))
-    e.update(json_lesen(KONFIG, {}))
+    gespeichert = json_lesen(KONFIG, {})
+    e.update(gespeichert)
+    if gespeichert and gespeichert.get("_stand", 1) < 2:
+        # 1.1.0: Sprache automatisch Englisch (Wunsch 23.10.); 1.0 speicherte immer "deutsch" mit
+        e["sprache"], e["ut_sprache"] = "englisch", "englisch"
+        if e["untertitel"] == "deutsch":
+            e["untertitel"] = "immer"
+    e["_stand"] = 2
     if e["kino"] is True:
         e["kino"] = "vorhang_gong"
     elif e["kino"] is False:
@@ -244,8 +256,48 @@ def cache_schluessel(e):
     return hashlib.sha1(f"{e['pfad']}|{e['mtime']}|{e['groesse']}".encode()).hexdigest()
 
 
+def video_angaben(pfad):
+    """Laufzeit, Aufloesung, Bildrate und HDR aus der Datei (ffprobe)."""
+    out = run(["ffprobe", "-v", "error", "-print_format", "json", "-show_entries",
+               "format=duration:stream=codec_type,width,height,avg_frame_rate,color_transfer", pfad], 30)
+    try:
+        daten = json.loads(out)
+    except ValueError:
+        return {}
+    a = {}
+    try:
+        a["dauer"] = float(daten.get("format", {}).get("duration", 0))
+    except (TypeError, ValueError):
+        pass
+    for st in daten.get("streams", []):
+        if st.get("codec_type") != "video" or not st.get("width"):
+            continue
+        a["breite"], a["hoehe"] = st.get("width"), st.get("height")
+        try:
+            z, n = (st.get("avg_frame_rate") or "0/1").split("/")
+            a["fps"] = round(float(z) / float(n), 3) if float(n) else 0
+        except (ValueError, ZeroDivisionError):
+            pass
+        a["hdr"] = {"smpte2084": "HDR10", "arib-std-b67": "HLG"}.get(st.get("color_transfer") or "", "")
+        break
+    return a
+
+
+def qualitaet_text(a):
+    """z. B. "4K · HDR10 · 24 fps" """
+    b = a.get("breite") or 0
+    if not b:
+        return ""
+    teile = [(b >= 3800 and "4K") or (b >= 2500 and "1440p") or (b >= 1900 and "1080p") or (b >= 1250 and "720p") or "SD"]
+    if a.get("hdr"):
+        teile.append(a["hdr"])
+    if a.get("fps"):
+        teile.append(f"{a['fps']:g} fps".replace(".", ","))
+    return " · ".join(teile)
+
+
 class BildSignale(QObject):
-    fertig = pyqtSignal(str, str, float)  # pfad, bilddatei, dauer
+    fertig = pyqtSignal(str, str, str)  # pfad, bilddatei, Angaben als JSON (dauer, breite, hoehe, fps, hdr)
 
 
 class BildArbeit(QRunnable):
@@ -255,18 +307,14 @@ class BildArbeit(QRunnable):
 
     def run(self):
         ziel = PLAKATE / (cache_schluessel(self.e) + ".jpg")
-        dauer = 0.0
-        out = run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", self.e["pfad"]], 30)
-        try:
-            dauer = float(out.strip().splitlines()[0])
-        except (ValueError, IndexError):
-            pass
+        angaben = video_angaben(self.e["pfad"])
+        dauer = angaben.get("dauer", 0.0)
         if not ziel.is_file():
             PLAKATE.mkdir(parents=True, exist_ok=True)
             punkt = max(5.0, min(dauer * 0.12, 600.0)) if dauer else 60.0
             run(["ffmpeg", "-v", "error", "-y", "-ss", f"{punkt:.0f}", "-i", self.e["pfad"], "-frames:v", "1",
                  "-vf", "scale=640:-2", "-q:v", "4", str(ziel)], 60)
-        self.signale.fertig.emit(self.e["pfad"], str(ziel) if ziel.is_file() else "", dauer)
+        self.signale.fertig.emit(self.e["pfad"], str(ziel) if ziel.is_file() else "", json.dumps(angaben))
 
 
 class Bilder(QObject):
@@ -302,18 +350,27 @@ class Bilder(QObject):
     def dauer(self, e):
         return self.info.get(e["pfad"], {}).get("dauer", 0)
 
+    def qualitaet(self, e):
+        return qualitaet_text(self.info.get(e["pfad"], {}))
+
     def _anstossen(self, e):
-        if e["pfad"] in self.laufend or (e["pfad"] in self.info and (PLAKATE / (cache_schluessel(e) + ".jpg")).is_file()):
+        # "breite" fehlt bei Eintraegen aus Bibiplexx 1.0: dann einmal neu auslesen
+        if e["pfad"] in self.laufend or ("breite" in self.info.get(e["pfad"], {})
+                                         and (PLAKATE / (cache_schluessel(e) + ".jpg")).is_file()):
             return
         if not shutil.which("ffmpeg"):
             return
         self.laufend.add(e["pfad"])
         self.pool.start(BildArbeit(e, self.signale))
 
-    def _fertig(self, pfad, datei, dauer):
+    def _fertig(self, pfad, datei, angaben):
         self.laufend.discard(pfad)
-        if dauer:
-            self.info[pfad] = {"dauer": dauer}
+        try:
+            a = json.loads(angaben)
+        except ValueError:
+            a = {}
+        if a:
+            self.info[pfad] = a
             json_schreiben(INFO, self.info)
         if datei and pfad not in self.pixmaps:
             pm = QPixmap(datei)
@@ -789,7 +846,7 @@ class Haupt(QMainWindow):
                 unter = f"S{e['staffel']:02d}E{e['folge']:02d}" + (f" · {e['titel']}" if e["titel"] else "")
             else:
                 d = self.bilder.dauer(e)
-                unter = " · ".join(x for x in (e.get("jahr") or "", dauer_text(d) if d else "") if x)
+                unter = " · ".join(x for x in (e.get("jahr") or "", dauer_text(d) if d else "", self.bilder.qualitaet(e)) if x)
         k = Karte(self, e, titel, unter, anteil if not fertig else 0, fertig, gross)
         k.geklickt.connect(aktion or (lambda: self.abspielen_ab(e)))
         return k
@@ -969,6 +1026,8 @@ class Haupt(QMainWindow):
         info = []
         if d:
             info.append(dauer_text(d))
+        if self.bilder.qualitaet(e):
+            info.append(self.bilder.qualitaet(e))
         if fertig:
             info.append("gesehen")
         elif st.get("pos", 0) > 30:
@@ -1209,10 +1268,22 @@ class Haupt(QMainWindow):
              "Saal wird dunkel, der Vorhang geht auf. „Reihe sieben.“")
         schalter("Nachtmodus", "nachtmodus", "Leise Stellen lauter, Explosionen leiser. Auch im Film unten in der Leiste umschaltbar.")
 
+        lay.addWidget(label("Bild", "h2"))
+        wahl("Bildqualität", "qualitaet", [("hoechste", "Höchste (empfohlen)"), ("ausgewogen", "Ausgewogen (schwächere PCs)")],
+             "Höchste: beste Skalierung, Debanding und HDR-Spitzenwerte. Deine RTX 5070 Ti schafft das auch in 4K.")
+        schalter("Bildglättung", "glaettung", "Passt die Bildrate an deinen Bildschirm an: 24-fps-Filme laufen auf 240 Hz ohne Ruckeln.")
+        schalter("Grafikkarte dekodiert", "hwdec", "Schonender für den Prozessor, wichtig für 4K und HDR.")
+        schalter("Bild füllen (Zoom)", "fuellen", "Schneidet schwarze Ränder ab, z. B. bei Kinofilmen auf 21:9-Bildschirmen.")
+        lay.addWidget(label("Im Film: unten „Bild“ (Taste B) schaltet alles um, Taste I zeigt die Bild-Infos: "
+                            "Auflösung, fps, Codec, HDR, Dekodierung, Bitrate, verlorene Bilder.", "leise", wrap=True))
+
         lay.addWidget(label("Sprache und Untertitel", "h2"))
-        wahl("Tonspur", "sprache", [("deutsch", "Deutsch, sonst Englisch"), ("original", "Originalton")])
+        wahl("Tonsprache", "sprache", [("deutsch", "Deutsch, sonst Englisch"), ("englisch", "Englisch, sonst Deutsch"),
+                                       ("japanisch", "Japanisch (Anime)"), ("original", "Originalton")])
+        wahl("Untertitel-Sprache", "ut_sprache", [("deutsch", "Deutsch"), ("englisch", "Englisch")])
         wahl("Untertitel", "untertitel", [("fremd", "Nur bei fremder Sprache"),
-                                          ("deutsch", "Immer deutsche Untertitel"), ("aus", "Aus")])
+                                          ("immer", "Immer anzeigen"), ("aus", "Aus")])
+        lay.addWidget(label("Im Film: unten „Sprache“ (Taste L) zeigt alle Ton- und Untertitelspuren mit Namen.", "leise", wrap=True))
         wahl("Untertitel-Größe", "ut_groesse", [("klein", "Klein"), ("mittel", "Mittel"), ("gross", "Groß")])
         wahl("Untertitel-Farbe", "ut_farbe", [("weiss", "Weiß"), ("gelb", "Kino-Gelb")])
 
@@ -1317,14 +1388,30 @@ def mpv_argumente(liste, start, einst):
     args = [f"--include={MPV_CONF}", f"--script={MPV_LUA}",
             f"--script-opts=bibiplexx-kino={'yes' if kino else 'no'},bibiplexx-gong={gong},bibiplexx-stand={STAND},"
             f"bibiplexx-countdown={countdown},bibiplexx-intro_knopf={'yes' if einst['intro_knopf'] else 'no'}"]
-    if einst["sprache"] == "deutsch":
-        args.append(f"--alang={DEUTSCH},en,eng")
+    args[-1] += f",bibiplexx-qualitaet={einst['qualitaet']}"
+    ton = {"deutsch": f"{DEUTSCH},en,eng", "englisch": f"en,eng,{DEUTSCH}", "japanisch": f"ja,jpn,{DEUTSCH}"}.get(einst["sprache"])
+    if ton:
+        args.append(f"--alang={ton}")
+    ut = f"{DEUTSCH},en,eng" if einst["ut_sprache"] == "deutsch" else f"en,eng,{DEUTSCH}"
     if einst["untertitel"] == "aus":
         args.append("--sid=no")
-    elif einst["untertitel"] == "deutsch":
-        args += [f"--slang={DEUTSCH}", "--subs-with-matching-audio=yes"]
+    elif einst["untertitel"] in ("deutsch", "immer"):
+        args += [f"--slang={ut}", "--subs-with-matching-audio=yes"]
     else:
-        args += [f"--slang={DEUTSCH},en,eng", "--subs-with-matching-audio=no"]
+        args += [f"--slang={ut}", "--subs-with-matching-audio=no"]
+    # Bildqualitaet: hoechste = beste Skalierung (ewa_lanczossharp), Debanding, HDR-Spitzenwerte
+    if einst["qualitaet"] == "hoechste":
+        args += ["--profile=high-quality", "--scale=ewa_lanczossharp", "--cscale=ewa_lanczossharp",
+                 "--dscale=mitchell", "--deband=yes", "--hdr-compute-peak=yes"]
+    else:
+        args += ["--profile=fast"]
+    if einst["glaettung"]:
+        args += ["--video-sync=display-resample", "--interpolation=yes", "--tscale=oversample"]
+    else:
+        args += ["--video-sync=audio", "--interpolation=no"]
+    args.append("--hwdec=auto-safe" if einst["hwdec"] else "--hwdec=no")
+    if einst["fuellen"]:
+        args.append("--panscan=1.0")
     args.append("--sub-font-size=" + {"klein": "36", "mittel": "44", "gross": "56"}.get(einst["ut_groesse"], "44"))
     if einst["ut_farbe"] == "gelb":
         args.append("--sub-color=#FFE45C")

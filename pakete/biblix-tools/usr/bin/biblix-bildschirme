@@ -7,6 +7,7 @@ hoechste Bildrate bei gleicher Aufloesung; danach gilt, was du in den Systemeins
     biblix-bildschirme              Liste: Bildschirme, aktuelle und hoechste Bildrate
     biblix-bildschirme --jetzt      alle Bildschirme jetzt auf die hoechste Bildrate stellen
     biblix-bildschirme --anmeldung  beim Anmelden (Autostart): nur neue Bildschirme
+    biblix-bildschirme --json       Liste fuer Programme (Haustechnik)
 """
 import json
 import shutil
@@ -92,6 +93,15 @@ def main(argv):
                 break
             time.sleep(1)
         einstellen(nur_neue=True)
+        return 0
+    if "--json" in argv:
+        # fuer die Haustechnik-App
+        liste = []
+        for o in ausgaenge():
+            jetzt, best = bester_modus(o)
+            liste.append({"name": o.get("name"), "jetzt": round(hz(jetzt)), "moeglich": round(hz(best)),
+                          "vrr": "vrrPolicy" in o, "vrr_an": o.get("vrrPolicy") not in (None, 0)})
+        print(json.dumps(liste))
         return 0
     if "--jetzt" in argv:
         _, geaendert = einstellen(nur_neue=False)

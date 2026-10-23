@@ -1,0 +1,45 @@
+/* Bibi Browser: "Neuer Tab" und private Fenster im Biblix-Look (aus der Biblix-Design-Palette erzeugt) */
+
+@-moz-document url("about:home"), url("about:newtab"), url("about:privatebrowsing") {
+  :root, body {
+    --newtab-background-color: @GRUND@ !important;
+    --newtab-background-color-secondary: @KARTE@ !important;
+    --newtab-text-primary-color: @TEXT@ !important;
+    --newtab-text-secondary-color: @LEISE@ !important;
+    --newtab-primary-action-background: @AKZENT@ !important;
+    --newtab-element-hover-color: @FLAECHE@ !important;
+    --newtab-border-color: @RAND@ !important;
+    --in-content-page-background: @GRUND@ !important;
+    --in-content-page-color: @TEXT@ !important;
+    --color-accent-primary: @AKZENT@ !important;
+    background-color: @GRUND@ !important;
+    color: @TEXT@ !important;
+  }
+  /* Prompt-B statt Firefox-Logo, "Bibi Browser" statt Schriftzug */
+  .logo-and-wordmark .logo, .logo-and-wordmark-wrapper .logo {
+    background: @LOGO@ center / contain no-repeat !important;
+  }
+  .logo-and-wordmark .wordmark, .logo-and-wordmark-wrapper .wordmark {
+    background: none !important;
+    width: auto !important;
+  }
+  .logo-and-wordmark .wordmark::after, .logo-and-wordmark-wrapper .wordmark::after {
+    content: "Bibi Browser";
+    font: 700 34px "DejaVu Sans", sans-serif;
+    color: @TEXT@;
+    white-space: nowrap;
+  }
+  /* Suchfeld und Kacheln */
+  .search-handoff-button, .search-wrapper input {
+    background-color: @KARTE@ !important;
+    color: @TEXT@ !important;
+    border: 1px solid @RAND@ !important;
+    border-radius: 14px !important;
+  }
+  .top-site-outer .tile, .top-site-outer .top-site-icon {
+    background-color: @KARTE@ !important;
+    border-radius: 14px !important;
+  }
+  .top-site-outer:hover .tile { box-shadow: 0 0 0 2px @AKZENT@ !important; }
+  .top-site-outer .title { color: @TEXT@ !important; }
+}

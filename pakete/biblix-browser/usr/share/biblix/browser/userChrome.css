@@ -1,0 +1,124 @@
+/* Bibi Browser: Biblix-Look. Wird bei jedem Start aus der Biblix-Design-Palette erzeugt,
+   eigene Aenderungen bitte in userChrome-eigen.css (gleicher Ordner). */
+
+@import url("userChrome-eigen.css");
+
+:root {
+  --bb-grund: @GRUND@; --bb-flaeche: @FLAECHE@; --bb-karte: @KARTE@; --bb-rand: @RAND@;
+  --bb-text: @TEXT@; --bb-leise: @LEISE@; --bb-akzent: @AKZENT@; --bb-akzent2: @AKZENT2@;
+  --bb-auf-akzent: @AUF_AKZENT@;
+
+  /* Farben von Firefox selbst umbiegen */
+  --lwt-accent-color: var(--bb-grund) !important;
+  --lwt-text-color: var(--bb-text) !important;
+  --toolbar-bgcolor: var(--bb-flaeche) !important;
+  --toolbar-color: var(--bb-text) !important;
+  --toolbarbutton-icon-fill: var(--bb-text) !important;
+  --toolbarbutton-hover-background: color-mix(in srgb, var(--bb-akzent) 22%, transparent) !important;
+  --toolbarbutton-active-background: color-mix(in srgb, var(--bb-akzent) 38%, transparent) !important;
+  --toolbar-field-background-color: var(--bb-karte) !important;
+  --toolbar-field-focus-background-color: var(--bb-karte) !important;
+  --toolbar-field-color: var(--bb-text) !important;
+  --toolbar-field-focus-color: var(--bb-text) !important;
+  --toolbar-field-border-color: var(--bb-rand) !important;
+  --toolbar-field-focus-border-color: var(--bb-akzent) !important;
+  --focus-outline-color: var(--bb-akzent) !important;
+  --tab-selected-bgcolor: var(--bb-karte) !important;
+  --tab-selected-textcolor: var(--bb-text) !important;
+  --tab-border-radius: 9px !important;
+  --arrowpanel-background: var(--bb-flaeche) !important;
+  --arrowpanel-color: var(--bb-text) !important;
+  --arrowpanel-border-color: var(--bb-rand) !important;
+  --arrowpanel-border-radius: 12px !important;
+  --panel-separator-color: var(--bb-rand) !important;
+  --urlbarView-highlight-background: var(--bb-akzent) !important;
+  --urlbarView-highlight-color: var(--bb-auf-akzent) !important;
+  --urlbarView-separator-color: var(--bb-rand) !important;
+  --sidebar-background-color: var(--bb-flaeche) !important;
+  --sidebar-text-color: var(--bb-text) !important;
+  --button-primary-bgcolor: var(--bb-akzent) !important;
+  --button-primary-color: var(--bb-auf-akzent) !important;
+  --color-accent-primary: var(--bb-akzent) !important;
+  accent-color: var(--bb-akzent) !important;
+}
+
+/* Kopf: dunkler Grund mit Biblix-Akzentlinie */
+#navigator-toolbox {
+  background: var(--bb-grund) !important;
+  border-bottom: 2px solid var(--bb-akzent) !important;
+}
+#TabsToolbar, #titlebar { background: var(--bb-grund) !important; }
+#nav-bar { background: var(--bb-flaeche) !important; box-shadow: none !important; }
+#PersonalToolbar { background: var(--bb-flaeche) !important; color: var(--bb-leise) !important; }
+
+/* Prompt-B-Logo vor den Tabs */
+#TabsToolbar-customization-target::before {
+  content: "";
+  flex: 0 0 26px;
+  height: 26px;
+  margin: auto 8px auto 10px;
+  background: @LOGO@ center / contain no-repeat;
+}
+
+/* Tabs */
+.tabbrowser-tab .tab-background { border-radius: var(--tab-border-radius) !important; }
+.tabbrowser-tab[selected] .tab-background,
+.tabbrowser-tab[visuallyselected] .tab-background {
+  background: var(--bb-karte) !important;
+  box-shadow: inset 0 -3px 0 var(--bb-akzent), 0 0 0 1px var(--bb-rand) !important;
+}
+.tabbrowser-tab:not([selected]):hover .tab-background {
+  background: color-mix(in srgb, var(--bb-karte) 65%, transparent) !important;
+}
+.tabbrowser-tab:not([selected]) .tab-label { color: var(--bb-leise) !important; }
+.tab-close-button:hover { background: #e24b4a !important; color: #ffffff !important; }
+
+/* Ladeanzeige im Tab: drehende Schraubenmutter */
+@keyframes bb-drehen { to { transform: rotate(360deg); } }
+.tab-throbber[busy] {
+  background: @LADEN@ center / 16px no-repeat !important;
+  animation: bb-drehen 0.9s linear infinite !important;
+}
+.tab-throbber[busy]::before { display: none !important; }
+
+/* Adressleiste */
+#urlbar-background, .urlbar-background,
+#urlbar:is([focused], [open]) #urlbar-background,
+#urlbar:is([focused], [open]) .urlbar-background,
+#searchbar {
+  border-radius: 12px !important;
+  border: 1px solid var(--bb-rand) !important;
+  background-color: var(--bb-karte) !important;
+}
+#urlbar:is([focused], [open]) #urlbar-background,
+#urlbar:is([focused], [open]) .urlbar-background { border-color: var(--bb-akzent) !important; }
+#urlbar, #urlbar-input, .urlbar-input { color: var(--bb-text) !important; }
+#urlbar-input::placeholder, .urlbar-input::placeholder { color: var(--bb-leise) !important; opacity: 1 !important; }
+.urlbarView { color: var(--bb-text) !important; }
+#urlbar[open] > .urlbarView { background: var(--bb-flaeche) !important; }
+#identity-box, #tracking-protection-icon-container { fill: var(--bb-akzent) !important; }
+
+/* Fensterknoepfe als Schrauben-Muttern: Symbol immer grau, beim Darueberfahren farbig und gedreht */
+.titlebar-buttonbox { margin-inline-end: 6px !important; }
+.titlebar-button { padding: 8px 6px !important; background: transparent !important; }
+.titlebar-button > .toolbarbutton-icon {
+  width: 20px !important; height: 20px !important;
+  transition: transform 0.35s ease;
+  -moz-context-properties: none !important;
+}
+.titlebar-button:hover > .toolbarbutton-icon { transform: rotate(60deg); }
+.titlebar-min { list-style-image: @KNOPF_MIN@ !important; }
+.titlebar-min:hover { list-style-image: @KNOPF_MIN_AN@ !important; }
+.titlebar-max { list-style-image: @KNOPF_MAX@ !important; }
+.titlebar-max:hover { list-style-image: @KNOPF_MAX_AN@ !important; }
+.titlebar-restore { list-style-image: @KNOPF_WIEDER@ !important; }
+.titlebar-restore:hover { list-style-image: @KNOPF_WIEDER_AN@ !important; }
+.titlebar-close { list-style-image: @KNOPF_ZU@ !important; }
+.titlebar-close:hover { list-style-image: @KNOPF_ZU_AN@ !important; }
+
+/* Menues und Popups */
+menupopup, panel { --panel-background: var(--bb-flaeche) !important; --panel-color: var(--bb-text) !important; }
+menupopup > menuitem[_moz-menuactive], menupopup > menu[_moz-menuactive] {
+  background: var(--bb-akzent) !important; color: var(--bb-auf-akzent) !important;
+}
+

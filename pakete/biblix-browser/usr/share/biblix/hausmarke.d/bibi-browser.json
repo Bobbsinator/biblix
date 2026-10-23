@@ -1,0 +1,9 @@
+{
+  "id": "bibi-browser",
+  "name": "Bibi Browser",
+  "beschreibung": "Surfen im Biblix-Look: Werbeblocker, kein Datensammeln, Netflix & Co. laufen.",
+  "symbol": "de.biblix.BibiBrowser",
+  "befehl": ["bibi-browser"],
+  "status": "fertig",
+  "reihenfolge": 15
+}

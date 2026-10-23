@@ -14,3 +14,8 @@ audio/x-matroska=org.kde.haruna.desktop
 # E-Mail-Links (mailto:) mit Thunderbird
 x-scheme-handler/mailto=thunderbird.desktop
 message/rfc822=thunderbird.desktop
+# Webseiten mit dem Bibi Browser (Firefox als Ausweich)
+text/html=de.biblix.BibiBrowser.desktop;firefox-esr.desktop;
+x-scheme-handler/http=de.biblix.BibiBrowser.desktop;firefox-esr.desktop;
+x-scheme-handler/https=de.biblix.BibiBrowser.desktop;firefox-esr.desktop;
+application/xhtml+xml=de.biblix.BibiBrowser.desktop;firefox-esr.desktop;

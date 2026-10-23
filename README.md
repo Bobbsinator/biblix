@@ -316,6 +316,12 @@ Animationen und Klänge stellt man über die Schraubenmutter oben rechts ein. Di
 - Flatpak-Apps dürfen Wayland nutzen; Electron-Apps wie Discord laufen nativ (schärfer, volle Bildrate).
 - Videos öffnen standardmäßig mit Bibiplexx (Haruna bleibt als Ausweich).
 
+## Bibi Browser
+
+Firefox im Biblix-Look: Leisten, Tabs und Fensterknöpfe in den Farben deines Biblix-Design-Presets,
+Bibi-Startseite, uBlock Origin, keine Telemetrie, HTTPS-Modus, Netflix & Co. ohne Rückfrage.
+Eigenes Profil (`~/.local/share/bibi-browser`), Standardbrowser von Biblix. Der normale Firefox bleibt daneben.
+
 ## Bibiplexx (Filme und Serien)
 
 **Bibiplexx** sammelt Filme und Serien aus deinen Ordnern (Standard `~/Videos`, weitere in den

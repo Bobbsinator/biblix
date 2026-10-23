@@ -1,0 +1,227 @@
+#!/usr/bin/python3
+"""Bibi Browser: Firefox ESR mit eigenem Profil, Biblix-Look, Werbeblocker und Datenschutz.
+
+Bei jedem Start werden Farben (aus Biblix Design) und Startseite erneuert. Die Grundeinstellungen
+setzt Biblix nur EINMAL; was du danach in den Einstellungen aenderst, bleibt. Lesezeichen, Passwoerter
+und Verlauf liegen im eigenen Profil (~/.local/share/bibi-browser/profil).
+
+    bibi-browser [ADRESSE ...]          normal
+    bibi-browser --private-window       privates Fenster
+"""
+import json
+import os
+import sys
+from pathlib import Path
+from urllib.parse import quote
+
+HIER = Path("/usr/share/biblix/browser")
+VORLAGE_START = Path("/usr/share/biblix/design/startseite/index.html")
+DATEN = Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local/share") / "bibi-browser"
+PROFIL = DATEN / "profil"
+PALETTE = Path(os.environ.get("BIBLIX_KONFIG_DIR") or Path.home() / ".config/biblix") / "palette.json"
+SPRUECHE = Path("/usr/share/biblix/design/sprueche.txt")
+
+# Bibi Tech dunkel, falls Biblix Design noch nichts geschrieben hat
+STANDARD = {"grund": "#0f141c", "flaeche": "#1a2029", "karte": "#232a35", "rand": "#313a48", "text": "#e8ecf2",
+            "leise": "#8b95a5", "akzent": "#378add", "akzent2": "#ffd400", "auf_akzent": "#ffffff", "dunkel": True}
+
+# Immer gesetzt: ohne das gibt es keinen Biblix-Look
+PFLICHT = {"toolkit.legacyUserProfileCustomizations.stylesheets": True}
+
+# Einmal gesetzt (beim ersten Start bzw. wenn ein Update neue Werte bringt), danach entscheidest du
+EINSTELLUNGEN = {
+    # Tabs in der Titelleiste (Fensterknoepfe als Schrauben-Muttern)
+    "browser.tabs.inTitlebar": 1,
+    "browser.tabs.drawInTitlebar": True,
+    # Startseite
+    "browser.startup.page": 1,
+    "browser.aboutwelcome.enabled": False,
+    # Beim ersten Start und nach Updates direkt die Bibi-Startseite statt Willkommensseiten
+    "browser.startup.homepage_override.mstone": "ignore",
+    "startup.homepage_welcome_url": "",
+    "startup.homepage_welcome_url.additional": "",
+    "startup.homepage_override_url": "",
+    "browser.newtabpage.activity-stream.showWeather": False,
+    "browser.newtabpage.activity-stream.feeds.weatherfeed": False,
+    "browser.shell.checkDefaultBrowser": False,
+    "browser.newtabpage.activity-stream.showSponsored": False,
+    "browser.newtabpage.activity-stream.showSponsoredTopSites": False,
+    "browser.newtabpage.activity-stream.feeds.section.topstories": False,
+    "browser.newtabpage.activity-stream.feeds.telemetry": False,
+    "browser.newtabpage.activity-stream.telemetry": False,
+    "extensions.pocket.enabled": False,
+    # Mitgelieferte Erweiterungen (uBlock Origin) ohne Rueckfrage einschalten
+    "extensions.autoDisableScopes": 0,
+    # Datenschutz: keine Telemetrie, keine Studien, HTTPS-Modus, "nicht verkaufen"-Signal
+    "datareporting.healthreport.uploadEnabled": False,
+    "datareporting.policy.dataSubmissionEnabled": False,
+    "toolkit.telemetry.enabled": False,
+    "toolkit.telemetry.unified": False,
+    "toolkit.telemetry.archive.enabled": False,
+    "app.shield.optoutstudies.enabled": False,
+    "app.normandy.enabled": False,
+    "browser.discovery.enabled": False,
+    "dom.security.https_only_mode": True,
+    "privacy.globalprivacycontrol.enabled": True,
+    # Netflix, Disney+, Prime: Kopierschutz (Widevine) ohne Rueckfrage
+    "media.eme.enabled": True,
+    "media.gmp-widevinecdm.enabled": True,
+    "media.gmp-widevinecdm.visible": True,
+    # Wie unter Windows: Mittelklick-Scrollen, KDE-Dateidialog, Deutsch
+    "general.autoScroll": True,
+    "widget.use-xdg-desktop-portal.file-picker": 1,
+    "intl.locale.requested": "de",
+}
+
+
+def palette():
+    p = dict(STANDARD)
+    try:
+        d = json.loads(PALETTE.read_text(encoding="utf-8"))
+        p.update({k: v for k, v in d.items() if k in STANDARD})
+    except (OSError, ValueError):
+        pass
+    return p
+
+
+def svg_url(svg):
+    return 'url("data:image/svg+xml,' + quote(svg, safe=" =:/;,'") + '")'
+
+
+def mutter(fuellung, rand, zeichen, farbe):
+    """Schrauben-Mutter wie bei den Biblix-Fensterknoepfen."""
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20">'
+            f'<polygon points="10,1 18,5.5 18,14.5 10,19 2,14.5 2,5.5" fill="{fuellung}" stroke="{rand}" '
+            f'stroke-width="1.6" stroke-linejoin="round"/><g fill="none" stroke="{farbe}" stroke-width="1.8" '
+            f'stroke-linecap="round">{zeichen}</g></svg>')
+
+
+ZEICHEN = {
+    "min": '<path d="M6.5 10h7"/>',
+    "max": '<path d="M6.5 10h7M10 6.5v7"/>',
+    "wieder": '<path d="M7 8.5h6v5h-6z"/>',
+    "zu": '<path d="M7.3 7.3l5.4 5.4M12.7 7.3l-5.4 5.4"/>',
+}
+
+
+def prompt_b(p):
+    return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">'
+            f'<rect width="120" height="120" rx="26" fill="{p["karte"]}"/>'
+            f'<path d="M26 44 L42 60 L26 76" fill="none" stroke="{p["akzent"]}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>'
+            f'<path d="M54 34 H74 a13 13 0 0 1 0 26 H54 Z M54 60 H78 a14 14 0 0 1 0 28 H54 Z" fill="none" stroke="{p["text"]}" stroke-width="9" stroke-linejoin="round"/>'
+            f'<rect x="54" y="94" width="34" height="6" rx="2" fill="{p["akzent"]}"/></svg>')
+
+
+def lade_mutter(p):
+    """Drehende Mutter statt Ladekreis im Tab."""
+    return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="16" height="16">'
+            f'<polygon points="10,1.5 17.5,5.8 17.5,14.2 10,18.5 2.5,14.2 2.5,5.8" fill="none" stroke="{p["akzent"]}" '
+            'stroke-width="2" stroke-linejoin="round"/>'
+            f'<circle cx="10" cy="10" r="3" fill="none" stroke="{p["akzent2"]}" stroke-width="2"/></svg>')
+
+
+def aussehen(p):
+    vorlage = (HIER / "userChrome.css").read_text(encoding="utf-8")
+    ruhe = p["leise"]
+    ersatz = {
+        "@GRUND@": p["grund"], "@FLAECHE@": p["flaeche"], "@KARTE@": p["karte"], "@RAND@": p["rand"],
+        "@TEXT@": p["text"], "@LEISE@": p["leise"], "@AKZENT@": p["akzent"], "@AKZENT2@": p["akzent2"],
+        "@AUF_AKZENT@": p["auf_akzent"],
+        "@LOGO@": svg_url(prompt_b(p)),
+        "@LADEN@": svg_url(lade_mutter(p)),
+    }
+    for name, zeichen in ZEICHEN.items():
+        ersatz[f"@KNOPF_{name.upper()}@"] = svg_url(mutter("none", ruhe, zeichen, ruhe))
+        ersatz[f"@KNOPF_{name.upper()}_AN@"] = svg_url(mutter(
+            "#e24b4a" if name == "zu" else p["akzent"], "#e24b4a" if name == "zu" else p["akzent"], zeichen, "#ffffff"))
+    for a, b in ersatz.items():
+        vorlage = vorlage.replace(a, b)
+    chrome = PROFIL / "chrome"
+    chrome.mkdir(parents=True, exist_ok=True)
+    (chrome / "userChrome.css").write_text(vorlage, encoding="utf-8")
+    inhalt = (HIER / "userContent.css").read_text(encoding="utf-8")
+    for a, b in ersatz.items():
+        inhalt = inhalt.replace(a, b)
+    (chrome / "userContent.css").write_text(inhalt, encoding="utf-8")
+    eigen = chrome / "userChrome-eigen.css"
+    if not eigen.exists():
+        eigen.write_text("/* Eigene Anpassungen fuer den Bibi Browser (bleiben bei Updates erhalten) */\n", encoding="utf-8")
+
+
+def startseite(p):
+    try:
+        html = VORLAGE_START.read_text(encoding="utf-8")
+    except OSError:
+        html = (HIER / "startseite.html").read_text(encoding="utf-8")
+    for k in ("grund", "flaeche", "karte", "rand", "text", "leise", "akzent", "akzent2", "auf_akzent"):
+        html = html.replace(f"@{k.upper()}@", p[k])
+    try:
+        sprueche = [s.strip() for s in SPRUECHE.read_text(encoding="utf-8").splitlines() if s.strip() and not s.startswith("#")]
+    except OSError:
+        sprueche = []
+    html = html.replace("@SPRUECHE@", json.dumps(sprueche or ["AUF BIBLIX GEHT DAS."], ensure_ascii=False))
+    html = html.replace("<title>Biblix</title>", "<title>Bibi Browser</title>")
+    ziel = DATEN / "startseite.html"
+    ziel.write_text(html, encoding="utf-8")
+    return ziel
+
+
+def laeuft():
+    """Laeuft der Bibi Browser schon? (Firefox legt im Profil eine Sperre an.)"""
+    return (PROFIL / "lock").is_symlink() or (PROFIL / "lock").exists()
+
+
+def einstellungen(start):
+    """user.js: Pflichtwerte immer, Grundeinstellungen nur bis Firefox sie einmal uebernommen hat.
+    Danach stehen sie in prefs.js und du kannst sie frei aendern."""
+    merker = PROFIL / "bibi-einstellungen.json"
+    try:
+        erledigt = set(json.loads(merker.read_text(encoding="utf-8")).get("angewendet", []))
+    except (OSError, ValueError, AttributeError):
+        erledigt = set()
+    einmal = dict(EINSTELLUNGEN)
+    einmal["browser.startup.homepage"] = start.as_uri()
+    neu = {k: v for k, v in einmal.items() if k not in erledigt}
+    werte = {**neu, **PFLICHT}
+    zeilen = ["// Bibi Browser: wird bei jedem Start neu geschrieben. Nur der Biblix-Look ist Pflicht,",
+              "// alles andere hat Biblix einmal eingestellt und gehoert jetzt dir (Einstellungen / about:config)."]
+    zeilen += [f"user_pref({json.dumps(k)}, {json.dumps(v)});" for k, v in werte.items()]
+    (PROFIL / "user.js").write_text("\n".join(zeilen) + "\n", encoding="utf-8")
+    if neu:
+        merker.write_text(json.dumps({"angewendet": sorted(erledigt | set(neu))}, indent=1), encoding="utf-8")
+
+
+def erweiterungen():
+    """Mitgelieferte Erweiterungen einmalig ins Profil legen (Firefox prueft die Mozilla-Signatur
+    und haelt sie danach selbst aktuell)."""
+    quelle = HIER / "erweiterungen"
+    ziel = PROFIL / "extensions"
+    merker = PROFIL / ".bibi-erweiterungen"
+    if merker.exists() or not quelle.is_dir():
+        return
+    ziel.mkdir(parents=True, exist_ok=True)
+    for xpi in quelle.glob("*.xpi"):
+        if not (ziel / xpi.name).exists():
+            (ziel / xpi.name).write_bytes(xpi.read_bytes())
+    merker.write_text("1\n", encoding="utf-8")
+
+
+def main(argv):
+    PROFIL.mkdir(parents=True, exist_ok=True)
+    p = palette()
+    try:
+        aussehen(p)
+        start = startseite(p)
+        # Laeuft er schon, oeffnet Firefox nur ein neues Fenster und liest nichts neu ein:
+        # Einstellungen und Erweiterungen dann erst beim naechsten echten Start
+        if not laeuft():
+            einstellungen(start)
+            erweiterungen()
+    except OSError as e:
+        print(f"Bibi Browser: Einrichtung unvollständig ({e}), starte trotzdem.", file=sys.stderr)
+    firefox = "firefox-esr" if Path("/usr/bin/firefox-esr").exists() else "firefox"
+    os.execvp(firefox, [firefox, "--name", "bibi-browser", "--class", "bibi-browser", "--profile", str(PROFIL), *argv])
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

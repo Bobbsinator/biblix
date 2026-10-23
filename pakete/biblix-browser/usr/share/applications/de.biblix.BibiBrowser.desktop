@@ -1,0 +1,23 @@
+[Desktop Entry]
+Type=Application
+Name=Bibi Browser
+GenericName=Webbrowser
+Comment=Im Internet surfen – im Biblix-Look, mit Werbeblocker und Streaming
+Exec=bibi-browser %u
+Icon=de.biblix.BibiBrowser
+Terminal=false
+StartupNotify=true
+StartupWMClass=bibi-browser
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+Keywords=Internet;Web;Browser;Firefox;Surfen;
+InitialPreference=15
+Actions=neues-fenster;privat;
+
+[Desktop Action neues-fenster]
+Name=Neues Fenster
+Exec=bibi-browser --new-window
+
+[Desktop Action privat]
+Name=Privates Fenster
+Exec=bibi-browser --private-window

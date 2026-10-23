@@ -10,6 +10,19 @@ W=$(mktemp -d)
 trap 'rm -rf "$W"' EXIT
 git clone -q --branch gh-pages --single-branch "$(git remote get-url origin)" "$W/p"
 cd "$W/p"
+# Schutz: liegen online Pakete, die hier fehlen (z. B. von einem anderen Rechner veroeffentlicht),
+# wuerden sie sonst geloescht. Dann erst holen: Pakete aus gh-pages nach paketquelle/ kopieren,
+# paketquelle/InRelease loeschen und bauen.sh laufen lassen (signiert die Liste neu).
+fehlend=""
+for f in *.deb; do
+    [ -e "$f" ] || continue
+    [ -f "$OLDPWD/paketquelle/$f" ] || fehlend="$fehlend $f"
+done
+if [ -n "$fehlend" ]; then
+    echo "ABBRUCH: online gibt es Pakete, die in paketquelle/ fehlen:$fehlend"
+    echo "Erst holen (siehe Kommentar in pakete/veroeffentlichen.sh), sonst wuerden sie geloescht."
+    exit 1
+fi
 git config user.name "$(git -C "$OLDPWD" config user.name)"
 git config user.email "$(git -C "$OLDPWD" config user.email)"
 git config core.autocrlf false

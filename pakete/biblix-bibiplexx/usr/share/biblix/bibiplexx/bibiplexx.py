@@ -17,6 +17,9 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 from PyQt6 import sip
 from PyQt6.QtCore import (
@@ -30,7 +33,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy, QStackedWidget, QVBoxLayout, QWidget,
 )
 
-VERSION = "1.0"
+VERSION = "1.2"
 HIER = Path(__file__).resolve().parent
 MPV_CONF = HIER / "mpv/bibiplexx.conf"
 MPV_LUA = HIER / "mpv/bibiplexx.lua"
@@ -43,6 +46,10 @@ STAND = ZUSTAND / "fortschritt.json"
 CACHE = Path(os.environ.get("BIBIPLEXX_CACHE") or Path.home() / ".cache/bibiplexx")
 PLAKATE = CACHE / "plakate"
 INFO = CACHE / "info.json"
+TMDB_BILDER = CACHE / "tmdb"
+TMDB_INFO = CACHE / "tmdb.json"
+TMDB_API = "https://api.themoviedb.org/3"
+TMDB_POSTER = "https://image.tmdb.org/t/p/w342"
 PLATTE_HELFER = "/usr/lib/biblix/bibiplexx-platte"
 PLATTE_ORT = Path("/media/bibiplexx")
 
@@ -139,6 +146,9 @@ STANDARD = {
     "countdown": 15,
     "intro_knopf": True,
     "sortierung": "az",          # az | neu | jahr
+    "tmdb_schluessel": "",       # eigener TMDB-Schluessel (API-Key v3 oder Lese-Token v4)
+    "bewertung": True,           # TMDB-Bewertung auf den Karten
+    "beschreibung": False,       # Beschreibung aus TMDB (Serienseite, Saal, Tooltip)
 }
 
 
@@ -379,6 +389,166 @@ class Bilder(QObject):
         self.neu.emit(pfad)
 
 
+# ---------------------------------------------------------------- TMDB: Poster, Bewertung, Beschreibung
+# Verwendet die TMDB-API, ist aber nicht von TMDB unterstuetzt oder zertifiziert.
+
+def tmdb_suche(e):
+    """(art, name, jahr) fuer die TMDB-Suche: Serien nach Serienname, Filme nach Titel und Jahr."""
+    if e["art"] == "serie":
+        return "tv", e["serie"], None
+    return "movie", e["titel"], e.get("jahr")
+
+
+def tmdb_kennung(art, name, jahr):
+    return f"{art}|{name.strip().lower()}|{jahr or ''}"
+
+
+class TmdbFehler(Exception):
+    pass
+
+
+def tmdb_anfrage(schluessel, pfad, params):
+    params = dict(params)
+    kopf = {"Accept": "application/json", "User-Agent": "Bibiplexx (Biblix)"}
+    if schluessel.startswith("eyJ"):
+        kopf["Authorization"] = "Bearer " + schluessel  # Lese-Zugriffstoken (v4)
+    else:
+        params["api_key"] = schluessel                   # API-Schluessel (v3)
+    try:
+        with urlopen(Request(f"{TMDB_API}{pfad}?{urlencode(params)}", headers=kopf), timeout=15) as antwort:
+            return json.load(antwort)
+    except HTTPError as f:
+        if f.code == 401:
+            raise TmdbFehler("schluessel")
+        raise TmdbFehler("netz")
+    except (URLError, OSError, ValueError):
+        raise TmdbFehler("netz")
+
+
+def tmdb_holen(schluessel, art, name, jahr):
+    """Bestes Suchergebnis: Poster laden, Bewertung und Beschreibung merken."""
+    params = {"query": name, "language": "de-DE", "include_adult": "false"}
+    if jahr:
+        params["year" if art == "movie" else "first_air_date_year"] = jahr
+    treffer = tmdb_anfrage(schluessel, f"/search/{art}", params).get("results") or []
+    if not treffer and jahr:
+        params.pop("year", None)
+        params.pop("first_air_date_year", None)
+        treffer = tmdb_anfrage(schluessel, f"/search/{art}", params).get("results") or []
+    info = {"zeit": time.time(), "gefunden": bool(treffer)}
+    if not treffer:
+        return info
+    t = treffer[0]
+    text = t.get("overview") or ""
+    if not text:
+        try:
+            text = tmdb_anfrage(schluessel, f"/{art}/{t['id']}", {"language": "en-US"}).get("overview") or ""
+        except TmdbFehler:
+            pass
+    info.update({"id": t.get("id"), "titel": t.get("title") or t.get("name") or name, "text": text,
+                 "note": round(float(t.get("vote_average") or 0), 1), "stimmen": int(t.get("vote_count") or 0)})
+    if t.get("poster_path"):
+        ziel = TMDB_BILDER / (hashlib.sha1(tmdb_kennung(art, name, jahr).encode()).hexdigest() + ".jpg")
+        try:
+            TMDB_BILDER.mkdir(parents=True, exist_ok=True)
+            with urlopen(Request(TMDB_POSTER + t["poster_path"], headers={"User-Agent": "Bibiplexx (Biblix)"}), timeout=20) as a:
+                daten = a.read()
+            tmp = ziel.with_suffix(".tmp")
+            tmp.write_bytes(daten)
+            tmp.replace(ziel)
+            info["poster"] = str(ziel)
+        except (URLError, OSError):
+            pass
+    return info
+
+
+class TmdbSignale(QObject):
+    fertig = pyqtSignal(str, str)  # Kennung, Info als JSON ("" = Fehler)
+
+
+class TmdbArbeit(QRunnable):
+    def __init__(self, schluessel, art, name, jahr, signale):
+        super().__init__()
+        self.schluessel, self.art, self.name, self.jahr, self.signale = schluessel, art, name, jahr, signale
+
+    def run(self):
+        kennung = tmdb_kennung(self.art, self.name, self.jahr)
+        try:
+            info = tmdb_holen(self.schluessel, self.art, self.name, self.jahr)
+            self.signale.fertig.emit(kennung, json.dumps(info))
+        except TmdbFehler as f:
+            self.signale.fertig.emit(kennung, "!" + str(f))
+
+
+class Tmdb(QObject):
+    """Holt Poster und Bewertungen im Hintergrund (nur mit eigenem Schluessel) und merkt sie sich."""
+    neu = pyqtSignal(str)
+    schluessel_falsch = pyqtSignal()
+    ALTER = 30 * 86400        # Bewertungen monatlich auffrischen
+    ALTER_NICHTS = 7 * 86400  # nichts gefunden: nach einer Woche noch einmal
+
+    def __init__(self, einst):
+        super().__init__()
+        self.einst = einst
+        self.pool = QThreadPool()
+        self.pool.setMaxThreadCount(2)
+        self.daten = json_lesen(TMDB_INFO, {})
+        self.pixmaps = {}
+        self.laufend = set()
+        self.gesperrt = False  # falscher Schluessel: nicht weiter fragen
+        self.signale = TmdbSignale()
+        self.signale.fertig.connect(self._fertig)
+
+    def info(self, e):
+        """Gemerkte Infos (oder None) und bei Bedarf im Hintergrund holen."""
+        if not e:
+            return None
+        art, name, jahr = tmdb_suche(e)
+        kennung = tmdb_kennung(art, name, jahr)
+        d = self.daten.get(kennung)
+        alter = time.time() - (d or {}).get("zeit", 0)
+        if d is None or alter > (self.ALTER if d.get("gefunden") else self.ALTER_NICHTS):
+            self._anstossen(art, name, jahr, kennung)
+        return d if d and d.get("gefunden") else None
+
+    def poster(self, e):
+        d = self.info(e)
+        datei = (d or {}).get("poster")
+        if not datei:
+            return None
+        if datei not in self.pixmaps:
+            pm = QPixmap(datei)
+            self.pixmaps[datei] = None if pm.isNull() else pm
+        return self.pixmaps[datei]
+
+    def _anstossen(self, art, name, jahr, kennung):
+        schluessel = (self.einst.get("tmdb_schluessel") or "").strip()
+        if not schluessel or self.gesperrt or kennung in self.laufend:
+            return
+        self.laufend.add(kennung)
+        self.pool.start(TmdbArbeit(schluessel, art, name, jahr, self.signale))
+
+    def _fertig(self, kennung, info):
+        self.laufend.discard(kennung)
+        if info.startswith("!"):
+            if info == "!schluessel" and not self.gesperrt:
+                self.gesperrt = True
+                self.schluessel_falsch.emit()
+            return  # Netzfehler: beim naechsten Anzeigen noch einmal
+        self.daten[kennung] = json.loads(info)
+        json_schreiben(TMDB_INFO, self.daten)
+        self.neu.emit(kennung)
+
+    def vergessen(self):
+        """Neuer Schluessel oder "Neu laden": alles frisch holen."""
+        self.daten, self.pixmaps, self.gesperrt = {}, {}, False
+        json_schreiben(TMDB_INFO, {})
+
+
+def note_text(note):
+    return f"★ {note:.1f}".replace(".", ",")
+
+
 # ---------------------------------------------------------------- Malhilfen
 
 def sitzreihe(p, x, y, platz, abstand, anzahl=6, hell=3):
@@ -426,28 +596,61 @@ def bild_fuellen(p, r, pm, radius=12):
 # ---------------------------------------------------------------- Karten
 
 class Karte(QWidget):
-    """16:9-Karte mit Standbild, Titel, Untertitel und Fortschritt."""
+    """16:9-Karte mit Standbild (oder TMDB-Poster), Titel, Untertitel, Bewertung und Fortschritt."""
     geklickt = pyqtSignal()
 
     B, H = 272, 153
 
-    def __init__(self, haupt, e, titel, unter="", anteil=0.0, fertig=False, gross=False):
+    def __init__(self, haupt, e, titel, unter="", anteil=0.0, fertig=False, gross=False, tmdb=False):
         super().__init__()
         self.haupt, self.e, self.titel, self.unter = haupt, e, titel, unter
         self.anteil, self.fertig = anteil, fertig
         self.hover = False
+        self.tmdb = tmdb and e is not None
         faktor = 1.25 if gross else 1.0
         self.bw, self.bh = round(self.B * faktor), round(self.H * faktor)
         self.setFixedSize(self.bw, self.bh + 50)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setToolTip(Path(e["pfad"]).name if e else "")
+        self.setFocusPolicy(Qt.FocusPolicy.TabFocus)  # Controller (Sofa-Modus), kein Rahmen beim Mausklick
         self.pm = haupt.bilder.pixmap(e) if e else None
         haupt.bilder.neu.connect(self._neu)
+        self.poster, self.note = None, 0.0
+        if self.tmdb:
+            haupt.tmdb.neu.connect(self._tmdb_neu)
+            self._tmdb_neu()
+        else:
+            self.setToolTip(Path(e["pfad"]).name if e else "")
 
     def _neu(self, pfad):
         if alive(self) and self.e and pfad == self.e["pfad"]:
             self.pm = self.haupt.bilder.pixmap(self.e)
             self.update()
+
+    def _tmdb_neu(self, _kennung=None):
+        if not alive(self):
+            return
+        d = self.haupt.tmdb.info(self.e) or {}
+        self.poster = self.haupt.tmdb.poster(self.e)
+        self.note = d.get("note", 0.0) if d.get("stimmen", 0) >= 5 else 0.0
+        text = d.get("text") if self.haupt.einst["beschreibung"] else ""
+        self.setToolTip(text or Path(self.e["pfad"]).name)
+        self.update()
+
+    def focusInEvent(self, ev):
+        super().focusInEvent(ev)
+        self.update()
+
+    def focusOutEvent(self, ev):
+        super().focusOutEvent(ev)
+        self.update()
+
+    def keyPressEvent(self, ev):
+        if ev.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Space):
+            self.geklickt.emit()
+        elif ev.key() == Qt.Key.Key_Menu:
+            self.haupt.kontextmenue(self, self.mapToGlobal(QPoint(self.bw // 2, self.bh // 2)))
+        else:
+            super().keyPressEvent(ev)
 
     def enterEvent(self, _):
         self.hover = True
@@ -469,8 +672,28 @@ class Karte(QWidget):
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
         r = QRectF(1, 1, self.bw - 2, self.bh - 2)
-        bild_fuellen(p, r, self.pm)
-        if self.pm is None:
+        if self.poster is not None:
+            # Poster (2:3) links, dahinter das Poster gross und abgedunkelt
+            bild_fuellen(p, r, self.poster)
+            pfad = QPainterPath()
+            pfad.addRoundedRect(r, 12, 12)
+            p.fillPath(pfad, QColor(7, 7, 12, 175))
+            ph = r.height() - 16
+            pr = QRectF(r.left() + 8, r.top() + 8, ph * 2 / 3, ph)
+            bild_fuellen(p, pr, self.poster, 8)
+            p.setPen(QPen(QColor(255, 255, 255, 40), 1))
+            p.setBrush(Qt.BrushStyle.NoBrush)
+            p.drawRoundedRect(pr, 8, 8)
+            p.setPen(QColor(F["text"]))
+            f = QFont(self.font())
+            f.setPointSizeF(f.pointSizeF() * 1.15)
+            f.setBold(True)
+            p.setFont(f)
+            p.drawText(QRectF(pr.right() + 14, r.top() + 14, r.right() - pr.right() - 26, r.height() - 40),
+                       Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop | Qt.TextFlag.TextWordWrap, self.titel)
+        else:
+            bild_fuellen(p, r, self.pm)
+        if self.poster is None and self.pm is None:
             p.setPen(QColor(F["leise"]))
             f = QFont(self.font())
             f.setPointSizeF(f.pointSizeF() * 1.4)
@@ -489,7 +712,20 @@ class Karte(QWidget):
             p.drawEllipse(QPointF(r.right() - 18, r.top() + 18), 11, 11)
             p.setPen(QPen(QColor("#1b0d00"), 2.4))
             p.drawPolyline([QPointF(r.right() - 23, r.top() + 18), QPointF(r.right() - 19, r.top() + 22), QPointF(r.right() - 12, r.top() + 14)])
-        p.setPen(QPen(QColor(F["pink"] if self.hover else F["rand"]), 2 if self.hover else 1))
+        if self.note and self.haupt.einst["bewertung"]:
+            f = QFont(self.font())
+            f.setBold(True)
+            p.setFont(f)
+            text = note_text(self.note)
+            w = p.fontMetrics().horizontalAdvance(text) + 16
+            br = QRectF(r.right() - w - 8, r.bottom() - 34, w, 22)
+            p.setPen(Qt.PenStyle.NoPen)
+            p.setBrush(QColor(7, 7, 12, 210))
+            p.drawRoundedRect(br, 11, 11)
+            p.setPen(QColor(F["orange"]))
+            p.drawText(br, Qt.AlignmentFlag.AlignCenter, text)
+        aktiv = self.hover or self.hasFocus()
+        p.setPen(QPen(QColor(F["pink"] if aktiv else F["rand"]), 3 if self.hasFocus() else (2 if self.hover else 1)))
         p.setBrush(Qt.BrushStyle.NoBrush)
         p.drawRoundedRect(r, 12, 12)
         p.setPen(QColor(F["text"]))
@@ -713,6 +949,10 @@ class Haupt(QMainWindow):
         self.resize(1360, 860)
         self.einst = einstellungen()
         self.bilder = Bilder()
+        self.tmdb = Tmdb(self.einst)
+        self.tmdb.schluessel_falsch.connect(lambda: QMessageBox.warning(
+            self, "Bibiplexx", "TMDB lehnt den Schlüssel ab.\n\nBitte in den Einstellungen unter "
+            "„Poster und Bewertungen“ prüfen (API-Schlüssel oder Lese-Zugriffstoken)."))
         self.alle = []
         self.stand = {}
         self.mpv = None
@@ -847,7 +1087,9 @@ class Haupt(QMainWindow):
             else:
                 d = self.bilder.dauer(e)
                 unter = " · ".join(x for x in (e.get("jahr") or "", dauer_text(d) if d else "", self.bilder.qualitaet(e)) if x)
-        k = Karte(self, e, titel, unter, anteil if not fertig else 0, fertig, gross)
+        # TMDB-Poster nur fuer Filme mit eigenem Titel; Folgen behalten ihr Standbild
+        poster = e["art"] == "film" and titel == e["titel"]
+        k = Karte(self, e, titel, unter, anteil if not fertig else 0, fertig, gross, tmdb=poster)
         k.geklickt.connect(aktion or (lambda: self.abspielen_ab(e)))
         return k
 
@@ -884,12 +1126,12 @@ class Haupt(QMainWindow):
             if "Nächste" not in info:
                 knoepfe.append(knopf("Von vorn", cb=lambda: self.abspielen_ab(e, von_vorn=True)))
             knoepfe.append(knopf("Überrasch mich", cb=self.ueberraschung))
-            s.body.addWidget(Leinwand(self.bilder.pixmap(e), "Weiterschauen", titel, info, knoepfe, self, e))
+            s.body.addWidget(Leinwand(self.bilder.pixmap(e), "Weiterschauen", titel, self.mit_beschreibung(e, info), knoepfe, self, e))
             s.body.addWidget(Reihe("Weiterschauen", [self.karte(e2, unter=info2) for e2, info2 in weiter[:20]]))
         else:
             neueste = max(self.alle, key=lambda e: e["mtime"])
             s.body.addWidget(Leinwand(self.bilder.pixmap(neueste), "Neu im Saal", self.name_von(neueste),
-                                      "Frisch dazugekommen.", [knopf("Abspielen", "orange", lambda: self.abspielen_ab(neueste)),
+                                      self.mit_beschreibung(neueste, "Frisch dazugekommen."), [knopf("Abspielen", "orange", lambda: self.abspielen_ab(neueste)),
                                                                knopf("Überrasch mich", cb=self.ueberraschung)],
                                       self, neueste))
         serien = self.serien()
@@ -902,11 +1144,20 @@ class Haupt(QMainWindow):
         s.body.addWidget(Reihe("Neu dazugekommen", [self.karte(e, titel=self.name_von(e), unter="") for e in neu]))
         return s
 
+    def mit_beschreibung(self, e, text):
+        """Kurzinfo plus TMDB-Beschreibung (gekuerzt), wenn eingeschaltet."""
+        d = self.tmdb.info(e) or {}
+        b = d.get("text") if self.einst["beschreibung"] else ""
+        if b and len(b) > 260:
+            b = b[:257].rsplit(" ", 1)[0] + " …"
+        return f"{text}\n\n{b}" if b else text
+
     def serien_karte(self, name, folgen):
         gesehen = sum(1 for e in folgen if self.stand.get(e["pfad"], {}).get("fertig"))
         staffeln = len({e["staffel"] for e in folgen})
         unter = f"{staffeln} Staffel{'n' if staffeln != 1 else ''} · {len(folgen)} Folgen" + (f" · {gesehen} gesehen" if gesehen else "")
-        k = Karte(self, folgen[0], name, unter, gesehen / len(folgen) if gesehen < len(folgen) else 0, gesehen == len(folgen))
+        k = Karte(self, folgen[0], name, unter, gesehen / len(folgen) if gesehen < len(folgen) else 0, gesehen == len(folgen),
+                  tmdb=True)
         k.serie = name
         k.geklickt.connect(lambda: self.serie_zeigen(name))
         return k
@@ -981,6 +1232,15 @@ class Haupt(QMainWindow):
         kopf.addStretch(1)
         s.body.addLayout(kopf)
         s.body.addWidget(label(name, "h1"))
+        d = self.tmdb.info(folgen[0]) or {}
+        if self.einst["bewertung"] and d.get("note") and d.get("stimmen", 0) >= 5:
+            note = label(f"{note_text(d['note'])}  ·  {d['stimmen']} Bewertungen auf TMDB")
+            note.setStyleSheet(f"color: {F['orange']}; font-weight: 700;")
+            s.body.addWidget(note)
+        if self.einst["beschreibung"] and d.get("text"):
+            text = label(d["text"], wrap=True)
+            text.setMaximumWidth(900)
+            s.body.addWidget(text)
         reihe = QHBoxLayout()
         for st in staffeln:
             b = knopf(f"Staffel {st}", cb=lambda _=False, x=st: self.serie_zeigen(name, x))
@@ -1292,6 +1552,33 @@ class Haupt(QMainWindow):
         wahl("Countdown vor der nächsten Folge", "countdown", [(10, "10 Sekunden"), (15, "15 Sekunden"), (25, "25 Sekunden"), (0, "Kein Countdown")])
         schalter("Knopf „Intro überspringen“", "intro_knopf", "Erscheint, wenn die Folge ein Kapitel wie Intro, Vorspann oder Rückblick hat.")
 
+        lay.addWidget(label("Poster und Bewertungen (TMDB)", "h2"))
+        lay.addWidget(label("Mit einem eigenen, kostenlosen Schlüssel von themoviedb.org bekommen Filme und Serien echte Poster "
+                            "und die TMDB-Bewertung. Konto anlegen → Einstellungen → API → „API-Schlüssel“ (oder "
+                            "„API-Lese-Zugriffstoken“) hier einfügen.", "leise", wrap=True))
+        z = QHBoxLayout()
+        feld = QLineEdit(self.einst.get("tmdb_schluessel", ""))
+        feld.setEchoMode(QLineEdit.EchoMode.Password)
+        feld.setPlaceholderText("TMDB-Schlüssel einfügen")
+        z.addWidget(feld, 1)
+
+        def schluessel_speichern():
+            neu = feld.text().strip()
+            if neu != self.einst.get("tmdb_schluessel", ""):
+                self.einst["tmdb_schluessel"] = neu
+                self.speichern()
+                self.tmdb.vergessen()
+                status.setText("Gespeichert. Poster werden im Hintergrund geladen." if neu else "Schlüssel entfernt.")
+        feld.editingFinished.connect(schluessel_speichern)
+        z.addWidget(knopf("Speichern", cb=schluessel_speichern))
+        z.addWidget(knopf("Poster neu laden", cb=lambda: (self.tmdb.vergessen(), status.setText("Wird neu geladen …"))))
+        lay.addLayout(z)
+        status = label("", "leise")
+        lay.addWidget(status)
+        schalter("Bewertung anzeigen (★ auf den Karten)", "bewertung")
+        schalter("Beschreibung anzeigen", "beschreibung", "Kurzer Inhalt auf der Serienseite, im Saal und beim Darüberfahren.")
+        lay.addWidget(label("Verwendet die TMDB-API, ist aber nicht von TMDB unterstützt oder zertifiziert.", "leise", wrap=True))
+
         lay.addWidget(label("Im Film", "h2"))
         lay.addWidget(label("Mausrad: Lautstärke (mehr als 100 % gibt es nicht) · Leertaste: Pause · Pfeiltasten: spulen · "
                             "F: Vollbild · T: Schlaf-Timer · N: Nachtmodus · Esc: Fenster/Ende.", "leise", wrap=True))
@@ -1306,6 +1593,7 @@ class Haupt(QMainWindow):
         dlg.resize(680, 720)
         dlg.exec()
         self.neu_einlesen()
+        self.zeigen(self.aktuell if self.aktuell in ("saal", "serien", "filme", "suche") else "saal")
 
     def platte_einrichten(self):
         platten = leere_platten()
@@ -1343,6 +1631,8 @@ class Haupt(QMainWindow):
             self.einleser.wait(3000)
         self.bilder.pool.clear()
         self.bilder.pool.waitForDone(3000)
+        self.tmdb.pool.clear()
+        self.tmdb.pool.waitForDone(3000)
         super().closeEvent(ev)
 
     def changeEvent(self, ev):
@@ -1445,7 +1735,30 @@ def main():
         sys.exit(subprocess.call(["mpv", *mpv_argumente(liste, start, einstellungen())]))
     w = Haupt()
     w.show()
+    w.gamepad = sofa_modus(w)
     sys.exit(app.exec())
+
+
+def sofa_modus(w):
+    """Xbox-Controller: LB/RB wechselt Saal/Serien/Filme, B geht zurueck, Y = Ueberrasch mich."""
+    sys.path.insert(0, "/usr/share/biblix/gamepad")
+    try:
+        from biblix_gamepad import Gamepad
+    except ImportError:
+        return None
+    bereiche = ["saal", "serien", "filme"]
+
+    def zurueck():
+        if w.aktuell == "serie":
+            w.zeigen("serien")
+        elif w.aktuell == "suche":
+            w.zeigen("saal")
+
+    def bereich(schritt):
+        jetzt = w.aktuell if w.aktuell in bereiche else ("serien" if w.aktuell == "serie" else "saal")
+        w.zeigen(bereiche[(bereiche.index(jetzt) + schritt) % len(bereiche)])
+
+    return Gamepad(w, zurueck=zurueck, bereich=bereich, y=w.ueberraschung, farbe=F["pink"])
 
 
 if __name__ == "__main__":

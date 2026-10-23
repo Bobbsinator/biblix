@@ -22,7 +22,7 @@ FARBNAMEN = ["grund", "flaeche", "karte", "rand", "text", "leise", "akzent", "ak
 
 # Der Biblix-Standard. Jede Option der Design-App hat hier ihren Platz.
 STANDARD = {
-    "_stand": 4,                    # Stand der Einstellungen (für einmalige Umstellungen nach Updates)
+    "_stand": 6,                    # Stand der Einstellungen (für einmalige Umstellungen nach Updates)
     "preset": "bibi-tech",
     "modus": "dunkel",              # dunkel | hell | auto (Tag hell, Abend dunkel)
     "eigene_farben": None,          # None oder {"dunkel": {...}, "hell": {...}}
@@ -42,6 +42,7 @@ STANDARD = {
     "effekt_minimieren": "fliegen", # fliegen | wabern | ausblenden
     "arbeitsflaeche": "wuerfel",    # wuerfel | gleiten | ueberblenden
     "arbeitsflaechen": "eine",      # eine | vier
+    "overlay": "ausfuehrlich",      # Leistungs-Overlay in Spielen: ausfuehrlich | kompakt | aus
     "wackeln": True,
     "durchsichtig_verschieben": False,
     "klick_funken": False,
@@ -86,6 +87,7 @@ WAHL = {
     "effekt_minimieren": [("fliegen", "In die Taskleiste"), ("wabern", "Wabern"), ("ausblenden", "Ausblenden")],
     "arbeitsflaeche": [("wuerfel", "3D-Würfel"), ("gleiten", "Gleiten"), ("ueberblenden", "Überblenden")],
     "arbeitsflaechen": [("eine", "Eine"), ("vier", "Vier")],
+    "overlay": [("ausfuehrlich", "Ausführlich"), ("kompakt", "Kompakt (eine Zeile)"), ("aus", "Aus")],
     "symbole": [("kacheln", "Kacheln"), ("flach", "Flach"), ("linien", "Linien")],
     "tray": [("schrauben", "Bibi-Schrauben"), ("standard", "KDE-Standard")],
     "zeiger": [("biblix", "Biblix-Zeiger"), ("standard", "Standard")],

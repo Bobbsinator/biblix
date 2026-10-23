@@ -97,6 +97,16 @@ def main(argv):
             e["_stand"] = 4
             kern.speichern(e, verlauf=False)
             anwenden.symbole_erneuern(e)
+        # Einmalig (2.2.1): Rahmenmasse in Vielfachen von 4, keine Fugen an den Ecken bei 175 % Skalierung
+        if gespeichert.get("_stand", 0) < 5:
+            e["_stand"] = 5
+            kern.speichern(e, verlauf=False)
+            anwenden.rahmen_erneuern(e)
+        # Einmalig (2.3.0): Leistungs-Overlay im Biblix-Look, Steam laedt es (versteckt) in jedes Spiel
+        if gespeichert.get("_stand", 0) < 6:
+            e["_stand"] = 6
+            kern.speichern(e, verlauf=False)
+            anwenden.overlay(kern.palette(e), e)
         if e["modus"] == "auto":
             try:
                 import json

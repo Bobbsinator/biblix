@@ -837,6 +837,7 @@ class Fenster(QMainWindow):
             schalter("Wackelnde Fenster beim Verschieben", "wackeln")
             schalter("Fenster beim Verschieben durchsichtig", "durchsichtig_verschieben")
             schalter("Klick-Funken (an/aus mit Meta + *)", "klick_funken")
+            wahl("Leistungs-Overlay in Spielen (ein/aus: Shift rechts + F12)", "overlay")
             hinweis = QLabel("Bei Spielen im Vollbild sind alle Animationen automatisch aus.\n"
                              "Arbeitsflächen „Eine“: kein Umschalter in der Taskleiste. Würfel, Gleiten und "
                              "Überblenden gibt es nur mit „Vier“ (Wechsel mit Strg+F1 … F4, Meta+C dreht den Würfel mit der Maus).")

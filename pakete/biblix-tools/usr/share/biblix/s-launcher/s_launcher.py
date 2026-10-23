@@ -1358,7 +1358,23 @@ def main():
         start = "accessories"
     win = Main(start)
     win.show()
+    win.gamepad = sofa_modus(win)
     sys.exit(app.exec())
+
+
+def sofa_modus(win):
+    """Xbox-Controller: LB/RB wechselt den Bereich links, B geht eine Seite zurueck."""
+    sys.path.insert(0, "/usr/share/biblix/gamepad")
+    try:
+        from biblix_gamepad import Gamepad
+    except ImportError:
+        return None
+
+    def bereich(schritt):
+        n = win.nav.count()
+        win.nav.setCurrentRow((win.nav.currentRow() + schritt) % n)
+
+    return Gamepad(win, zurueck=win.go_back, bereich=bereich, farbe=win.farben.get("akzent", "#0aa5c6"))
 
 
 if __name__ == "__main__":

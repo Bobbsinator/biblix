@@ -9,7 +9,9 @@ from pathlib import Path
 from .grafik import SECHSECK
 from .kern import mischen, dunkler
 
-SCHATTEN_OBEN, SCHATTEN_SEITE, SCHATTEN_UNTEN = 8, 14, 18
+# Alle Masse sind Vielfache von 4: bei 175 % Skalierung ergibt das ganze Pixel (4 -> 7), sonst entstehen
+# Fugen zwischen den Rahmenteilen (Ecke und obere Kante wirkten abgetrennt).
+SCHATTEN_OBEN, SCHATTEN_SEITE, SCHATTEN_UNTEN = 8, 16, 20
 SYMBOLE = {
     "close": "schliessen", "minimize": "minimieren", "maximize": "maximieren", "restore": "wiederherstellen",
     "alldesktops": "anheften", "keepabove": "oben", "keepbelow": "unten", "shade": "abrollen", "help": "hilfe",
@@ -153,7 +155,7 @@ def rahmen_svg(p, e, titel_h, r):
         nonlocal ox
         teile.append(f'<g id="{gid}" transform="translate({ox} 0)">'
                      f'<rect x="0" y="0" width="{w}" height="{h}" fill="#000" fill-opacity="0.001"/>{inhalt}</g>')
-        ox += w + 10
+        ox += w + 12
 
     for zustand in ("aktiv", "inaktiv"):
         pre = "decoration" if zustand == "aktiv" else "decoration-inactive"
@@ -176,39 +178,41 @@ def rahmen_svg(p, e, titel_h, r):
         # Ecke oben links
         form = (f'M{PS} {T} V{PT + ecke} A{ecke} {ecke} 0 0 1 {PS + ecke} {PT} H{L} V{T} Z' if ecke
                 else f'M{PS} {T} V{PT} H{L} V{T} Z')
-        akz = (f'<path d="M{PS} {PT + ecke + 2} A{ecke} {ecke} 0 0 1 {PS + ecke} {PT} H{L}" fill="none" '
-               f'stroke="{p["akzent"]}" stroke-width="2.4"/>' if linie and ecke
+        akz = (f'<path d="M{PS} {PT + ecke + 2} V{PT + ecke} A{ecke} {ecke} 0 0 1 {PS + ecke} {PT} H{L} V{PT + 2} '
+               f'H{PS + ecke} A{ecke - 2} {ecke - 2} 0 0 0 {PS + 2} {PT + ecke} V{PT + ecke + 2} Z" '
+               f'fill="{p["akzent"]}"/>' if linie and ecke
                else (f'<rect x="{PS}" y="{PT}" width="{B}" height="2" fill="{p["akzent"]}"/>' if linie else ""))
         ablegen(f"{pre}-topleft", L, T,
                 f'<rect x="0" y="0" width="{L}" height="{T}" fill="url(#ctl{z})"/>'
                 f'<path d="{form}" fill="{titel}"/>{akz}')
-        ablegen(f"{pre}-top", 10, T,
-                f'<rect x="0" y="0" width="10" height="{PT}" fill="url(#so{z})"/>'
-                f'<rect x="0" y="{PT}" width="10" height="{titel_h}" fill="{titel}"/>'
-                + (f'<rect x="0" y="{PT}" width="10" height="2" fill="{p["akzent"]}"/>' if linie else ""))
+        ablegen(f"{pre}-top", 12, T,
+                f'<rect x="0" y="0" width="12" height="{PT}" fill="url(#so{z})"/>'
+                f'<rect x="0" y="{PT}" width="12" height="{titel_h}" fill="{titel}"/>'
+                + (f'<rect x="0" y="{PT}" width="12" height="2" fill="{p["akzent"]}"/>' if linie else ""))
         form_r = (f'M0 {T} V{PT} H{B - ecke} A{ecke} {ecke} 0 0 1 {B} {PT + ecke} V{T} Z' if ecke
                   else f'M0 {T} V{PT} H{B} V{T} Z')
-        akz_r = (f'<path d="M0 {PT} H{B - ecke} A{ecke} {ecke} 0 0 1 {B} {PT + ecke + 2}" fill="none" '
-                 f'stroke="{p["akzent"]}" stroke-width="2.4"/>' if linie and ecke
+        akz_r = (f'<path d="M0 {PT} H{B - ecke} A{ecke} {ecke} 0 0 1 {B} {PT + ecke} V{PT + ecke + 2} '
+                 f'H{B - 2} V{PT + ecke} A{ecke - 2} {ecke - 2} 0 0 0 {B - ecke} {PT + 2} H0 Z" '
+                 f'fill="{p["akzent"]}"/>' if linie and ecke
                  else (f'<rect x="0" y="{PT}" width="{B}" height="2" fill="{p["akzent"]}"/>' if linie else ""))
         ablegen(f"{pre}-topright", L, T,
                 f'<rect x="0" y="0" width="{L}" height="{T}" fill="url(#ctr{z})"/>'
                 f'<path d="{form_r}" fill="{titel}"/>{akz_r}')
-        ablegen(f"{pre}-left", L, 10,
-                f'<rect x="0" y="0" width="{PS}" height="10" fill="url(#sl{z})"/>'
-                f'<rect x="{PS}" y="0" width="{B}" height="10" fill="{rand}"/>')
-        ablegen(f"{pre}-right", L, 10,
-                f'<rect x="{B}" y="0" width="{PS}" height="10" fill="url(#sr{z})"/>'
-                f'<rect x="0" y="0" width="{B}" height="10" fill="{rand}"/>')
-        ablegen(f"{pre}-center", 10, 10, "")
+        ablegen(f"{pre}-left", L, 12,
+                f'<rect x="0" y="0" width="{PS}" height="12" fill="url(#sl{z})"/>'
+                f'<rect x="{PS}" y="0" width="{B}" height="12" fill="{rand}"/>')
+        ablegen(f"{pre}-right", L, 12,
+                f'<rect x="{B}" y="0" width="{PS}" height="12" fill="url(#sr{z})"/>'
+                f'<rect x="0" y="0" width="{B}" height="12" fill="{rand}"/>')
+        ablegen(f"{pre}-center", 12, 12, "")
         form_bl = (f'M{PS} 0 V{B - ecke} A{ecke} {ecke} 0 0 0 {PS + ecke} {B} H{L} V0 Z' if ecke
                    else f'M{PS} 0 V{B} H{L} V0 Z')
         ablegen(f"{pre}-bottomleft", L, U,
                 f'<rect x="0" y="0" width="{L}" height="{U}" fill="url(#cbl{z})"/>'
                 f'<path d="{form_bl}" fill="{rand}"/>')
-        ablegen(f"{pre}-bottom", 10, U,
-                f'<rect x="0" y="{B}" width="10" height="{PB}" fill="url(#su{z})"/>'
-                f'<rect x="0" y="0" width="10" height="{B}" fill="{rand}"/>')
+        ablegen(f"{pre}-bottom", 12, U,
+                f'<rect x="0" y="{B}" width="12" height="{PB}" fill="url(#su{z})"/>'
+                f'<rect x="0" y="0" width="12" height="{B}" fill="{rand}"/>')
         form_br = (f'M0 0 V{B} H{B - ecke} A{ecke} {ecke} 0 0 0 {B} {B - ecke} V0 Z' if ecke
                    else f'M0 0 V{B} H{B} V0 Z')
         ablegen(f"{pre}-bottomright", L, U,
@@ -221,11 +225,11 @@ def rahmen_svg(p, e, titel_h, r):
         pre = "decoration-maximized" if zustand == "aktiv" else "decoration-maximized-inactive"
         titel = (p["akzent"] if farbig else p["flaeche"]) if zustand == "aktiv" else p["flaeche"]
         for teil in ("topleft", "top", "topright"):
-            ablegen(f"{pre}-{teil}", 2 if teil != "top" else 10, titel_h,
-                    f'<rect x="0" y="0" width="{2 if teil != "top" else 10}" height="{titel_h}" fill="{titel}"/>')
-        ablegen(f"{pre}-center", 10, titel_h, f'<rect x="0" y="0" width="10" height="{titel_h}" fill="{titel}"/>')
+            ablegen(f"{pre}-{teil}", 4 if teil != "top" else 12, titel_h,
+                    f'<rect x="0" y="0" width="{4 if teil != "top" else 12}" height="{titel_h}" fill="{titel}"/>')
+        ablegen(f"{pre}-center", 12, titel_h, f'<rect x="0" y="0" width="12" height="{titel_h}" fill="{titel}"/>')
         for teil in ("left", "right", "bottomleft", "bottom", "bottomright"):
-            ablegen(f"{pre}-{teil}", 2, 2, "")
+            ablegen(f"{pre}-{teil}", 4, 4, "")
 
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{ox}" height="{max(T, U) + 4}">'
             f'<defs>{"".join(defs)}</defs>{"".join(teile)}</svg>')
@@ -236,9 +240,9 @@ def erzeugen(p, e, ziel: Path, name):
     d = ziel / name
     d.mkdir(parents=True, exist_ok=True)
     schlank = e["titelleiste"] == "schlank"
-    titel_h = 22 if schlank else 32
+    titel_h = 24 if schlank else 32
     knopf = 16 if schlank else 24
-    r = 7 if e["ecken"] == "rund" else 2
+    r = 8 if e["ecken"] == "rund" else 4
     farbig = e["titelleiste"] == "farbig"
     (d / "decoration.svg").write_text(rahmen_svg(p, e, titel_h, r), encoding="utf-8")
     for datei, symbol in SYMBOLE.items():

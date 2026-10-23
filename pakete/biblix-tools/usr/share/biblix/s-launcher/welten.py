@@ -1155,6 +1155,7 @@ class HausmarkeKarte(QFrame):
         self.setAttribute(Qt.WidgetAttribute.WA_Hover)
         if not self.in_arbeit and self.da:
             self.setCursor(Qt.CursorShape.PointingHandCursor)
+            self.setFocusPolicy(Qt.FocusPolicy.TabFocus)  # Xbox-Controller (Sofa-Modus)
         self.setToolTip(eintrag.get("beschreibung", ""))
 
         lay = QHBoxLayout(self)
@@ -1229,6 +1230,20 @@ class HausmarkeKarte(QFrame):
         if ev.button() == Qt.MouseButton.LeftButton and self.da:
             self.oeffnen(self.e)
 
+    def keyPressEvent(self, ev):
+        if ev.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Space) and self.da:
+            self.oeffnen(self.e)
+        else:
+            super().keyPressEvent(ev)
+
+    def focusInEvent(self, ev):
+        super().focusInEvent(ev)
+        self.update()
+
+    def focusOutEvent(self, ev):
+        super().focusOutEvent(ev)
+        self.update()
+
     def paintEvent(self, _):
         f = self.f
         p = QPainter(self)
@@ -1250,7 +1265,7 @@ class HausmarkeKarte(QFrame):
                 x += 24
         p.fillRect(QRectF(r.left(), r.top(), r.width(), 5), QColor(GOLD))
         p.restore()
-        p.setPen(QPen(QColor(GOLD if self.hover and self.da else f["rand"]), 1.2))
+        p.setPen(QPen(QColor(GOLD if (self.hover or self.hasFocus()) and self.da else f["rand"]), 3 if self.hasFocus() else 1.2))
         p.setBrush(Qt.BrushStyle.NoBrush)
         p.drawPath(pfad)
         # Kennzeichnung oben

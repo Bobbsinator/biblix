@@ -281,6 +281,46 @@ def effekte(e):
     return "Animationen: " + ("an" if an else "aus")
 
 
+MANGO = KONFIG / "MangoHud" / "MangoHud.conf"
+MANGO_KOPF = "# Biblix-Overlay"
+
+
+def overlay(p, e):
+    """Leistungs-Overlay (MangoHud) in Spielen, im Biblix-Look. Startet versteckt, Shift rechts + F12 blendet es ein.
+    Eine eigene MangoHud.conf (ohne Biblix-Kopfzeile) bleibt unangetastet."""
+    art = e.get("overlay", "ausfuehrlich")
+    try:
+        alt = MANGO.read_text(encoding="utf-8")
+    except OSError:
+        alt = ""
+    if alt and not alt.startswith((MANGO_KOPF, "# MangoHud unter Biblix")):
+        return "Overlay: eigene MangoHud.conf bleibt"
+    h = lambda k: p[k].lstrip("#")
+    z = [f"{MANGO_KOPF} (von Biblix Design erzeugt. Eigene Einstellungen? Diese Zeile loeschen, dann bleibt die Datei.)",
+         "# Ein/aus im Spiel: Shift rechts + F12",
+         "legacy_layout=false", "no_display", "toggle_hud=Shift_R+F12", "position=top-left",
+         "round_corners=10", "background_alpha=0.82", f"background_color={h('grund')}", "font_size=20",
+         f"text_color={h('text')}", f"gpu_color={h('akzent')}", f"cpu_color={h('akzent2')}",
+         f"vram_color={h('akzent')}", f"ram_color={h('akzent2')}", f"frametime_color={h('akzent')}",
+         f"engine_color={h('leise')}", "fps_color_change", f"fps_color=e24b4a,{h('akzent2')},{h('akzent')}",
+         "fps_value=30,60", "fps"]
+    if art == "kompakt":
+        z += ["horizontal", "hud_compact", "gpu_stats", "gpu_temp", "cpu_stats", "cpu_temp", "frametime=0"]
+    else:
+        z += ["custom_text_center=BIBLIX", "frame_timing", "gpu_stats", "gpu_temp", "gpu_power",
+              "cpu_stats", "cpu_temp", "ram", "vram"]
+    MANGO.parent.mkdir(parents=True, exist_ok=True)
+    MANGO.write_text("\n".join(z) + "\n", encoding="utf-8")
+    # Steam (Flatpak) laedt MangoHud in jedes Spiel; ohne Tastendruck sieht man nichts
+    if shutil.which("flatpak"):
+        if art == "aus":
+            _lauf("flatpak", "override", "--user", "--env=MANGOHUD=0", "com.valvesoftware.Steam")
+        else:
+            _lauf("flatpak", "override", "--user", "--env=MANGOHUD=1", f"--env=MANGOHUD_CONFIGFILE={MANGO}",
+                  "com.valvesoftware.Steam")
+    return "Overlay: " + dict(kern.WAHL["overlay"])[art]
+
+
 def arbeitsflaechen(e):
     """Eine Arbeitsfläche (Standard) oder vier für Würfel und Co. Bei einer fliegt die Arbeitsflächen-Anzeige
     (Pager) aus der Taskleiste; Fenster der entfernten Flächen landet KWin auf der verbleibenden."""
@@ -573,6 +613,7 @@ def alles(e=None, system=True, melden=print):
         ("Klänge", lambda: klaenge(e)),
         ("Taskleiste", lambda: taskleiste(e, p)),
         ("Arbeitsflächen", lambda: arbeitsflaechen(e)),
+        ("Overlay", lambda: overlay(p, e)),
         ("Sperrbildschirm", lambda: sperrbildschirm(e)),
         ("Ladebildschirm", lambda: ladebildschirm(p, e)),
         ("Terminal", lambda: konsole(p, e)),

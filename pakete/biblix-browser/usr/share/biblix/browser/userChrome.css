@@ -100,11 +100,17 @@
 
 /* Fensterknoepfe als Schrauben-Muttern: Symbol immer grau, beim Darueberfahren farbig und gedreht */
 .titlebar-buttonbox { margin-inline-end: 6px !important; }
-.titlebar-button { padding: 8px 6px !important; background: transparent !important; }
+/* Firefox malt sonst die KDE/GTK-Knoepfe (Pfeile, grosses X) unter die Muttern: Systemaussehen abschalten */
+.titlebar-button {
+  appearance: none !important; -moz-default-appearance: none !important;
+  padding: 8px 6px !important; background: transparent !important; border: none !important; box-shadow: none !important;
+}
+.titlebar-button:hover, .titlebar-button:active { background: transparent !important; }
 .titlebar-button > .toolbarbutton-icon {
   width: 20px !important; height: 20px !important;
   transition: transform 0.35s ease;
   -moz-context-properties: none !important;
+  appearance: none !important; background: none !important; padding: 0 !important;
 }
 .titlebar-button:hover > .toolbarbutton-icon { transform: rotate(60deg); }
 .titlebar-min { list-style-image: @KNOPF_MIN@ !important; }

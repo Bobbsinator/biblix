@@ -673,6 +673,41 @@ mp.add_forced_key_binding("ESC", "bibiplexx-esc", function()
 end)
 mp.observe_property("seeking", "bool", function(_, v) if v then zeigen() end end)
 
+-- ---------------------------------------------------------------- Xbox-Controller (Sofa-Modus)
+-- A: Pause · B: Menue zu bzw. Film beenden · Steuerkreuz links/rechts: 10 s spulen, hoch/runter: Lautstaerke
+-- LB/RB: 1 Minute zurueck/vor · X: Tonspur wechseln · Y: Untertitel wechseln · Ansicht-Taste: Bild-Infos
+
+local function spur_wechseln(art, name)
+    mp.commandv("cycle", art)
+    local id = mp.get_property(art, "no")
+    if id == "no" or id == "false" then
+        melden(name .. ": aus", 1.6)
+    else
+        local titel = mp.get_property("current-tracks/" .. (art == "aid" and "audio" or "sub") .. "/title", "")
+        local sprache = mp.get_property("current-tracks/" .. (art == "aid" and "audio" or "sub") .. "/lang", "")
+        melden(name .. ": " .. ((titel ~= "" and titel) or (sprache ~= "" and sprache) or ("Spur " .. id)), 1.6)
+    end
+end
+
+local function pad(taste, name, f, wiederholen)
+    mp.add_forced_key_binding(taste, "bibiplexx-pad-" .. name, function() f(); zeigen() end,
+        wiederholen and { repeatable = true } or nil)
+end
+pad("GAMEPAD_ACTION_DOWN", "a", function() mp.commandv("cycle", "pause") end)
+pad("GAMEPAD_START", "start", function() mp.commandv("cycle", "pause") end)
+pad("GAMEPAD_ACTION_RIGHT", "b", function()
+    if panel then panel = nil else mp.commandv("quit") end
+end)
+pad("GAMEPAD_DPAD_LEFT", "links", function() mp.commandv("seek", "-10") end, true)
+pad("GAMEPAD_DPAD_RIGHT", "rechts", function() mp.commandv("seek", "10") end, true)
+pad("GAMEPAD_LEFT_SHOULDER", "lb", function() mp.commandv("seek", "-60") end, true)
+pad("GAMEPAD_RIGHT_SHOULDER", "rb", function() mp.commandv("seek", "60") end, true)
+pad("GAMEPAD_DPAD_UP", "hoch", function() lauter(5) end, true)
+pad("GAMEPAD_DPAD_DOWN", "runter", function() lauter(-5) end, true)
+pad("GAMEPAD_ACTION_LEFT", "x", function() spur_wechseln("aid", "Ton") end)
+pad("GAMEPAD_ACTION_UP", "y", function() spur_wechseln("sid", "Untertitel") end)
+pad("GAMEPAD_BACK", "ansicht", function() ausfuehren("info") end)
+
 -- ---------------------------------------------------------------- Kinomodus
 
 local function gong()

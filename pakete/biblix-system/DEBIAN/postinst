@@ -25,6 +25,15 @@ case "$1" in
             if lspci -n 2>/dev/null | grep -qE " 03[0-9a-f]{2}: 10de:"; then
                 flatpak override --system --env=PROTON_ENABLE_NVAPI=1 --env=__GL_SHADER_DISK_CACHE_SIZE=12000000000                     --env=__GL_SHADER_DISK_CACHE_SKIP_CLEANUP=1 com.valvesoftware.Steam >/dev/null 2>&1 || true
             fi
+            # Leistungs-Overlay (MangoHud) fuer Steam: Baustein passend zu Steams Laufzeit (wechselt mit Steam-Updates)
+            if flatpak info --system com.valvesoftware.Steam >/dev/null 2>&1; then
+                zweig=$(flatpak info --system --show-runtime com.valvesoftware.Steam 2>/dev/null | awk -F/ '{print $3}')
+                if [ -n "$zweig" ] && ! flatpak info --system "org.freedesktop.Platform.VulkanLayer.MangoHud//$zweig" >/dev/null 2>&1; then
+                    timeout 600 flatpak install --system -y --noninteractive flathub \
+                        "org.freedesktop.Platform.VulkanLayer.MangoHud//$zweig" >/dev/null 2>&1 || true
+                fi
+                flatpak override --system --filesystem=xdg-config/MangoHud:ro com.valvesoftware.Steam >/dev/null 2>&1 || true
+            fi
         fi
         # Neue Werte sofort wirksam machen (Rest beim naechsten Neustart)
         sysctl --system >/dev/null 2>&1 || true

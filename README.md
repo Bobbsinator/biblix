@@ -23,14 +23,15 @@ Treiber für **NVIDIA und AMD**, abgestimmt auf **Ryzen 7 9800X3D + RTX 5070 Ti*
 | HDR | KDE Plasma 6.3 mit HDR unter Wayland, HDR in Spielen über Gamescope (Startoption im S-Launcher) |
 | Intel | Mesa + Intel-Media-Treiber |
 | Laptops | Hybridgrafik: „Mit dedizierter Grafikkarte starten" im Rechtsklickmenü |
-| Leistung | GameMode, MangoHud, Energieprofil „Leistung" als Standard, zram (komprimierter RAM-Swap), schnelle I/O-Scheduler, Spiele-Kernelwerte wie bei SteamOS, `split_lock` ohne Bremse |
+| Leistung | GameMode, **Leistungs-Overlay** im Biblix-Look (Shift rechts + F12 im Spiel), Energieprofil „Leistung" als Standard, zram (komprimierter RAM-Swap), schnelle I/O-Scheduler, Spiele-Kernelwerte wie bei SteamOS, `split_lock` ohne Bremse |
 | Alltag | LibreOffice, KDE Connect (Handy), OneDrive, Ersatz-Schriften für Word-Dokumente, RAR/7z, Drucker (HP u. a.) und Scanner |
 | Claude | **Claude Desktop** (offizielle Linux-Beta von Anthropic) mit Chat, Cowork und Claude Code |
-| Controller | Xbox per Kabel, Bluetooth (xpadneo) und Funkadapter (xone), PS5-Controller, Steam Input |
+| Controller | Xbox per Kabel, Bluetooth (xpadneo) und Funkadapter (xone), PS5-Controller, Steam Input, **Sofa-Modus** (S-Launcher und Bibiplexx mit dem Controller bedienen) |
 | Zubehör | Eigene Seite im S-Launcher: EasyEffects, GPU Screen Recorder, OBS, OpenRGB, Piper, Solaar, WiVRn (VR), Mission Center, StreamController |
 | Sicherheit | Firewall mit Oberfläche (nur KDE Connect, Steam-Streaming, Drucker, VR offen), Timeshift-Snapshots, Secure Boot mit eigenem Schlüssel |
-| Updates | Benachrichtigung, wenn System- oder App-Updates da sind; Klick öffnet den S-Launcher |
-| Werkzeuge | `biblix-gpu` (Grafik-Check), fastfetch mit Bibi-Logo, Git, Python, Build-Tools |
+| Updates | Benachrichtigung, wenn System- oder App-Updates da sind; Klick öffnet den S-Launcher. Hinweis, wenn ein Neustart nötig ist (neuer Kernel oder Treiber) |
+| Filme & Web | **Bibiplexx** (Filme und Serien, mit TMDB-Postern und Bewertungen) und **Bibi Browser** (Firefox im Biblix-Look) |
+| Werkzeuge | **Haustechnik** (Secure Boot, Bildschirme, Platten einrichten), `biblix-gpu` (Grafik-Check), Dolphin-Rechtsklick „Bibi“, fastfetch mit Bibi-Logo, Git, Python, Build-Tools |
 | Installer | Calamares, Deutsch (Österreich), Zeitzone Wien |
 
 ### Wichtige Befehle
@@ -59,11 +60,9 @@ Technisch ist `bibi` das bewährte `sudo` unter Biblix-Namen. `sudo`
 selbst bleibt im Hintergrund erhalten, weil Programme und Anleitungen
 aus dem Internet es erwarten.
 
-Steam-Startoptionen für FPS-Anzeige und GameMode (im S-Launcher zum Kopieren):
-
-```
-MANGOHUD=1 gamemoderun %command%
-```
+**FPS und Temperaturen im Spiel:** Das Leistungs-Overlay ist in jedem Steam-Spiel schon geladen, aber
+versteckt. **Shift rechts + F12** blendet es ein und aus (Biblix Design → Animationen: ausführlich, kompakt
+oder aus). Für GameMode im S-Launcher unter Spiele die Startoption `gamemoderun %command%` kopieren.
 
 ---
 
@@ -116,9 +115,11 @@ signiert. Bei aktivem Secure Boot lädt er deshalb nicht. Zwei
 Möglichkeiten:
 
 - Secure Boot im BIOS/UEFI ausschalten (einfach), oder
-- nach der Installation `bibi biblix-secureboot` ausführen: erzeugt einen
+- nach der Installation in der **Haustechnik** (Startmenü) auf „Secure Boot einrichten“
+  klicken oder `bibi biblix-secureboot` ausführen: erzeugt einen
   eigenen Schlüssel nur für deinen PC, signiert alle Treiber neu und meldet
-  ihn an. Neu starten, „Enroll MOK" wählen. **Nicht** den Schlüssel aus
+  ihn an. Neu starten und auf dem blauen Bildschirm **sofort eine Taste drücken**
+  (er wartet nur 10 Sekunden), dann „Enroll MOK“ wählen. Danach Secure Boot im BIOS einschalten. **Nicht** den Schlüssel aus
   `/var/lib/dkms` direkt anmelden: der stammt aus dem ISO-Bau und steckt in
   jeder Kopie der ISO.
 
@@ -195,10 +196,9 @@ Vorinstalliert ist **ZapZap**: WhatsApp Web als eigene App mit
 Benachrichtigungen. Einmal per QR-Code mit dem Handy verbinden. Ob Sprach-
 und Videoanrufe gehen, hängt davon ab, was WhatsApp Web gerade erlaubt.
 
-**Videos:** **Haruna** ist der Standard-Player (Doppelklick auf ein Video),
-**mpv** läuft mit Hochqualitäts-Einstellungen (beste Skalierung,
-Dekodierung über die Grafikkarte, HDR-Weitergabe, ruckelfreie
-Bildanpassung), **VLC** spielt alles andere.
+**Videos:** **Bibiplexx** ist der Standard-Player (Doppelklick auf ein Video, siehe unten),
+mit mpv und Hochqualitäts-Einstellungen (beste Skalierung, Dekodierung über die Grafikkarte,
+HDR-Weitergabe, ruckelfreie Bildanpassung). **Haruna** und **VLC** bleiben als Ausweich.
 
 **Zwei Monitore:** Systemeinstellungen → Anzeige. Jeder Monitor mit eigener
 Auflösung, Hz-Zahl, Skalierung, VRR und HDR. Den Spiele-Monitor dort als
@@ -286,8 +286,11 @@ passende Auswahl, unten liegt die Lackfarben-Leiste, „Übernehmen" wendet alle
 - **Sperrbildschirm** mit großer Uhr und Bibi-Spruch (oder Terminal-Stil),
   Startbildschirm mit dem Schichten-B, **Bootmenü** im Kachel-Stil in
   Designfarbe (fragt dafür einmal nach dem Passwort).
-- **Extras:** Terminal-Farben und Biblix-Prompt, Firefox-Startseite,
-  Spielereien für die Taskleiste (Spielmodus-Anzeige, Update-Symbol,
+- **Symbole unten rechts** (Lautstärke, Netzwerk, Bluetooth, Benachrichtigungen) im Schrauben-Stil.
+- **Arbeitsflächen:** Standard ist eine (kein Umschalter in der Taskleiste), mit „Vier“ gibt es Würfel und Co.
+- **Leistungs-Overlay** in Spielen in den Designfarben (ausführlich, kompakt oder aus).
+- **Extras:** Terminal-Farben und Biblix-Prompt, Firefox-Startseite, sechs **Firmen-Widgets** für den
+  Desktop, Spielereien für die Taskleiste (Spielmodus-Anzeige, Update-Symbol,
   Temperaturen, Kopfhörer-Schalter).
 - **Rückgängig** mit Verlauf und **Meine Mischungen** zum Speichern.
 
@@ -320,7 +323,8 @@ Animationen und Klänge stellt man über die Schraubenmutter oben rechts ein. Di
 
 Firefox im Biblix-Look: Leisten, Tabs und Fensterknöpfe in den Farben deines Biblix-Design-Presets,
 Bibi-Startseite, uBlock Origin, keine Telemetrie, HTTPS-Modus, Netflix & Co. ohne Rückfrage.
-Eigenes Profil (`~/.local/share/bibi-browser`), Standardbrowser von Biblix. Der normale Firefox bleibt daneben.
+Eigenes Profil (`~/.local/share/bibi-browser`), Standardbrowser von Biblix für Links, Taskleiste und Apps.
+Der normale Firefox bleibt daneben. Offene Tabs stellt der Bibi Browser beim nächsten Öffnen selbst wieder her.
 
 ## Bibiplexx (Filme und Serien)
 
@@ -331,35 +335,71 @@ Hardware-Dekodierung. Serien werden an `S01E02` oder `1x02` im Dateinamen erkann
 Dazu: Intro überspringen, „Nächste Folge in …", Schlaf-Timer, Nachtmodus, Untertitel nur bei fremder
 Sprache, „Überrasch mich" und ein Rechtsklick-Menü (gesehen markieren usw.).
 
+Im Film: **Bild-Menü** (Taste B: Qualität, Bildglättung, Zoom), **Sprach-Menü** (Taste L: alle Ton- und
+Untertitelspuren mit Namen), **Bild-Infos** (Taste I). Unter „Neu dazugekommen“ steht jede Serie einmal.
+
+**Poster und Bewertungen (TMDB):** Mit einem eigenen, kostenlosen Schlüssel von
+[themoviedb.org](https://www.themoviedb.org) (Konto → Einstellungen → API) bekommen Filme und Serien echte
+Poster und die TMDB-Bewertung (★ 7,9). Die Beschreibung lässt sich zuschalten. Einzutragen unter
+Bibiplexx → Einstellungen → „Poster und Bewertungen“. Ohne Schlüssel bleiben die Standbilder aus den Filmen.
+*Bibiplexx verwendet die TMDB-API, ist aber nicht von TMDB unterstützt oder zertifiziert.*
+
 Eine **leere** zweite Platte richtet Bibiplexx auf Wunsch als Filmplatte ein
 (Einstellungen → „Leere Platte einrichten", Ordner `/media/bibiplexx` mit `Filme/` und `Serien/`).
 Platten mit Partitionen oder Daten werden dabei nie angefasst.
+
+## Sofa-Modus (Xbox-Controller)
+
+S-Launcher und Bibiplexx lassen sich komplett mit dem Controller bedienen. Den Auswahlrahmen gibt es erst,
+wenn du den Controller benutzt. Mit der Maus sieht alles aus wie immer.
+
+| Taste | S-Launcher / Bibiplexx | Im Film |
+|---|---|---|
+| Steuerkreuz / linker Stick | Auswahl bewegen | ±10 s spulen, Lautstärke |
+| A | Öffnen, Abspielen, Installieren | Pause |
+| B | Zurück | Menü zu bzw. Film beenden |
+| X | Menü (wie Rechtsklick) | Tonspur wechseln |
+| Y | Bibiplexx: „Überrasch mich“ | Untertitel wechseln |
+| LB / RB | Bereich wechseln | 1 Minute zurück/vor |
+| Start | Vollbild | Pause |
+
+## Haustechnik und Dateimanager
+
+**Haustechnik** (Startmenü, Hausmarke Bibi): Secure Boot mit Anleitung einrichten, alle Bildschirme auf die
+höchste Bildrate stellen und **leere Platten einrichten** (als Spiele-, Film- oder Datenplatte; Steam bekommt
+automatisch Zugriff).
+
+**Dolphin:** In der Seitenleiste stehen Bibiplexx, Spiele, Daten und OneDrive, sobald es die Ordner gibt.
+Rechtsklick → **Bibi**: in Bibiplexx abspielen, als Hintergrund setzen, Bild verkleinern, als JPG/PNG/WebP
+speichern, als Admin öffnen, auf eine Windows-Platte kopieren.
 
 ---
 
 ## Biblix-Updates (eigene Paketquelle)
 
-S-Launcher und alle Biblix-Helfer stecken im Paket **`biblix-tools`**.
+Biblix besteht aus eigenen Paketen: **`biblix`** (zieht alles mit), `biblix-tools` (S-Launcher, Haustechnik
+und Helfer), `biblix-system`, `biblix-design`, `biblix-browser`, `biblix-bibiplexx`, `biblix-xbox` und
+`biblix-kwin-wuerfel`.
 Jedes Biblix holt neue Versionen aus der Biblix-Paketquelle (GitHub Pages)
 und meldet sich mit **„Biblix-Update verfügbar"**. Klick → S-Launcher →
 „System aktualisieren". Neu installieren ist nie nötig.
 
-Neue Version veröffentlichen (in WSL/Debian):
+Neue Version veröffentlichen (auf Biblix oder einem anderen Debian 13):
 
 ```bash
-nano pakete/VERSION
-bash pakete/bauen.sh
+git clone -b gh-pages https://github.com/Bobbsinator/biblix.git paketquelle
+nano pakete/<paket>/VERSION       # Version erhöhen
+bash pakete/bauen.sh              # baut nur geänderte Pakete und signiert
+bash pakete/veroeffentlichen.sh "Beschreibung"
 ```
 
-`bauen.sh` baut das Paket, signiert die Paketquelle in `paketquelle/` und
-legt es auch für den nächsten ISO-Bau ab. Danach `paketquelle/` auf GitHub
-Pages hochladen.
+`bauen.sh` baut, signiert die Paketquelle in `paketquelle/` und legt die Pakete auch für den
+nächsten ISO-Bau ab. `veroeffentlichen.sh` lädt sie auf GitHub Pages hoch.
 
 Die Pakete sind mit dem Biblix-Schlüssel signiert (Fingerabdruck
 `49FC918CBFF609CF881409A1EB1799B26C11B788`). Fremde oder veränderte
-Pakete lehnt jedes Biblix ab. Der **private Schlüssel** liegt in WSL und als
-Sicherung in `%USERPROFILE%\Biblix-Schluessel` (Windows-Benutzerordner). Nicht weitergeben, nicht
-hochladen, zusätzlich auf einem USB-Stick sichern. Ohne ihn lassen sich keine
+Pakete lehnt jedes Biblix ab. Der **private Schlüssel** gehört nur auf den Rechner, der veröffentlicht,
+und als Sicherung auf einen USB-Stick. Nicht weitergeben, nicht hochladen. Ohne ihn lassen sich keine
 Updates mehr veröffentlichen.
 
 ---
@@ -370,6 +410,8 @@ Updates mehr veröffentlichen.
 biblix/
 ├── build.sh, build-docker.sh      ISO bauen
 ├── .github/workflows/             Cloud-Build
+├── pakete/                        Biblix-Pakete (je Ordner ein Paket mit VERSION), bauen.sh, veroeffentlichen.sh
+├── docs/                          Pläne und Notizen zu den einzelnen Updates
 ├── auto/config                    live-build-Grundeinstellungen
 └── config/
     ├── package-lists/             desktop, gpu, gaming

@@ -220,6 +220,9 @@ def main(argv):
     except OSError as e:
         print(f"Bibi Browser: Einrichtung unvollständig ({e}), starte trotzdem.", file=sys.stderr)
     firefox = "firefox-esr" if Path("/usr/bin/firefox-esr").exists() else "firefox"
+    # Nicht bei der KDE-Sitzung anmelden: KDE merkt sich sonst nur "firefox-esr" (ohne Profil und Bibi-Look)
+    # und startet beim naechsten Anmelden einen nackten Firefox. Offene Tabs stellt der Browser selbst wieder her.
+    os.environ.pop("SESSION_MANAGER", None)
     os.execvp(firefox, [firefox, "--name", "bibi-browser", "--class", "bibi-browser", "--profile", str(PROFIL), *argv])
 
 

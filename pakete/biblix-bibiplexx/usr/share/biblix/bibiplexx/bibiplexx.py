@@ -1140,8 +1140,7 @@ class Haupt(QMainWindow):
         filme = self.filme()
         if filme:
             s.body.addWidget(Reihe("Filme", [self.karte(e) for e in filme[:30]]))
-        neu = sorted(self.alle, key=lambda e: -e["mtime"])[:20]
-        s.body.addWidget(Reihe("Neu dazugekommen", [self.karte(e, titel=self.name_von(e), unter="") for e in neu]))
+        s.body.addWidget(Reihe("Neu dazugekommen", self.neu_karten()))
         return s
 
     def mit_beschreibung(self, e, text):
@@ -1151,6 +1150,16 @@ class Haupt(QMainWindow):
         if b and len(b) > 260:
             b = b[:257].rsplit(" ", 1)[0] + " …"
         return f"{text}\n\n{b}" if b else text
+
+    def neu_karten(self, anzahl=20):
+        """Zuletzt hinzugefuegt: eine Karte pro Serie (neueste Folge zaehlt), dazu Filme."""
+        eintraege = [(max(e["mtime"] for e in folgen), name, folgen) for name, folgen in self.serien().items()]
+        eintraege += [(e["mtime"], None, e) for e in self.filme()]
+        eintraege.sort(key=lambda x: -x[0])
+        karten = []
+        for _, name, inhalt in eintraege[:anzahl]:
+            karten.append(self.serien_karte(name, inhalt) if name is not None else self.karte(inhalt))
+        return karten
 
     def serien_karte(self, name, folgen):
         gesehen = sum(1 for e in folgen if self.stand.get(e["pfad"], {}).get("fertig"))

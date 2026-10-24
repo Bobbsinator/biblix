@@ -280,6 +280,9 @@ passende Auswahl, unten liegt die Lackfarben-Leiste, „Übernehmen" wendet alle
   (Meta+C dreht ihn per Maus), wackelnde Fenster. Bei Vollbild-Spielen aus.
 - **Viele Hintergründe:** elf Motive in deinen Farben, dazu eigene Serien pro
   Firma (z. B. acht Exabibi-Tower-Bilder), auch als Diashow.
+- **Lebendige Hintergründe:** 24 animierte Szenen (Sternenflug, Schnee, Leuchtwaben, Synthwave, Prompt mit
+  Bibi-Sprüchen, Tower bei Nacht, Donau-Abend, Saallichter …) in deinen Farben bzw. Firmenfarben. Sie pausieren
+  automatisch, sobald ein Spiel im Vollbild läuft oder ein Fenster maximiert ist.
 - **Symbole und Mauszeiger** in Firmenfarbe, Lade-Zeiger als drehende Mutter.
 - **Klänge:** Bibi-Jingle beim Start, Firmen-Klänge (Kassa bei Bibi Mac,
   Roller-Hupe bei Delivery, Kino-Gong bei Bibiplexx …), Retro oder ruhig.

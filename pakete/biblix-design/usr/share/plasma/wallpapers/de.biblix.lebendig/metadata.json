@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Wallpaper",
+    "KPlugin": {
+        "Authors": [{ "Name": "Biblix" }],
+        "Description": "Animierte Biblix-Hintergründe in den Farben von Biblix Design. Pausieren bei Vollbild und maximierten Fenstern.",
+        "Icon": "preferences-desktop-wallpaper",
+        "Id": "de.biblix.lebendig",
+        "License": "GPL-2.0-or-later",
+        "Name": "Biblix lebendig",
+        "Version": "1.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

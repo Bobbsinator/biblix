@@ -890,6 +890,45 @@ FIRMA = {
 }
 
 
+# Animierte Hintergruende (Plasma-Modul de.biblix.lebendig, QML-Szenen in den Designfarben).
+# (szene, name, gruppe, standbild) - das Standbild nehmen Sperrbildschirm und Vorschau.
+LEBENDIG_PREFIX = "lebendig-"
+LEBENDIG = [
+    ("sternenflug", "Sternenflug", "allgemein", "punkte"),
+    ("sternenhimmel", "Sternenhimmel", "allgemein", "punkte"),
+    ("gluehwuermchen", "Glühwürmchen", "allgemein", "punkte"),
+    ("schnee", "Schnee", "allgemein", "berge"),
+    ("regen", "Regen", "allgemein", "diagonale"),
+    ("bokeh", "Bokeh", "allgemein", "schichten"),
+    ("farbnebel", "Farbnebel", "allgemein", "schichten"),
+    ("wellen", "Wellen", "allgemein", "horizont"),
+    ("tropfen", "Tropfen", "allgemein", "hoehenlinien"),
+    ("muttern", "Schwebende Muttern", "allgemein", "muttern"),
+    ("waben", "Leuchtwaben", "allgemein", "waben"),
+    ("tunnel", "Muttern-Tunnel", "allgemein", "muttern"),
+    ("platine", "Stromkreis", "allgemein", "platine"),
+    ("equalizer", "Equalizer", "allgemein", "diagonale"),
+    ("synthwave", "Synthwave", "allgemein", "horizont"),
+    ("prompt", "Prompt mit Bibi-Sprüchen", "allgemein", "prompt"),
+    ("bauplan", "Bauplan", "allgemein", "schrauben-bauplan"),
+    ("tower", "Tower bei Nacht", "bibi-tech", "tower-nacht"),
+    ("wafer", "Wafer unterm Laser", "bibi-tech", "wafer"),
+    ("kurse", "Zugriffsindex", "bibi-budget-bank", "bank-kurse"),
+    ("route", "Route", "bibi-delivery", "delivery-route"),
+    ("boegen", "Lächelbögen", "bibi-mac", "mac-boegen"),
+    ("donau", "Donau-Abend", "nassmacher", "nass-donau"),
+    ("saal", "Saallichter", "bibiplexx", "plexx-saal"),
+]
+
+
+def lebendig(mid):
+    """(szene, name, gruppe, standbild) fuer eine ID "lebendig-<szene>", sonst None."""
+    if not str(mid).startswith(LEBENDIG_PREFIX):
+        return None
+    szene = mid[len(LEBENDIG_PREFIX):]
+    return next((x for x in LEBENDIG if x[0] == szene), None)
+
+
 def alle():
     """Liste aller Motive: (id, name, gruppe) — gruppe 'allgemein' oder Preset-ID."""
     liste = [(i, n, "allgemein") for i, n, _ in ALLGEMEIN]
@@ -899,6 +938,9 @@ def alle():
 
 
 def _funktion(mid):
+    leb = lebendig(mid)
+    if leb:  # animiert: Standbild fuer Sperrbildschirm und Vorschau
+        mid = leb[3]
     for i, _, f in ALLGEMEIN:
         if i == mid:
             return f, None

@@ -182,12 +182,15 @@ def symbol_thema(p, e, akt):
 
 def hintergrund(p, e):
     mid = e["hintergrund"]
-    png = hintergruende.rendern(mid, p, HG_DIR)
+    leb = hintergruende.lebendig(mid)
+    png = hintergruende.rendern(mid, p, HG_DIR)  # bei animierten: Standbild fuer den Sperrbildschirm
     # alte Bilder aufraeumen (die letzten 12 behalten)
     bilder = sorted(HG_DIR.glob("*.png"), key=lambda f: f.stat().st_mtime, reverse=True)
     for alt in bilder[12:]:
         alt.unlink(missing_ok=True)
-    if e["diashow"]:
+    if leb:
+        lebendig(p, leb)
+    elif e["diashow"]:
         diashow(p, e)
     else:
         _lauf("plasma-apply-wallpaperimage", str(png))
@@ -196,6 +199,28 @@ def hintergrund(p, e):
     kconf("kscreenlockerrc", gruppen, "Image", f"file://{png}")
     kconf("kscreenlockerrc", gruppen, "PreviewImage", f"file://{png}")
     return png
+
+
+def lebendig(p, leb):
+    """Animierter Hintergrund (Plasma-Modul de.biblix.lebendig) auf allen Bildschirmen."""
+    szene, _, gruppe, _ = leb
+    if gruppe != "allgemein":  # Firmen-Szenen in Firmenfarben, wie die Firmenbilder
+        p = kern.palette({"preset": gruppe, "modus": "dunkel", "eigene_farben": None}, "dunkel")
+    farben = {k: p[k] for k in ("grund", "flaeche", "karte", "rand", "text", "leise", "akzent", "akzent2") if k in p}
+    try:
+        sprueche = [z.strip() for z in (DESIGN / "sprueche.txt").read_text(encoding="utf-8").splitlines()
+                    if z.strip() and not z.startswith("#")]
+    except OSError:
+        sprueche = []
+    plasma_skript(f"""
+desktops().forEach(function (d) {{
+    d.wallpaperPlugin = "de.biblix.lebendig";
+    d.currentConfigGroup = ["Wallpaper", "de.biblix.lebendig", "General"];
+    d.writeConfig("Szene", {json.dumps(szene)});
+    d.writeConfig("Farben", {json.dumps(json.dumps(farben))});
+    d.writeConfig("Sprueche", {json.dumps(chr(10).join(sprueche))});
+    d.reloadConfig();
+}});""")
 
 
 def diashow(p, e):

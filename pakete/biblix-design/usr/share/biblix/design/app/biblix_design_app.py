@@ -799,6 +799,25 @@ class Fenster(QMainWindow):
             zeile.addWidget(minuten)
             zeile.addStretch(1)
             lay.addLayout(zeile)
+            # Animierte Hintergruende: eigene Vorschaubilder, pausieren bei Vollbild und maximierten Fenstern
+            titel = QLabel("Lebendig (animiert) · pausiert bei Spielen und maximierten Fenstern")
+            titel.setObjectName("leise")
+            titel.setWordWrap(True)
+            lay.addWidget(titel)
+            gitter = QGridLayout()
+            gitter.setSpacing(8)
+            for k, (szene, name, _gruppe, _standbild) in enumerate(hintergruende.LEBENDIG):
+                mid = hintergruende.LEBENDIG_PREFIX + szene
+                kachel = HintergrundKachel(mid, "▶ " + name)
+                bild = kern.DESIGN / "lebendig" / f"{szene}.png"
+                if bild.is_file():
+                    kachel.setIcon(QIcon(str(bild)))
+                kachel.lebendig = True
+                kachel.setChecked(mid == e["hintergrund"])
+                kachel.clicked.connect(lambda _=False, mid=mid: self.setzen("hintergrund", mid))
+                gitter.addWidget(kachel, k // 2, k % 2)
+                self.bildkacheln.append(kachel)
+            lay.addLayout(gitter)
             gruppen = [("allgemein", "In deinen Farben")] + [(pr["id"], pr["name"]) for pr in kern.presets()]
             alle = hintergruende.alle()
             for gid, gname in gruppen:
@@ -873,6 +892,8 @@ class Fenster(QMainWindow):
 
     def _bildkacheln_aktualisieren(self):
         for kachel in getattr(self, "bildkacheln", []):
+            if getattr(kachel, "lebendig", False):
+                continue  # animierte haben feste Vorschaubilder
             try:
                 bild = self.vorschauen.holen(kachel.mid, self.p)
             except RuntimeError:

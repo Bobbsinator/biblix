@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+  <group name="General">
+    <entry name="Szene" type="String"><default>sternenflug</default></entry>
+    <!-- Farben aus Biblix Design als JSON (grund, flaeche, karte, rand, text, leise, akzent, akzent2) -->
+    <entry name="Farben" type="String"><default></default></entry>
+    <!-- Bibi-Sprueche fuer die Prompt-Szene, eine pro Zeile -->
+    <entry name="Sprueche" type="String"><default></default></entry>
+    <entry name="Tempo" type="Double"><default>1.0</default></entry>
+    <entry name="Pausieren" type="Bool"><default>true</default></entry>
+  </group>
+</kcfg>

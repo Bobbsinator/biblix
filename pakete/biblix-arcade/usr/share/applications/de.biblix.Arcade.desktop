@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Bibi Arcade
+GenericName=Spielebibliothek
+Comment=Deine Spiele im Biblix-Rechenzentrum
+Exec=bibi-arcade
+Icon=de.biblix.Arcade
+Terminal=false
+Categories=Game;
+Keywords=Spiele;Steam;Arcade;Controller;ProtonDB;
+Actions=vollbild;
+
+[Desktop Action vollbild]
+Name=Im Vollbild starten (Sofa)
+Exec=bibi-arcade --vollbild

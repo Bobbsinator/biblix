@@ -1,0 +1,7 @@
+{
+  "kennung": "bibi_minesweeper",
+  "name": "Bibi Minesweeper",
+  "kurz": "Finde die lockeren Schrauben unter den Blechplatten, bevor sie dir das System zerlegen.",
+  "version": "1.0.0",
+  "stufen": ["Lehrling", "Geselle", "Meister"]
+}

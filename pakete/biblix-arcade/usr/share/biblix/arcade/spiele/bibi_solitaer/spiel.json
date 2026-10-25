@@ -1,0 +1,7 @@
+{
+  "kennung": "bibi_solitaer",
+  "name": "Bibi Solitär",
+  "kurz": "Die klassische Patience im Biblix-Look: alle Karten nach Farbe sortiert auf die vier Zielstapel.",
+  "version": "1.0.0",
+  "stufen": ["Lehrling", "Geselle", "Meister"]
+}

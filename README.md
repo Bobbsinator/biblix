@@ -30,6 +30,7 @@ Treiber für **NVIDIA und AMD**, abgestimmt auf **Ryzen 7 9800X3D + RTX 5070 Ti*
 | Zubehör | Eigene Seite im S-Launcher: EasyEffects, GPU Screen Recorder, OBS, OpenRGB, Piper, Solaar, WiVRn (VR), Mission Center, StreamController |
 | Sicherheit | Firewall mit Oberfläche (nur KDE Connect, Steam-Streaming, Drucker, VR offen), Timeshift-Snapshots, Secure Boot mit eigenem Schlüssel |
 | Updates | Benachrichtigung, wenn System- oder App-Updates da sind; Klick öffnet den S-Launcher. Hinweis, wenn ein Neustart nötig ist (neuer Kernel oder Treiber) |
+| Spiele | **Bibi Arcade** (Steam-Bibliothek als Rechenzentrum, Linux-Ampel, Datenblatt, „In Windows starten“ bei Anti-Cheat) |
 | Filme & Web | **Bibiplexx** (Filme und Serien, mit TMDB-Postern und Bewertungen, Import-Assistent, Tierlist und Top 10) und **Bibi Browser** (Firefox im Biblix-Look) |
 | Werkzeuge | **Haustechnik** (Secure Boot, Bildschirme, Platten einrichten), `biblix-gpu` (Grafik-Check), Dolphin-Rechtsklick „Bibi“, fastfetch mit Bibi-Logo, Git, Python, Build-Tools |
 | Installer | Calamares, Deutsch (Österreich), Zeitzone Wien |
@@ -328,6 +329,14 @@ Firefox im Biblix-Look: Leisten, Tabs und Fensterknöpfe in den Farben deines Bi
 Bibi-Startseite, uBlock Origin, keine Telemetrie, HTTPS-Modus, Netflix & Co. ohne Rückfrage.
 Eigenes Profil (`~/.local/share/bibi-browser`), Standardbrowser von Biblix für Links, Taskleiste und Apps.
 Der normale Firefox bleibt daneben. Offene Tabs stellt der Bibi Browser beim nächsten Öffnen selbst wieder her.
+
+## Bibi Arcade (Spiele)
+
+**Bibi Arcade** zeigt deine Steam-Spiele als Server-Einschübe in einem Rechenzentrum: Die LED zeigt, wie gut
+das Spiel unter Linux läuft (ProtonDB, Anti-Cheat-Liste), das Klebeband die Spielzeit, der Balken die letzten zwei
+Wochen. Ein Spiel öffnen zeigt sein **Datenblatt** als Blaupause. Spiele mit Anti-Cheat-Sperre bekommen den Knopf
+**„In Windows starten“**. Dazu die **Netz-Ansicht** (Größe = Spielzeit) und das **Labor** mit Prüfständen für eigene
+Bibi-Spiele. Komplett mit dem Controller bedienbar. Siehe `docs/bibi-arcade.md`.
 
 ## Bibiplexx (Filme und Serien)
 

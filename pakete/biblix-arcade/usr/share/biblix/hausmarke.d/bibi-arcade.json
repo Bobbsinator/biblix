@@ -1,0 +1,9 @@
+{
+  "id": "bibi-arcade",
+  "name": "Bibi Arcade",
+  "beschreibung": "Deine Spiele im Biblix-Rechenzentrum. Mit Linux-Ampel, Datenblatt und Labor für Bibi-Spiele.",
+  "symbol": "de.biblix.Arcade",
+  "befehl": ["bibi-arcade"],
+  "status": "fertig",
+  "reihenfolge": 25
+}

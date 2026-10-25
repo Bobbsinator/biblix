@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Bibiplexx-Wächter
+Comment=Meldet sich, wenn eine Platte mit neuen Filmen oder Serien angesteckt wird
+Exec=bibiplexx --waechter
+Icon=de.biblix.Bibiplexx
+Terminal=false
+NoDisplay=true
+X-KDE-autostart-phase=2
+OnlyShowIn=KDE;

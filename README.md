@@ -30,7 +30,7 @@ Treiber für **NVIDIA und AMD**, abgestimmt auf **Ryzen 7 9800X3D + RTX 5070 Ti*
 | Zubehör | Eigene Seite im S-Launcher: EasyEffects, GPU Screen Recorder, OBS, OpenRGB, Piper, Solaar, WiVRn (VR), Mission Center, StreamController |
 | Sicherheit | Firewall mit Oberfläche (nur KDE Connect, Steam-Streaming, Drucker, VR offen), Timeshift-Snapshots, Secure Boot mit eigenem Schlüssel |
 | Updates | Benachrichtigung, wenn System- oder App-Updates da sind; Klick öffnet den S-Launcher. Hinweis, wenn ein Neustart nötig ist (neuer Kernel oder Treiber) |
-| Filme & Web | **Bibiplexx** (Filme und Serien, mit TMDB-Postern und Bewertungen) und **Bibi Browser** (Firefox im Biblix-Look) |
+| Filme & Web | **Bibiplexx** (Filme und Serien, mit TMDB-Postern und Bewertungen, Import-Assistent, Tierlist und Top 10) und **Bibi Browser** (Firefox im Biblix-Look) |
 | Werkzeuge | **Haustechnik** (Secure Boot, Bildschirme, Platten einrichten), `biblix-gpu` (Grafik-Check), Dolphin-Rechtsklick „Bibi“, fastfetch mit Bibi-Logo, Git, Python, Build-Tools |
 | Installer | Calamares, Deutsch (Österreich), Zeitzone Wien |
 
@@ -346,6 +346,14 @@ Untertitelspuren mit Namen), **Bild-Infos** (Taste I). Unter „Neu dazugekommen
 Poster und die TMDB-Bewertung (★ 7,9). Die Beschreibung lässt sich zuschalten. Einzutragen unter
 Bibiplexx → Einstellungen → „Poster und Bewertungen“. Ohne Schlüssel bleiben die Standbilder aus den Filmen.
 *Bibiplexx verwendet die TMDB-API, ist aber nicht von TMDB unterstützt oder zertifiziert.*
+
+**Importieren:** Platte anstecken → Bibiplexx meldet sich („3 neue Folgen und 1 neuer Film – übernehmen?").
+Der Assistent zeigt alles vorher (alter Name → neuer Name), sortiert in `Serien/Name (Jahr)/Staffel 1/` und
+`Filme/Titel (Jahr)/`, nimmt Untertitel mit, überspringt, was schon da ist, und **kopiert nur** – die Originale
+bleiben. Auch per Knopf „Importieren" oder Rechtsklick auf einen Ordner → Bibi → „In Bibiplexx importieren".
+
+**Ranking:** eigene Tierlist (S „Reihe sieben" bis D „Im Saal eingeschlafen") zum Ziehen, Top 10 für Serien
+und Filme und eigene Sterne. Die Tierlist lässt sich als Bild speichern.
 
 Eine **leere** zweite Platte richtet Bibiplexx auf Wunsch als Filmplatte ein
 (Einstellungen → „Leere Platte einrichten", Ordner `/media/bibiplexx` mit `Filme/` und `Serien/`).

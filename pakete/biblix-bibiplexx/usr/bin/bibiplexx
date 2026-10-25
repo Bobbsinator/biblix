@@ -1,2 +1,6 @@
 #!/bin/sh
+# Der Waechter laeuft ohne Qt (wenig Speicher); alles andere ist die Bibiplexx-App.
+if [ "$1" = "--waechter" ]; then
+    exec python3 /usr/share/biblix/bibiplexx/waechter.py
+fi
 exec python3 /usr/share/biblix/bibiplexx/bibiplexx.py "$@"

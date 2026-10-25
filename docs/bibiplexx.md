@@ -63,3 +63,37 @@ zu drehen. **Kein süßes Popcorn**, nirgends, auch nicht als Option.
 - Prüfung: alte Einstellungen (Stand 1, speicherten immer „deutsch") werden einmal auf Englisch umgestellt;
   Bildglättung lässt sich ohne bekannte Bildschirm-Hz nicht einschalten (Meldung statt schwarzem Bild);
   Bitrate zeigt bis zur ersten Messung den Schnitt der Datei; bei vielen Untertiteln bleibt „Aus" sichtbar.
+
+## 1.3.0 (25.10.2026): Importieren und Ranking
+
+**Import-Assistent** (`importieren.py`, Knopf „Importieren" oben, `bibiplexx --importieren [ORDNER]`,
+Dolphin: Rechtsklick auf einen Ordner → Bibi → „In Bibiplexx importieren"):
+
+- Quelle wählen: angesteckte Platten (unter `/media/<name>/`, erscheinen von selbst) oder ein Ordner.
+- Erkennung wie in Bibiplexx (`S01E02`, `1x02`, Jahr), dazu: Serienname aus dem Ordner
+  („Die Simpsons/Staffel 3/03x05 …"), Filmtitel und Jahr aus dem Ordner bei Release-Ordnern
+  („Inception.2010.1080p…/sparks-inception.mkv"), kleingeschriebene Namen werden groß geschrieben.
+  Samples und `System Volume Information` werden übersprungen.
+- Vorschau alt → neu, Name und Jahr direkt änderbar; was schon in Bibiplexx ist (gleiche Serie/Staffel/Folge
+  bzw. Film), ist „schon da" und abgehakt; zwei Dateien mit demselben Ziel (720p und 1080p) → nur eine.
+  Unklare Einzeldateien (Film ohne Jahr) stehen unter „Unklar" mit Auswahl Film/Serienfolge (Staffel, Folge).
+- Mit TMDB-Schlüssel: richtiger Name, Jahr, Folgentitel; „Meintest du …?" als Auswahl (bis zu 6 Treffer).
+  Sprache der Titel folgt der Tonsprache (Deutsch → de-DE, sonst en-US).
+- Ablage wie gehabt: `Serien/Name (Jahr)/Staffel N/Name - S01E02 - Titel.mkv`, `Filme/Titel (Jahr)/Titel (Jahr).mkv`;
+  vorhandene Serienordner werden weiterbenutzt. Untertitel (`Name.de.srt`, `Subs/`) kommen mit.
+- **Nur kopieren**, Originale bleiben. Platzprüfung (2 GB Reserve), Fortschritt mit Restzeit, Abbrechen.
+  Kopiert wird nach `Datei.bibiplexx-teil` und erst am Ende umbenannt (abgezogene Platte → keine halbe Datei).
+- Danach „Platte sicher entfernen" (udisksctl unmount + power-off).
+
+**Wächter** (`waechter.py`, Autostart `/etc/xdg/autostart/de.biblix.Bibiplexx.Waechter.desktop`, ohne Qt):
+schaut alle 3 s nach neuen Wechselplatten, hängt sie ein (udisksctl, ohne Passwort) und fragt per Meldung
+„Auf „HDD" gibt es 3 neue Folgen und 1 neuen Film. In Bibiplexx übernehmen?" → Importieren / Nicht jetzt.
+Platten, die beim Anmelden schon steckten, bleiben in Ruhe. Abschaltbar: Einstellungen → „Beim Anstecken einer Platte fragen".
+
+**Ranking** (neuer Bereich, `ranking.py`, gespeichert in `~/.local/state/bibiplexx/ranking.json`):
+
+- **Tierlist** S–D zum Ziehen: S „Reihe sieben", A „Salziges Popcorn", B „Läuft", C „Nebenbei am Handy",
+  D „Im Saal eingeschlafen". Filter Serien/Filme, „Als Bild speichern" (`~/Bilder/Bibiplexx-Tierlist-DATUM.png`).
+- **Top 10** Serien und Filme, mit ▲ ▼ sortieren, Platz 1–3 in Gold, Silber, Bronze.
+- **Meine Sterne** (1–5, eigene Bewertung neben der TMDB-Note); erscheinen auch auf den Karten (pink, oben links).
+- Alles auch per Rechtsklick auf Karten und Poster. Controller: LB/RB schaltet jetzt auch zum Ranking.

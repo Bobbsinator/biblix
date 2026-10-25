@@ -6,6 +6,8 @@ gespielt wird im Vollbild mit mpv, mit Bibiplexx-Steuerleiste und Vorhang-Intro.
 
     bibiplexx               Sammlung oeffnen
     bibiplexx DATEI ...     Datei(en) direkt im Bibiplexx-Player abspielen
+    bibiplexx --importieren [ORDNER]   Filme und Serien von einer Platte holen (importieren.py)
+    bibiplexx --waechter    meldet sich beim Anstecken einer Platte (waechter.py, ohne Qt)
 """
 import hashlib
 import json
@@ -32,6 +34,9 @@ from PyQt6.QtWidgets import (
     QInputDialog, QLabel, QLayout, QLineEdit, QMainWindow, QMenu, QMessageBox, QPushButton, QScrollArea,
     QSizePolicy, QStackedWidget, QVBoxLayout, QWidget,
 )
+
+# Als Skript gestartet: unter "bibiplexx" erreichbar, damit Import und Ranking dieselben Teile nutzen
+sys.modules.setdefault("bibiplexx", sys.modules[__name__])
 
 VERSION = "1.2"
 HIER = Path(__file__).resolve().parent
@@ -149,7 +154,10 @@ STANDARD = {
     "tmdb_schluessel": "",       # eigener TMDB-Schluessel (API-Key v3 oder Lese-Token v4)
     "bewertung": True,           # TMDB-Bewertung auf den Karten
     "beschreibung": False,       # Beschreibung aus TMDB (Serienseite, Saal, Tooltip)
+    "import_melden": True,       # beim Anstecken einer Platte mit neuen Videos fragen (Waechter)
 }
+
+SEITEN = ("saal", "serien", "filme", "ranking", "suche")
 
 
 def einstellungen():
@@ -724,6 +732,21 @@ class Karte(QWidget):
             p.drawRoundedRect(br, 11, 11)
             p.setPen(QColor(F["orange"]))
             p.drawText(br, Qt.AlignmentFlag.AlignCenter, text)
+        serie = getattr(self, "serie", None)
+        if self.e and (serie or (self.tmdb and self.e["art"] == "film")):
+            n = self.haupt.ranking.noten.get(ranking.schluessel(self.e, serie))
+            if n:
+                f = QFont(self.font())
+                f.setPointSizeF(f.pointSizeF() * 0.9)
+                p.setFont(f)
+                text = "★" * n
+                w = p.fontMetrics().horizontalAdvance(text) + 14
+                br = QRectF(r.left() + 8, r.top() + 8, w, 22)
+                p.setPen(Qt.PenStyle.NoPen)
+                p.setBrush(QColor(7, 7, 12, 210))
+                p.drawRoundedRect(br, 11, 11)
+                p.setPen(QColor(F["pink"]))
+                p.drawText(br, Qt.AlignmentFlag.AlignCenter, text)
         aktiv = self.hover or self.hasFocus()
         p.setPen(QPen(QColor(F["pink"] if aktiv else F["rand"]), 3 if self.hasFocus() else (2 if self.hover else 1)))
         p.setBrush(Qt.BrushStyle.NoBrush)
@@ -783,6 +806,8 @@ class FlowLayout(QLayout):
         return s
 
     def _ordnen(self, r, test):
+        m = self.contentsMargins()
+        r = r.adjusted(m.left(), m.top(), -m.right(), -m.bottom())
         x, y, zeile, sp = r.x(), r.y(), 0, self.spacing()
         for it in self._items:
             h = it.sizeHint()
@@ -792,7 +817,7 @@ class FlowLayout(QLayout):
                 it.setGeometry(QRect(QPoint(x, y), h))
             x += h.width() + sp
             zeile = max(zeile, h.height())
-        return y + zeile - r.y()
+        return y + zeile - r.y() + m.top() + m.bottom()
 
 
 class Reihe(QWidget):
@@ -958,6 +983,9 @@ class Haupt(QMainWindow):
         self.mpv = None
         self.einleser = None
         self.zuletzt_eingelesen = 0.0
+        self.ranking = ranking.Ranking()
+        self.ranking_teil, self.ranking_filter = "tierlist", "alles"
+        self.import_fenster = None
 
         root = QWidget()
         lay = QVBoxLayout(root)
@@ -976,7 +1004,7 @@ class Haupt(QMainWindow):
         name.setStyleSheet(f"color: {F['pink']}; font-size: 16pt; font-weight: 900; letter-spacing: 3px; margin-right: 18px;")
         kl.addWidget(name)
         self.nav = {}
-        for key, text in (("saal", "Saal"), ("serien", "Serien"), ("filme", "Filme")):
+        for key, text in (("saal", "Saal"), ("serien", "Serien"), ("filme", "Filme"), ("ranking", "Ranking")):
             b = knopf(text, "nav", lambda _=False, k=key: self.zeigen(k))
             b.setCheckable(True)
             kl.addWidget(b)
@@ -988,6 +1016,7 @@ class Haupt(QMainWindow):
         self.suche.setFixedWidth(320)
         self.suche.returnPressed.connect(self.suchen)
         kl.addWidget(self.suche)
+        kl.addWidget(knopf("Importieren", cb=self.importieren))
         kl.addWidget(knopf("Einstellungen", cb=self.einstellungen_zeigen))
         lay.addWidget(kopf)
         self.stack = QStackedWidget()
@@ -1110,7 +1139,8 @@ class Haupt(QMainWindow):
         weiter = self.weiterschauen()
         if not self.alle:
             leer = self.einleser is not None and not self.einleser.isRunning()
-            knoepfe = [knopf("Ordner hinzufügen", "orange", self.ordner_hinzu)]
+            knoepfe = [knopf("Von einer Platte importieren", "orange", self.importieren),
+                       knopf("Ordner hinzufügen", cb=self.ordner_hinzu)]
             if leere_platten():
                 knoepfe.append(knopf("Leere Platte für Filme einrichten", cb=self.platte_einrichten))
             s.body.addWidget(Leinwand(
@@ -1206,6 +1236,19 @@ class Haupt(QMainWindow):
         for e in filme:
             r.addWidget(self.karte(e))
         return s
+
+    def seite_ranking(self):
+        return ranking.seite(self)
+
+    def importieren(self):
+        """Import-Assistent (eigenes Fenster); danach Sammlung neu einlesen."""
+        if alive(self.import_fenster) and self.import_fenster.isVisible():
+            self.import_fenster.raise_()
+            self.import_fenster.activateWindow()
+            return
+        self.import_fenster = importieren.ImportFenster(None, self)
+        self.import_fenster.importiert.connect(self.neu_einlesen)
+        self.import_fenster.show()
 
     def seite_suche(self):
         s = Seite()
@@ -1391,7 +1434,7 @@ class Haupt(QMainWindow):
         if self.aktuell == "serie" and getattr(self, "serie_offen", None):
             self.serie_zeigen(*self.serie_offen)
         else:
-            self.zeigen(self.aktuell if self.aktuell in ("saal", "serien", "filme", "suche") else "saal")
+            self.zeigen(self.aktuell if self.aktuell in SEITEN else "saal")
 
     # ---- Rechtsklick auf Karten
 
@@ -1405,7 +1448,7 @@ class Haupt(QMainWindow):
                 stand.pop(p, None)
         json_schreiben(STAND, stand)
         self.stand_laden()
-        self.zeigen(self.aktuell if self.aktuell in ("saal", "serien", "filme", "suche") else "saal")
+        self.zeigen(self.aktuell if self.aktuell in SEITEN else "saal")
 
     def aus_weiterschauen(self, pfad):
         stand = json_lesen(STAND, {})
@@ -1414,7 +1457,7 @@ class Haupt(QMainWindow):
             stand[pfad]["zeit"] = 0
         json_schreiben(STAND, stand)
         self.stand_laden()
-        self.zeigen(self.aktuell if self.aktuell in ("saal", "serien", "filme", "suche") else "saal")
+        self.zeigen(self.aktuell if self.aktuell in SEITEN else "saal")
 
     def zeigen_im_dateimanager(self, pfad):
         if shutil.which("dolphin"):
@@ -1448,6 +1491,9 @@ class Haupt(QMainWindow):
                 m.addAction("Als gesehen markieren", lambda: self.stand_setzen([e["pfad"]], True))
             if st.get("pos", 0) > 30 and not st.get("fertig"):
                 m.addAction("Aus „Weiterschauen“ entfernen", lambda: self.aus_weiterschauen(e["pfad"]))
+        if serie or e["art"] == "film":
+            m.addSeparator()
+            ranking.menue_fuellen(m, self, ranking.schluessel(e, serie))
         m.addSeparator()
         m.addAction("Im Dateimanager zeigen", lambda: self.zeigen_im_dateimanager(e["pfad"]))
         m.exec(pos)
@@ -1532,6 +1578,15 @@ class Haupt(QMainWindow):
         reihe.addStretch(1)
         lay.addLayout(reihe)
 
+        lay.addWidget(label("Importieren", "h2"))
+        z = QHBoxLayout()
+        z.addWidget(label("Filme und Serien von einer Platte oder aus einem Ordner holen: richtig benannt und "
+                          "in Ordner sortiert. Es wird nur kopiert.", "leise", wrap=True), 1)
+        z.addWidget(knopf("Importieren …", cb=lambda: (dlg.accept(), self.importieren())))
+        lay.addLayout(z)
+        schalter("Beim Anstecken einer Platte fragen", "import_melden",
+                 "Steckt eine Platte mit Filmen oder Serien, die noch nicht in Bibiplexx sind, kommt eine Meldung mit „Importieren“.")
+
         lay.addWidget(label("Kino", "h2"))
         wahl("Kinomodus beim Start", "kino", [("vorhang_gong", "Vorhang und Gong"), ("vorhang", "Nur Vorhang"), ("aus", "Aus")],
              "Saal wird dunkel, der Vorhang geht auf. „Reihe sieben.“")
@@ -1602,7 +1657,7 @@ class Haupt(QMainWindow):
         dlg.resize(680, 720)
         dlg.exec()
         self.neu_einlesen()
-        self.zeigen(self.aktuell if self.aktuell in ("saal", "serien", "filme", "suche") else "saal")
+        self.zeigen(self.aktuell if self.aktuell in SEITEN else "saal")
 
     def platte_einrichten(self):
         platten = leere_platten()
@@ -1636,6 +1691,11 @@ class Haupt(QMainWindow):
         self.neu_einlesen()
 
     def closeEvent(self, ev):
+        if alive(self.import_fenster):
+            if self.import_fenster.isVisible() and not self.import_fenster._darf_zu():
+                ev.ignore()
+                return
+            self.import_fenster.aufraeumen()
         if self.einleser is not None and self.einleser.isRunning():
             self.einleser.wait(3000)
         self.bilder.pool.clear()
@@ -1729,6 +1789,8 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName("Bibiplexx")
     app.setDesktopFileName("de.biblix.Bibiplexx")
+    if "--importieren" in sys.argv:
+        sys.exit(importieren.main([a for a in sys.argv if a != "--importieren"]))
     dateien = [a for a in sys.argv[1:] if not a.startswith("-")]
     if dateien:
         # Direkt abspielen ("Oeffnen mit Bibiplexx"), ohne Sammlung
@@ -1749,13 +1811,13 @@ def main():
 
 
 def sofa_modus(w):
-    """Xbox-Controller: LB/RB wechselt Saal/Serien/Filme, B geht zurueck, Y = Ueberrasch mich."""
+    """Xbox-Controller: LB/RB wechselt Saal/Serien/Filme/Ranking, B geht zurueck, Y = Ueberrasch mich."""
     sys.path.insert(0, "/usr/share/biblix/gamepad")
     try:
         from biblix_gamepad import Gamepad
     except ImportError:
         return None
-    bereiche = ["saal", "serien", "filme"]
+    bereiche = ["saal", "serien", "filme", "ranking"]
 
     def zurueck():
         if w.aktuell == "serie":
@@ -1769,6 +1831,9 @@ def sofa_modus(w):
 
     return Gamepad(w, zurueck=zurueck, bereich=bereich, y=w.ueberraschung, farbe=F["pink"])
 
+
+import importieren  # noqa: E402 - braucht die Teile oben
+import ranking  # noqa: E402
 
 if __name__ == "__main__":
     main()

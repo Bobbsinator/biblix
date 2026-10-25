@@ -15,5 +15,5 @@ p = Path(sys.argv[1])
 spur = klaenge._als_spur(klaenge.akzent_kino(), 0.9)
 spur.speichern(p / "usr/share/biblix/bibiplexx/gong.wav", ziel_db=-6.0)
 PY
-python3 -m py_compile "$P/usr/share/biblix/bibiplexx/bibiplexx.py"
+for f in bibiplexx importieren ranking waechter; do python3 -m py_compile "$P/usr/share/biblix/bibiplexx/$f.py"; done
 rm -rf "$P/usr/share/biblix/bibiplexx/__pycache__" "$LIB/biblix_design/__pycache__"

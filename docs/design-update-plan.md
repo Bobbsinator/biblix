@@ -112,3 +112,14 @@ Technik-Entscheidungen:
   „Dispo!“ unter 10 %) · Nassmacher Pegel (RAM als Wasserstand mit Wellen) · Bibiplexx Leinwand (was gerade läuft, über playerctl;
   Klick: Pause/Weiter bzw. Bibiplexx öffnen).
 
+
+## biblix-design 2.5.0 (25.10.2026): Standorte und Hintergrund-Galerie
+
+- **Serie „Standorte“** (8 neue Motive, 4K, feste Farben je Ort, nur Kanon-Inhalte): Exabibi Tower (Schnitt bis Bibi Tief),
+  BBB-Kurstafel, Bibi Mac Menütafel, Delivery-W-Typentafel, Nassmacher-Parkplan, Bibiplexx-Saalplan, Burgenland-Ebenenplan,
+  H&H-Werkstatt. Bewusst nicht eingezeichnet: Euro-Tresor und Ebene -9 (laut Kanon auf keinem Plan). Details: `docs/hintergrund-galerie.md`.
+- **Neue Seite „Hintergründe“** in Biblix Design: Galerie nach Gruppen, Filter, Detail, ein Bild pro Monitor, eigene Bilder und Ordner,
+  Diashow je Gruppe. Der Konfigurator zeigt beim Hintergrund nur noch die Kurzfassung mit „Galerie öffnen“.
+- Lack-Leiste mit Namen, Häkchen der Schalter sichtbar, Vorschaubilder in 960×540.
+- Behoben: Bei animiertem Hintergrund lehnte der Systemhelfer (Bootmenü/Anmeldung) das Motiv ab; jetzt bekommt er das Standbild.
+- Gestaltungsregel für die Zukunft: neue Bildserien stilistisch mischen (nicht nur Flat-Pläne), siehe Galerie-Doku.

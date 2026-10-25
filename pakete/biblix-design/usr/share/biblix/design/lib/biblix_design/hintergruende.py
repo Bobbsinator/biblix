@@ -11,6 +11,7 @@ import subprocess
 from pathlib import Path
 
 from .kern import mischen, heller, dunkler, preset, palette as kern_palette
+from .standorte import STANDORTE
 
 W, H = 3840, 2160
 MONO = "DejaVu Sans Mono, monospace"
@@ -929,12 +930,59 @@ def lebendig(mid):
     return next((x for x in LEBENDIG if x[0] == szene), None)
 
 
+STANDORT_GRUPPE = "standorte"
+EIGEN_DATEI = "datei:"
+EIGEN_ORDNER = "ordner:"
+BILDENDUNGEN = (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".svg")
+
+
 def alle():
-    """Liste aller Motive: (id, name, gruppe) — gruppe 'allgemein' oder Preset-ID."""
+    """Liste aller Motive: (id, name, gruppe) — gruppe 'allgemein', 'standorte' oder Preset-ID."""
     liste = [(i, n, "allgemein") for i, n, _ in ALLGEMEIN]
+    liste += [(i, n, STANDORT_GRUPPE) for i, n, _, _, _ in STANDORTE]
     for firma, motive in FIRMA.items():
         liste += [(i, n, firma) for i, n, _ in motive]
     return liste
+
+
+def standort(mid):
+    """(id, name, funktion, preset, beschreibung) fuer ein Standort-Motiv, sonst None."""
+    return next((x for x in STANDORTE if x[0] == mid), None)
+
+
+def eigen_pfad(mid):
+    """Pfad eines eigenen Bildes oder Ordners ("datei:..." / "ordner:..."), sonst None."""
+    for vorsilbe in (EIGEN_DATEI, EIGEN_ORDNER):
+        if str(mid).startswith(vorsilbe):
+            return Path(mid[len(vorsilbe):])
+    return None
+
+
+def ordner_bilder(ordner):
+    try:
+        return sorted(f for f in Path(ordner).iterdir() if f.suffix.lower() in BILDENDUNGEN and f.is_file())
+    except OSError:
+        return []
+
+
+def eigenes_bild(mid):
+    """Bilddatei fuer ein eigenes Motiv (bei Ordnern das erste Bild) oder None, wenn nichts da ist."""
+    pfad = eigen_pfad(mid)
+    if pfad is None:
+        return None
+    if str(mid).startswith(EIGEN_ORDNER):
+        bilder = ordner_bilder(pfad)
+        return bilder[0] if bilder else None
+    return pfad if pfad.is_file() else None
+
+
+def system_motiv(mid):
+    """Motiv-ID, die der Systemhelfer (Bootmenue, Anmeldung) kennt: Standbild statt animiert,
+    Biblix-Standard statt eigener Bilder."""
+    leb = lebendig(mid)
+    if leb:
+        mid = leb[3]
+    return mid if any(i == mid for i, _, _ in alle()) else ALLGEMEIN[0][0]
 
 
 def _funktion(mid):
@@ -944,6 +992,9 @@ def _funktion(mid):
     for i, _, f in ALLGEMEIN:
         if i == mid:
             return f, None
+    st = standort(mid)
+    if st:
+        return st[2], STANDORT_GRUPPE
     for firma, motive in FIRMA.items():
         for i, _, f in motive:
             if i == mid:
@@ -951,16 +1002,26 @@ def _funktion(mid):
     return ALLGEMEIN[0][2], None
 
 
-def svg(mid, p):
+def svg(mid, p, eigene_farben=False):
+    """SVG eines Motivs. Standorte haben feste Farben; Firmenmotive nehmen die Firmenfarben,
+    ausser eigene_farben ist an (dann die aktuelle Palette)."""
     f, firma = _funktion(mid)
-    if firma:  # Firmenmotive in Firmenfarben (dunkel)
+    if firma == STANDORT_GRUPPE:
+        return f()
+    if firma and not eigene_farben:
         p = kern_palette({"preset": firma, "modus": "dunkel", "eigene_farben": None}, "dunkel")
     return f(p)
 
 
-def rendern(mid, p, ziel_dir: Path, breite=W, hoehe=H):
-    """Rendert ein Motiv als PNG und gibt den Pfad zurueck (mit Zwischenspeicher)."""
-    inhalt = svg(mid, p)
+def rendern(mid, p, ziel_dir: Path, breite=W, hoehe=H, eigene_farben=False):
+    """Rendert ein Motiv als PNG und gibt den Pfad zurueck (mit Zwischenspeicher).
+    Eigene Bilder werden nicht gerendert, sondern direkt zurueckgegeben."""
+    if eigen_pfad(mid) is not None:
+        bild = eigenes_bild(mid)
+        if bild:
+            return bild
+        mid = ALLGEMEIN[0][0]
+    inhalt = svg(mid, p, eigene_farben)
     kennung = hashlib.sha1(inhalt.encode()).hexdigest()[:10]
     ziel_dir.mkdir(parents=True, exist_ok=True)
     png = ziel_dir / f"{mid}-{kennung}-{breite}.png"

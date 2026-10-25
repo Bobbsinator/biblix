@@ -52,9 +52,14 @@ STANDARD = {
     "ladezeiger": "mutter",         # mutter | cursor | schichten
     "klaenge": "preset",            # biblix | preset | retro | ruhig | aus
     "startklang": True,
-    "hintergrund": "schrauben-bauplan",
+    "hintergrund": "schrauben-bauplan",  # Hauptmonitor (auch Sperrbildschirm); "datei:…"/"ordner:…" = eigene Bilder
+    "hintergrund_zweiter": None,    # weitere Monitore: None = wie der Hauptmonitor
+    "hintergrund_eigene_farben": False,  # Firmenmotive in der aktuellen Palette statt in Firmenfarben
+    "eigene_bilder": [],            # eigene Bilder und Ordner als Motiv-IDs ("datei:/pfad", "ordner:/pfad")
     "diashow": False,
     "diashow_minuten": 30,
+    "diashow_gruppe": "auto",       # auto (Gruppe des Hauptbildes) | allgemein | standorte | Preset-ID
+    "diashow_monitore": "beide",    # haupt | beide
     "sperrbildschirm": "bibi",      # bibi | terminal | schlicht
     "ladeanimation": "tippen",      # tippen | schrauben | einblenden
     "bootmenue_mitfaerben": True,

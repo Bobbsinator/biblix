@@ -12,18 +12,20 @@ import subprocess
 import sys
 from pathlib import Path
 
-sys.path.insert(0, "/usr/share/biblix/design/lib")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from PyQt6.QtCore import (Qt, QRectF, QPointF, QTimer, QThread, pyqtSignal, QObject, QRunnable,
                           QThreadPool, QSize)
 from PyQt6.QtGui import (QPainter, QColor, QPainterPath, QPixmap, QFont, QPen, QBrush, QIcon,
-                         QLinearGradient, QPolygonF)
+                         QLinearGradient, QPolygonF, QImage)
 from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QHBoxLayout, QVBoxLayout, QLabel,
                              QPushButton, QScrollArea, QFrame, QGridLayout, QButtonGroup, QCheckBox,
                              QSpinBox, QColorDialog, QInputDialog, QMessageBox, QStackedWidget,
                              QSizePolicy, QToolButton, QProgressBar, QListWidget, QListWidgetItem)
 
 from biblix_design import kern, hintergruende, anwenden, grafik
+from galerie import GalerieSeite
 
 CACHE = Path.home() / ".cache" / "biblix-design"
 VORSCHAU = CACHE / "vorschau"
@@ -42,20 +44,37 @@ class VorschauSignal(QObject):
 
 
 class VorschauAuftrag(QRunnable):
-    def __init__(self, mid, p, signal):
+    def __init__(self, mid, p, signal, eigene_farben=False):
         super().__init__()
-        self.mid, self.p, self.signal = mid, p, signal
+        self.mid, self.p, self.signal, self.eigene_farben = mid, p, signal, eigene_farben
 
     def run(self):
         try:
-            svg = hintergruende.svg(self.mid, self.p)
+            leb = hintergruende.lebendig(self.mid)
+            if leb:  # animierte Szenen haben feste Vorschaubilder
+                self.signal.fertig.emit(self.mid, str(kern.DESIGN / "lebendig" / f"{leb[0]}.png"))
+                return
+            if hintergruende.eigen_pfad(self.mid) is not None:
+                bild = hintergruende.eigenes_bild(self.mid)
+                if not bild:
+                    return
+                kennung = hashlib.sha1(f"{bild}{bild.stat().st_mtime}".encode()).hexdigest()[:12]
+                VORSCHAU.mkdir(parents=True, exist_ok=True)
+                png = VORSCHAU / f"eigen-{kennung}.png"
+                if not png.exists():
+                    img = QImage(str(bild)).scaled(960, 540, Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                                                   Qt.TransformationMode.SmoothTransformation)
+                    img.copy((img.width() - 960) // 2, (img.height() - 540) // 2, 960, 540).save(str(png))
+                self.signal.fertig.emit(self.mid, str(png))
+                return
+            svg = hintergruende.svg(self.mid, self.p, self.eigene_farben)
             kennung = hashlib.sha1(svg.encode()).hexdigest()[:10]
             VORSCHAU.mkdir(parents=True, exist_ok=True)
-            png = VORSCHAU / f"{self.mid}-{kennung}.png"
+            png = VORSCHAU / f"{self.mid}-{kennung}-960.png"
             if not png.exists():
                 quelle = VORSCHAU / f".{self.mid}-{kennung}.svg"
                 quelle.write_text(svg, encoding="utf-8")
-                subprocess.run(["rsvg-convert", "-w", "480", "-h", "270", "-o", str(png), str(quelle)],
+                subprocess.run(["rsvg-convert", "-w", "960", "-h", "540", "-o", str(png), str(quelle)],
                                check=True, capture_output=True)
                 quelle.unlink(missing_ok=True)
             self.signal.fertig.emit(self.mid, str(png))
@@ -76,17 +95,21 @@ class Vorschauen(QObject):
         self.pool = QThreadPool.globalInstance()
         self.pool.setMaxThreadCount(4)
 
-    def schluessel(self, mid, p):
-        f, firma = hintergruende._funktion(mid)
-        return mid if firma else mid + "|" + "".join(p[k] for k in kern.FARBNAMEN)
+    def schluessel(self, mid, p, eigene_farben=False):
+        if hintergruende.lebendig(mid) or hintergruende.eigen_pfad(mid) is not None:
+            return mid
+        f, gruppe = hintergruende._funktion(mid)
+        if gruppe == hintergruende.STANDORT_GRUPPE or (gruppe and not eigene_farben):
+            return mid
+        return mid + "|" + "".join(p[k] for k in kern.FARBNAMEN)
 
-    def holen(self, mid, p):
-        s = self.schluessel(mid, p)
+    def holen(self, mid, p, eigene_farben=False):
+        s = self.schluessel(mid, p, eigene_farben)
         if s in self.bilder:
             return self.bilder[s]
         if s not in self.laufend:
             self.laufend.add(s)
-            auftrag = VorschauAuftrag(mid, p, self.signal)
+            auftrag = VorschauAuftrag(mid, p, self.signal, eigene_farben)
             auftrag.schluessel = s
             self._offen = getattr(self, "_offen", {})
             self._offen[mid] = s
@@ -233,7 +256,7 @@ class Konfigurator(QWidget):
         qp.setClipPath(rahmen)
 
         # Hintergrund
-        bild = self.app.vorschauen.holen(e["hintergrund"], p)
+        bild = self.app.vorschauen.holen(e["hintergrund"], p, e.get("hintergrund_eigene_farben", False))
         if bild and not bild.isNull():
             qp.drawPixmap(R.toRect(), bild)
         else:
@@ -490,18 +513,6 @@ class Schalter(QCheckBox):
         self.toggled.connect(lambda an: self.geaendert.emit(self.schluessel, an))
 
 
-class HintergrundKachel(QToolButton):
-    def __init__(self, mid, name):
-        super().__init__()
-        self.mid = mid
-        self.setText(name)
-        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
-        self.setIconSize(QSize(150, 84))
-        self.setCheckable(True)
-        self.setObjectName("bildkachel")
-        self.setFixedSize(168, 112)
-
-
 # ====================================================================== Hauptfenster
 
 class Anwender(QThread):
@@ -547,7 +558,7 @@ class Fenster(QMainWindow):
         kh.addWidget(marke)
         kh.addSpacing(24)
         self.seiten_gruppe = QButtonGroup(self)
-        for i, name in enumerate(["Konfigurator", "Presets", "Meine Mischungen", "Extras"]):
+        for i, name in enumerate(["Konfigurator", "Hintergründe", "Presets", "Meine Mischungen", "Extras"]):
             b = QPushButton(name)
             b.setCheckable(True)
             b.setObjectName("reiter")
@@ -580,12 +591,16 @@ class Fenster(QMainWindow):
         h1.addWidget(self.seite_rechts)
         self.seiten.addWidget(s1)
 
-        # --- Seite 2: Presets
+        # --- Seite 2: Hintergründe (Galerie)
+        self.galerie = GalerieSeite(self)
+        self.seiten.addWidget(self.galerie)
+
+        # --- Seite 3: Presets
         self.presets_seite = QScrollArea()
         self.presets_seite.setWidgetResizable(True)
         self.seiten.addWidget(self.presets_seite)
 
-        # --- Seite 3: Meine Mischungen
+        # --- Seite 4: Meine Mischungen
         s3 = QWidget()
         v3 = QVBoxLayout(s3)
         v3.setContentsMargins(24, 20, 24, 20)
@@ -614,7 +629,7 @@ class Fenster(QMainWindow):
         v3.addWidget(self.verlauf, 1)
         self.seiten.addWidget(s3)
 
-        # --- Seite 4: Extras
+        # --- Seite 5: Extras
         self.extras_seite = QScrollArea()
         self.extras_seite.setWidgetResizable(True)
         self.seiten.addWidget(self.extras_seite)
@@ -642,6 +657,10 @@ class Fenster(QMainWindow):
             b.setProperty("pid", pr["id"])
             self.lack_gruppe.addButton(b)
             fh.addWidget(b)
+            kurz = QLabel(pr["name"].replace("Bibi Budget ", "").replace("Bibi ", ""))
+            kurz.setObjectName("leise")
+            fh.addWidget(kurz)
+            fh.addSpacing(4)
         eigen = QPushButton("Eigene Farben …")
         eigen.clicked.connect(self.eigene_farben)
         fh.addWidget(eigen)
@@ -674,7 +693,7 @@ class Fenster(QMainWindow):
         fh.addWidget(self.uebernehmen_knopf)
         v.addWidget(fuss)
 
-        self.vorschauen.neu.connect(lambda _m: (self.konf.update(), self._bildkacheln_aktualisieren()))
+        self.vorschauen.neu.connect(lambda _m: (self.konf.update(), self.galerie.aktualisieren()))
         self.aktueller_bereich = "hintergrund"
         self.alles_neu()
         self.konf.aktiv = "hintergrund"
@@ -729,11 +748,22 @@ class Fenster(QMainWindow):
             QToolButton#bildkachel:checked {{ border-color: {p['akzent']}; }}
             QToolButton#bildkachel:hover {{ border-color: {p['rand']}; }}
             QCheckBox {{ background: transparent; spacing: 8px; padding: 4px 0; }}
+            QCheckBox::indicator {{ width: 16px; height: 16px; border: 2px solid {p['leise']}; border-radius: 5px; background: {p['karte']}; }}
+            QCheckBox::indicator:checked {{ background: {p['akzent']}; border-color: {p['akzent']}; }}
+            QCheckBox::indicator:disabled {{ border-color: {p['rand']}; }}
             QListWidget {{ background: {p['flaeche']}; border: 1px solid {p['rand']}; border-radius: 10px; padding: 6px; }}
             QListWidget::item:selected {{ background: {p['auswahl']}; color: {p['text']}; }}
             QProgressBar {{ background: {p['karte']}; border: none; border-radius: 4px; max-height: 8px; }}
             QProgressBar::chunk {{ background: {p['akzent']}; border-radius: 4px; }}
             QSpinBox {{ background: {p['karte']}; border: 1px solid {p['rand']}; border-radius: 6px; padding: 4px; }}
+            QComboBox {{ background: {p['karte']}; border: 1px solid {p['rand']}; border-radius: 8px; padding: 5px 10px; }}
+            QComboBox QAbstractItemView {{ background: {p['flaeche']}; selection-background-color: {p['auswahl']}; }}
+            QFrame#feld {{ background: {p['flaeche']}; border-radius: 14px; }}
+            QFrame#feld QLabel, QFrame#feld QCheckBox {{ background: transparent; }}
+            QFrame#trenner {{ background: {p['rand']}; }}
+            QLabel#klein {{ color: {p['leise']}; font-family: 'DejaVu Sans Mono'; font-size: 8pt; letter-spacing: 2px; background: transparent; padding-top: 6px; }}
+            QLabel#abschnitt {{ font-size: 11pt; letter-spacing: 1px; background: transparent; padding: 6px 0 2px 2px; }}
+            QCheckBox#fett {{ font-weight: bold; font-size: 11pt; }}
         """)
 
     # ---------------------------------------------------------------- Zustand
@@ -745,6 +775,10 @@ class Fenster(QMainWindow):
         self.e["preset"] = pid
         self.e["eigene_farben"] = None
         self.alles_neu()
+
+    def geaendert(self):
+        """Eine Einstellung wurde in einer Unterseite geaendert (noch nicht uebernommen)."""
+        self.alles_neu(nur_vorschau=True)
 
     def alles_neu(self, nur_vorschau=False):
         self.p = kern.palette(self.e)
@@ -759,6 +793,9 @@ class Fenster(QMainWindow):
             self.presets_bauen()
         self.extras_bauen()
         self.mischungen_laden()
+        if not nur_vorschau:
+            self.galerie.aufbauen()
+        self.galerie.aktualisieren()
         geaendert = self.e != self.gespeichert
         self.status.setText("Nicht übernommen" if geaendert else "")
         self.konf.update()
@@ -785,58 +822,27 @@ class Fenster(QMainWindow):
             lay.addWidget(x)
 
         if bid == "hintergrund":
-            self.bildkacheln = []
-            schalter("Diashow (Bilder wechseln automatisch)", "diashow")
-            zeile = QHBoxLayout()
-            zl = QLabel("Wechsel alle")
-            zl.setObjectName("leise")
-            zeile.addWidget(zl)
-            minuten = QSpinBox()
-            minuten.setRange(1, 600)
-            minuten.setSuffix(" Minuten")
-            minuten.setValue(int(e.get("diashow_minuten", 30)))
-            minuten.valueChanged.connect(lambda v: self.e.__setitem__("diashow_minuten", v))
-            zeile.addWidget(minuten)
-            zeile.addStretch(1)
-            lay.addLayout(zeile)
-            # Animierte Hintergruende: eigene Vorschaubilder, pausieren bei Vollbild und maximierten Fenstern
-            titel = QLabel("Lebendig (animiert) · pausiert bei Spielen und maximierten Fenstern")
-            titel.setObjectName("leise")
-            titel.setWordWrap(True)
-            lay.addWidget(titel)
-            gitter = QGridLayout()
-            gitter.setSpacing(8)
-            for k, (szene, name, _gruppe, _standbild) in enumerate(hintergruende.LEBENDIG):
-                mid = hintergruende.LEBENDIG_PREFIX + szene
-                kachel = HintergrundKachel(mid, "▶ " + name)
-                bild = kern.DESIGN / "lebendig" / f"{szene}.png"
-                if bild.is_file():
-                    kachel.setIcon(QIcon(str(bild)))
-                kachel.lebendig = True
-                kachel.setChecked(mid == e["hintergrund"])
-                kachel.clicked.connect(lambda _=False, mid=mid: self.setzen("hintergrund", mid))
-                gitter.addWidget(kachel, k // 2, k % 2)
-                self.bildkacheln.append(kachel)
-            lay.addLayout(gitter)
-            gruppen = [("allgemein", "In deinen Farben")] + [(pr["id"], pr["name"]) for pr in kern.presets()]
-            alle = hintergruende.alle()
-            for gid, gname in gruppen:
-                motive = [(i, n) for i, n, g in alle if g == gid]
-                if not motive:
-                    continue
-                l = QLabel(gname)
-                l.setObjectName("leise")
-                lay.addWidget(l)
-                gitter = QGridLayout()
-                gitter.setSpacing(8)
-                for k, (mid, name) in enumerate(motive):
-                    kachel = HintergrundKachel(mid, name)
-                    kachel.setChecked(mid == e["hintergrund"])
-                    kachel.clicked.connect(lambda _=False, mid=mid: self.setzen("hintergrund", mid))
-                    gitter.addWidget(kachel, k // 2, k % 2)
-                    self.bildkacheln.append(kachel)
-                lay.addLayout(gitter)
-            self._bildkacheln_aktualisieren()
+            namen = {m["id"]: m["name"] for m in self.galerie.alle}
+            haupt = namen.get(e["hintergrund"], e["hintergrund"])
+            zeilen = [f"Hauptmonitor: <b>{haupt}</b>"]
+            if self.galerie.mehrere:
+                zweiter = e.get("hintergrund_zweiter")
+                zeilen.append("Weitere Monitore: <b>" + (namen.get(zweiter, zweiter) if zweiter else "wie der Hauptmonitor") + "</b>")
+            if e["diashow"]:
+                zeilen.append(f"Diashow an, alle {e.get('diashow_minuten', 30)} Minuten")
+            info = QLabel("<br>".join(zeilen))
+            info.setWordWrap(True)
+            info.setStyleSheet("background: transparent;")
+            lay.addWidget(info)
+            hinweis = QLabel("Alle Hintergründe, die neuen Standorte, eigene Bilder und ein Bild pro Monitor "
+                             "findest du in der Galerie.")
+            hinweis.setObjectName("leise")
+            hinweis.setWordWrap(True)
+            lay.addWidget(hinweis)
+            oeffnen = QPushButton("Galerie öffnen")
+            oeffnen.setObjectName("haupt")
+            oeffnen.clicked.connect(lambda: self.seite_zeigen(1))
+            lay.addWidget(oeffnen)
         elif bid == "fenster":
             wahl("Knöpfe", "knoepfe")
             schalter("Knöpfe links (wie bei Apple)", "knoepfe_links")
@@ -890,16 +896,9 @@ class Fenster(QMainWindow):
         self.seite_rechts.setWidget(w)
         self.konf.update()
 
-    def _bildkacheln_aktualisieren(self):
-        for kachel in getattr(self, "bildkacheln", []):
-            if getattr(kachel, "lebendig", False):
-                continue  # animierte haben feste Vorschaubilder
-            try:
-                bild = self.vorschauen.holen(kachel.mid, self.p)
-            except RuntimeError:
-                continue
-            if bild:
-                kachel.setIcon(QIcon(bild))
+    def seite_zeigen(self, nr):
+        self.seiten.setCurrentIndex(nr)
+        self.seiten_gruppe.buttons()[nr].setChecked(True)
 
     def klang_hoeren(self):
         e = self.e

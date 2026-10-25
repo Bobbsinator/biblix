@@ -180,29 +180,22 @@ def symbol_thema(p, e, akt):
     return "Symbole: " + dict(kern.WAHL["symbole"])[e["symbole"]]
 
 
-def hintergrund(p, e):
-    mid = e["hintergrund"]
-    leb = hintergruende.lebendig(mid)
-    png = hintergruende.rendern(mid, p, HG_DIR)  # bei animierten: Standbild fuer den Sperrbildschirm
-    # alte Bilder aufraeumen (die letzten 12 behalten)
-    bilder = sorted(HG_DIR.glob("*.png"), key=lambda f: f.stat().st_mtime, reverse=True)
-    for alt in bilder[12:]:
-        alt.unlink(missing_ok=True)
-    if leb:
-        lebendig(p, leb)
-    elif e["diashow"]:
-        diashow(p, e)
-    else:
-        _lauf("plasma-apply-wallpaperimage", str(png))
-    gruppen = ["Greeter", "Wallpaper", "org.kde.image", "General"]
-    kconf("kscreenlockerrc", ["Greeter"], "WallpaperPlugin", "org.kde.image")
-    kconf("kscreenlockerrc", gruppen, "Image", f"file://{png}")
-    kconf("kscreenlockerrc", gruppen, "PreviewImage", f"file://{png}")
-    return png
+def _bild_js(bild):
+    return (f'd.wallpaperPlugin = "org.kde.image";\n'
+            f'd.currentConfigGroup = ["Wallpaper", "org.kde.image", "General"];\n'
+            f'd.writeConfig("Image", {json.dumps("file://" + str(bild))});\n')
 
 
-def lebendig(p, leb):
-    """Animierter Hintergrund (Plasma-Modul de.biblix.lebendig) auf allen Bildschirmen."""
+def _diashow_js(ordner, minuten):
+    return (f'd.wallpaperPlugin = "org.kde.slideshow";\n'
+            f'd.currentConfigGroup = ["Wallpaper", "org.kde.slideshow", "General"];\n'
+            f'd.writeConfig("SlidePaths", {json.dumps(str(ordner))});\n'
+            f'd.writeConfig("SlideInterval", {minuten * 60});\n'
+            f'd.writeConfig("SlideshowMode", 1);\n')
+
+
+def _lebendig_js(p, leb):
+    """Animierter Hintergrund (Plasma-Modul de.biblix.lebendig)."""
     szene, _, gruppe, _ = leb
     if gruppe != "allgemein":  # Firmen-Szenen in Firmenfarben, wie die Firmenbilder
         p = kern.palette({"preset": gruppe, "modus": "dunkel", "eigene_farben": None}, "dunkel")
@@ -212,40 +205,71 @@ def lebendig(p, leb):
                     if z.strip() and not z.startswith("#")]
     except OSError:
         sprueche = []
-    plasma_skript(f"""
-desktops().forEach(function (d) {{
-    d.wallpaperPlugin = "de.biblix.lebendig";
-    d.currentConfigGroup = ["Wallpaper", "de.biblix.lebendig", "General"];
-    d.writeConfig("Szene", {json.dumps(szene)});
-    d.writeConfig("Farben", {json.dumps(json.dumps(farben))});
-    d.writeConfig("Sprueche", {json.dumps(chr(10).join(sprueche))});
-    d.reloadConfig();
-}});""")
+    return (f'd.wallpaperPlugin = "de.biblix.lebendig";\n'
+            f'd.currentConfigGroup = ["Wallpaper", "de.biblix.lebendig", "General"];\n'
+            f'd.writeConfig("Szene", {json.dumps(szene)});\n'
+            f'd.writeConfig("Farben", {json.dumps(json.dumps(farben))});\n'
+            f'd.writeConfig("Sprueche", {json.dumps(chr(10).join(sprueche))});\n')
 
 
-def diashow(p, e):
-    """Alle Motive der Gruppe des gewaehlten Bildes (oder alle allgemeinen) als Diashow."""
-    gruppe = next((g for i, _, g in hintergruende.alle() if i == e["hintergrund"]), "allgemein")
+def diashow_ordner(p, e):
+    """Fuellt den Diashow-Ordner mit allen Motiven der gewaehlten Gruppe."""
+    gruppe = e.get("diashow_gruppe", "auto")
+    if gruppe == "auto":
+        gruppe = next((g for i, _, g in hintergruende.alle() if i == e["hintergrund"]), "allgemein")
     DIASHOW_DIR.mkdir(parents=True, exist_ok=True)
-    for alt in DIASHOW_DIR.glob("*.png"):
-        alt.unlink()
-    for mid, _, g in hintergruende.alle():
-        if g == gruppe:
-            png = hintergruende.rendern(mid, p, HG_DIR)
-            ziel = DIASHOW_DIR / f"{mid}.png"
-            try:
-                ziel.symlink_to(png)
-            except OSError:
-                shutil.copy(png, ziel)
+    for alt in DIASHOW_DIR.iterdir():
+        if alt.is_symlink() or alt.suffix == ".png":
+            alt.unlink()
+    if gruppe == "eigene":
+        quellen = [(f"eigen-{k}", hintergruende.eigenes_bild(m)) for k, m in enumerate(e.get("eigene_bilder", []))
+                   if str(m).startswith(hintergruende.EIGEN_DATEI)]
+    else:
+        quellen = [(mid, hintergruende.rendern(mid, p, HG_DIR, eigene_farben=e.get("hintergrund_eigene_farben", False)))
+                   for mid, _, g in hintergruende.alle() if g == gruppe]
+    for name, bild in quellen:
+        if not bild:
+            continue
+        ziel = DIASHOW_DIR / f"{name}{Path(bild).suffix}"
+        try:
+            ziel.symlink_to(bild)
+        except OSError:
+            shutil.copy(bild, ziel)
+    return DIASHOW_DIR
+
+
+def _monitor_js(mid, p, e, mit_diashow):
     minuten = max(1, int(e.get("diashow_minuten", 30)))
-    plasma_skript(f"""
-desktops().forEach(function (d) {{
-    d.wallpaperPlugin = "org.kde.slideshow";
-    d.currentConfigGroup = ["Wallpaper", "org.kde.slideshow", "General"];
-    d.writeConfig("SlidePaths", "{DIASHOW_DIR}");
-    d.writeConfig("SlideInterval", {minuten * 60});
-    d.writeConfig("SlideshowMode", 1);
-}});""")
+    if mit_diashow:
+        return _diashow_js(DIASHOW_DIR, minuten)
+    if str(mid).startswith(hintergruende.EIGEN_ORDNER):
+        return _diashow_js(hintergruende.eigen_pfad(mid), minuten)
+    leb = hintergruende.lebendig(mid)
+    if leb:
+        return _lebendig_js(p, leb)
+    return _bild_js(hintergruende.rendern(mid, p, HG_DIR, eigene_farben=e.get("hintergrund_eigene_farben", False)))
+
+
+def hintergrund(p, e):
+    """Hauptmonitor (Plasma-Bildschirm 0) und weitere Monitore getrennt; Sperrbildschirm = Hauptmonitor."""
+    haupt = e["hintergrund"]
+    zweiter = e.get("hintergrund_zweiter") or haupt
+    if e["diashow"]:
+        diashow_ordner(p, e)
+    js_haupt = _monitor_js(haupt, p, e, e["diashow"])
+    js_zweiter = _monitor_js(zweiter, p, e, e["diashow"] and e.get("diashow_monitore", "beide") == "beide")
+    plasma_skript("desktops().forEach(function (d) {\nif (d.screen <= 0) {\n" + js_haupt + "} else {\n" + js_zweiter
+                  + "}\nd.reloadConfig();\n});")
+    png = hintergruende.rendern(haupt, p, HG_DIR, eigene_farben=e.get("hintergrund_eigene_farben", False))
+    # alte Bilder aufraeumen (die letzten 24 behalten, Diashows verweisen darauf)
+    bilder = sorted(HG_DIR.glob("*.png"), key=lambda f: f.stat().st_mtime, reverse=True)
+    for alt in bilder[24:]:
+        alt.unlink(missing_ok=True)
+    gruppen = ["Greeter", "Wallpaper", "org.kde.image", "General"]
+    kconf("kscreenlockerrc", ["Greeter"], "WallpaperPlugin", "org.kde.image")
+    kconf("kscreenlockerrc", gruppen, "Image", f"file://{png}")
+    kconf("kscreenlockerrc", gruppen, "PreviewImage", f"file://{png}")
+    return png
 
 
 def klaenge(e):
@@ -602,7 +626,7 @@ def firefox(p, e):
 def system_teile(p, e, warten=True):
     """Bootmenue, Startbildschirm und Anmeldung: braucht Admin-Rechte (pkexec, einmal Passwort)."""
     auftrag = {"palette": {k: p[k] for k in kern.FARBNAMEN}, "name": p["name"], "dunkel": p["dunkel"],
-               "hintergrund": e["hintergrund"], "bootmenue": e["bootmenue_mitfaerben"]}
+               "hintergrund": hintergruende.system_motiv(e["hintergrund"]), "bootmenue": e["bootmenue_mitfaerben"]}
     if not Path(SYSTEM_HELFER).exists():
         return "Bootmenü: Helfer fehlt"
     if os.geteuid() == 0:

@@ -103,6 +103,27 @@ Description: Bibiplexx: Filme und Serien auf Biblix
  .
  Reihe sieben.
 
+Package: biblix-bibiplexx
+Architecture: all
+Version: 1.3.0
+Priority: optional
+Section: video
+Maintainer: Biblix <biblix@localhost>
+Depends: python3, python3-pyqt6, mpv, ffmpeg, pkexec, polkitd, parted, e2fsprogs, util-linux, fonts-dejavu-core, libnotify-bin
+Recommends: udisks2, pipewire-bin, python3-evdev, biblix-tools (>= 1.5.0)
+Filename: ./biblix-bibiplexx_1.3.0_all.deb
+Size: 179744
+MD5sum: b7e177b507de9f4c325d9691d3d8c627
+SHA1: 57b1b214763b27f1784a5ff4b7c78549889842e9
+SHA256: e0b82223f4035609afaed8404ecf2dc7f16e21e42921bea14f250ed479f65999
+SHA512: cc219e887c8ba1ec6f3d75c5ebffed6f830bc81758a3422067d067c0670539b71910a5b2e9f7fb64593b3fa8a2bfe77927c7a55c911763c76666226f751c4f48
+Description: Bibiplexx: Filme und Serien auf Biblix
+ Eigene Filmsammlung (Saal, Serien, Filme, Weiterschauen) mit Bibiplexx-Player
+ auf mpv-Basis: Kinomodus mit Vorhang und Gong, eigene Steuerleiste, HDR und
+ Hardware-Dekodierung. Richtet auf Wunsch eine leere Platte als Filmplatte ein.
+ .
+ Reihe sieben.
+
 Package: biblix-browser
 Architecture: all
 Version: 1.0.0

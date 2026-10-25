@@ -3,6 +3,5 @@
 if [ -e /sys/module/nvidia_drm ]; then
     export LIBVA_DRIVER_NAME=nvidia
     export NVD_BACKEND=direct
-    # Firefox braucht das fuer nvidia-vaapi-driver
-    export MOZ_DISABLE_RDD_SANDBOX=1
+    # MOZ_DISABLE_RDD_SANDBOX setzt nur der Bibi Browser selbst (nicht systemweit, Sicherheit)
 fi

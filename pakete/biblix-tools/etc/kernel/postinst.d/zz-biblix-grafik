@@ -1,0 +1,5 @@
+#!/bin/sh
+# Biblix: neuer Kernel ohne NVIDIA-Treiber? Dann bleibt der bisherige Standard (laeuft nach dkms).
+[ -x /usr/lib/biblix/biblix-kernel-grafik ] || exit 0
+/usr/lib/biblix/biblix-kernel-grafik "$1" || true
+exit 0

@@ -38,7 +38,7 @@ for d in */DEBIAN; do
         find "$P" -type f -exec grep -Il . {} + | while IFS= read -r f; do sed -i 's/\r$//' "$f"; done
         find "$P" -type d -exec chmod 755 {} +
         find "$P" -type f -exec chmod 644 {} +
-        for f in "$P"/usr/bin/* "$P"/usr/lib/biblix/* "$P"/DEBIAN/preinst "$P"/DEBIAN/postinst "$P"/DEBIAN/prerm "$P"/DEBIAN/postrm; do
+        for f in "$P"/usr/bin/* "$P"/usr/lib/biblix/* "$P"/etc/kernel/*/* "$P"/DEBIAN/preinst "$P"/DEBIAN/postinst "$P"/DEBIAN/prerm "$P"/DEBIAN/postrm; do
             [ -f "$f" ] && chmod 755 "$f"
         done
         sed -i "s/@VERSION@/$VERSION/" "$P/DEBIAN/control"
@@ -47,7 +47,7 @@ for d in */DEBIAN; do
         find "$P" -name '*.py' -print0 | xargs -0 -r python3 -m py_compile
         find "$P" -name __pycache__ -type d -prune -exec rm -rf {} +
         # Skripte pruefen, bevor irgendetwas veroeffentlicht wird
-        for f in "$P"/usr/bin/* "$P"/usr/lib/biblix/* "$P"/DEBIAN/preinst "$P"/DEBIAN/postinst "$P"/DEBIAN/prerm "$P"/DEBIAN/postrm; do
+        for f in "$P"/usr/bin/* "$P"/usr/lib/biblix/* "$P"/etc/kernel/*/* "$P"/DEBIAN/preinst "$P"/DEBIAN/postinst "$P"/DEBIAN/prerm "$P"/DEBIAN/postrm; do
             [ -f "$f" ] || continue
             head -1 "$f" | grep -qE '^#!.*(ba)?sh' && bash -n "$f"
             head -1 "$f" | grep -qE '^#!.*python3' && python3 -m py_compile "$f" && rm -rf "$(dirname "$f")/__pycache__"

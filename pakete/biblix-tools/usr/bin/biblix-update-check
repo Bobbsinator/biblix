@@ -20,6 +20,21 @@ else
     rm -f "$neustart"
 fi
 
+# Neuer Kernel ohne Grafiktreiber zurueckgehalten (biblix-kernel-grafik)? Einmal pro Kernel melden
+zurueck_merker=/var/lib/biblix/kernel-zurueckgehalten
+zurueck_gemeldet="${XDG_CACHE_HOME:-$HOME/.cache}/biblix/kernel-zurueck-gemeldet"
+if [ -r "$zurueck_merker" ]; then
+    read -r k_neu k_alt < "$zurueck_merker"
+    if [ "$(cat "$zurueck_gemeldet" 2>/dev/null)" != "$k_neu" ]; then
+        echo "$k_neu" > "$zurueck_gemeldet"
+        notify-send --app-name="Biblix" --icon=dialog-warning --urgency=normal \
+            "Neuer Kernel wartet noch" \
+            "Für Kernel $k_neu fehlt noch der NVIDIA-Treiber. Biblix startet sicher weiter mit $k_alt. Das nächste System-Update versucht es erneut."
+    fi
+else
+    rm -f "$zurueck_gemeldet"
+fi
+
 sys=$(apt list --upgradable 2>/dev/null | grep -F '[upgradable from' || true)
 apps=$(flatpak remote-ls --updates --columns=application 2>/dev/null || true)
 n_sys=$(printf '%s' "$sys" | grep -c . || true)

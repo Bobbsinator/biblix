@@ -1,0 +1,5 @@
+#!/bin/sh
+# Biblix: nach dem Bau der Kernel-Header (dkms baut dann) neuesten Kernel erneut pruefen.
+[ -x /usr/lib/biblix/biblix-kernel-grafik ] || exit 0
+/usr/lib/biblix/biblix-kernel-grafik --pruefen || true
+exit 0

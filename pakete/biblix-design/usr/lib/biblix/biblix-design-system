@@ -76,8 +76,17 @@ def main():
     GRUB_CFG.write_text("# Biblix Design: Bootmenü im aktuellen Design\n"
                         f"GRUB_THEME={system.GRUB}/theme.txt\n", encoding="utf-8")
     if Path("/boot/grub/grub.cfg").exists():
-        subprocess.run(["update-grub"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
-    subprocess.run(["update-initramfs", "-u"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        melden_wenn_fehler(["update-grub"])
+    melden_wenn_fehler(["update-initramfs", "-u"])
+
+
+def melden_wenn_fehler(argv):
+    """Startdateien erneuern; schlaegt es fehl, sichtbar melden (Ausgabe der App und Journal)."""
+    r = subprocess.run(argv, capture_output=True, text=True, check=False)
+    if r.returncode != 0:
+        aus = (r.stdout + r.stderr).strip()
+        print(f"WARNUNG: {' '.join(argv)} ist fehlgeschlagen:\n" + "\n".join(aus.splitlines()[-5:]), file=sys.stderr)
+        subprocess.run(["logger", "-t", "biblix"], input=aus, text=True, check=False)
 
 
 if __name__ == "__main__":

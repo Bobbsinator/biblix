@@ -1,5 +1,13 @@
 #!/bin/sh
 set -e
+# Fehler beim Erneuern von Startdateien melden (Update-Protokoll und Journal), aber nicht abbrechen
+biblix_lauf() {
+    if ! ausgabe=$("$@" 2>&1); then
+        echo "Biblix: WARNUNG: '$*' ist fehlgeschlagen. Details: journalctl -t biblix" >&2
+        printf '%s\n' "$ausgabe" | tail -n 5 >&2
+        printf '%s\n' "$ausgabe" | logger -t biblix 2>/dev/null || true
+    fi
+}
 case "$1" in
     configure)
         visudo -cf /etc/sudoers.d/biblix >/dev/null
@@ -38,10 +46,12 @@ case "$1" in
         # Neue Werte sofort wirksam machen (Rest beim naechsten Neustart)
         sysctl --system >/dev/null 2>&1 || true
         udevadm control --reload >/dev/null 2>&1 || true
+        # HID-Rechte neu bewerten (Tastaturen ohne Rohzugriff; schon vergebene Rechte gelten bis zum Neustart)
+        udevadm trigger --subsystem-match=hidraw --action=change >/dev/null 2>&1 || true
         firewall-cmd --reload >/dev/null 2>&1 || true
-        update-initramfs -u >/dev/null 2>&1 || true
+        biblix_lauf update-initramfs -u
         if [ -e /boot/grub/grub.cfg ] && command -v update-grub >/dev/null; then
-            update-grub >/dev/null 2>&1 || true
+            biblix_lauf update-grub
         fi
         ;;
 esac

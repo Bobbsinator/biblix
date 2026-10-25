@@ -1,5 +1,13 @@
 #!/bin/sh
 set -e
+# Fehler beim Erneuern von Startdateien melden (Update-Protokoll und Journal), aber nicht abbrechen
+biblix_lauf() {
+    if ! ausgabe=$("$@" 2>&1); then
+        echo "Biblix: WARNUNG: '$*' ist fehlgeschlagen. Details: journalctl -t biblix" >&2
+        printf '%s\n' "$ausgabe" | tail -n 5 >&2
+        printf '%s\n' "$ausgabe" | logger -t biblix 2>/dev/null || true
+    fi
+}
 T=/usr/share/desktop-base/biblix-theme
 
 # Taskleiste und Startmenue: S-Launcher statt Discover (nach jedem Plasma-Update erneut)
@@ -39,9 +47,9 @@ case "$1" in
         gtk-update-icon-cache -q -f /usr/share/icons/hicolor 2>/dev/null || true
         if ! system_standard; then
             # Nutzer hat schon ein Design: nur Bilder des Grund-Themas uebernehmen
-            update-initramfs -u >/dev/null 2>&1 || true
+            biblix_lauf update-initramfs -u
             if [ -e /boot/grub/grub.cfg ] && command -v update-grub >/dev/null; then
-                update-grub >/dev/null 2>&1 || true
+                biblix_lauf update-grub
             fi
         fi
         ;;

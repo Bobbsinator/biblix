@@ -1,5 +1,13 @@
 #!/bin/sh
 set -e
+# Fehler beim Erneuern von Startdateien melden (Update-Protokoll und Journal), aber nicht abbrechen
+biblix_lauf() {
+    if ! ausgabe=$("$@" 2>&1); then
+        echo "Biblix: WARNUNG: '$*' ist fehlgeschlagen. Details: journalctl -t biblix" >&2
+        printf '%s\n' "$ausgabe" | tail -n 5 >&2
+        printf '%s\n' "$ausgabe" | logger -t biblix 2>/dev/null || true
+    fi
+}
 if [ "$1" = remove ] || [ "$1" = purge ]; then
     # Erzeugte Systemteile entfernen; Debian-Standard fuer Bootmenue und Startbildschirm zurueck
     rm -f /etc/default/grub.d/zz-biblix-design.cfg /usr/share/sddm/themes/breeze/theme.conf.user
@@ -8,7 +16,7 @@ if [ "$1" = remove ] || [ "$1" = purge ]; then
     fi
     rm -rf /usr/share/plymouth/themes/biblix-aktuell /boot/grub/themes/biblix-aktuell
     if [ -e /boot/grub/grub.cfg ] && command -v update-grub >/dev/null; then
-        update-grub >/dev/null 2>&1 || true
+        biblix_lauf update-grub
     fi
 fi
 if [ "$1" = purge ]; then

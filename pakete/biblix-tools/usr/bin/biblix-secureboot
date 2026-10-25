@@ -25,19 +25,64 @@ mokutil --sb-state 2>/dev/null || true
 echo
 
 # 1. Der Schluessel aus dem ISO-Bau ist in jeder Biblix-Kopie gleich: durch einen eigenen ersetzen
+# Alles oder nichts: alter Schluessel und die eingebauten Treiber werden vorher gesichert. Geht beim
+# Neu-Signieren etwas schief, kommt der alte Zustand zurueck, damit nie ein Grafiktreiber fehlt.
 if [ ! -f "$MARK" ]; then
+    SICHER=/var/lib/biblix/mok-sicherung
+    mapfile -t eintraege < <(dkms status | sed -n 's#^\([^/]*\)/\([^,]*\), \([^,]*\),.*installed.*#\1 \2 \3#p' | sort -u)
+    bearbeiten=()
+    for e in "${eintraege[@]}"; do
+        read -r mod ver kern <<< "$e"
+        if [ ! -d "/lib/modules/$kern/build" ]; then
+            echo "Überspringe $mod für Kernel $kern: keine Kernel-Header (dieser Kernel lädt den Treiber nur ohne Secure Boot)."
+            continue
+        fi
+        bearbeiten+=("$e")
+    done
+    if [ "${#eintraege[@]}" -gt 0 ] && [ "${#bearbeiten[@]}" -eq 0 ]; then
+        echo "FEHLER: Für keinen Kernel sind Header installiert, die Treiber lassen sich nicht neu signieren."
+        echo "Bitte zuerst: bibi apt install linux-headers-amd64   und dann noch einmal."
+        exit 1
+    fi
+    rm -rf "$SICHER"
+    mkdir -p "$SICHER/module"
+    cp -a "$KEY" "$PUB" "$SICHER/" 2>/dev/null || true
+    for e in "${bearbeiten[@]}"; do
+        read -r mod ver kern <<< "$e"
+        if [ -d "/lib/modules/$kern/updates/dkms" ] && [ ! -d "$SICHER/module/$kern" ]; then
+            cp -a "/lib/modules/$kern/updates/dkms" "$SICHER/module/$kern"
+        fi
+    done
+    zurueckrollen() {
+        echo
+        echo "FEHLER beim Signieren. Stelle den vorherigen Zustand wieder her ..."
+        for d in "$SICHER"/module/*; do
+            [ -d "$d" ] || continue
+            k=$(basename "$d")
+            rm -rf "/lib/modules/$k/updates/dkms"
+            cp -a "$d" "/lib/modules/$k/updates/dkms"
+            depmod -a "$k" || true
+        done
+        if [ -f "$SICHER/mok.key" ] && [ -f "$SICHER/mok.pub" ]; then
+            cp -a "$SICHER/mok.key" "$SICHER/mok.pub" /var/lib/dkms/
+        fi
+        echo "Die Treiber sind wieder wie vorher. Secure Boot bitte AUS lassen und den Fehler oben ansehen."
+        exit 1
+    }
     echo "Erzeuge eigenen Schluessel fuer diesen PC ..."
     rm -f "$KEY" "$PUB"
-    dkms generate_mok
+    dkms generate_mok || zurueckrollen
     echo "Signiere alle Treiber neu (dauert ein paar Minuten) ..."
-    dkms status | sed -n 's#^\([^/]*\)/\([^,]*\), \([^,]*\),.*installed.*#\1 \2 \3#p' | sort -u |
-    while read -r mod ver kern; do
+    for e in "${bearbeiten[@]}"; do
+        read -r mod ver kern <<< "$e"
+        echo "  $mod $ver für Kernel $kern"
         # "install --force" wuerde das alte, falsch signierte Modul wiederverwenden
-        dkms unbuild -m "$mod" -v "$ver" -k "$kern" >/dev/null
-        dkms install -m "$mod" -v "$ver" -k "$kern"
+        dkms unbuild -m "$mod" -v "$ver" -k "$kern" >/dev/null || zurueckrollen
+        dkms install -m "$mod" -v "$ver" -k "$kern" || zurueckrollen
     done
     mkdir -p "$(dirname "$MARK")"
     date > "$MARK"
+    rm -rf "$SICHER"
 fi
 
 # 2. Schluessel beim UEFI anmelden

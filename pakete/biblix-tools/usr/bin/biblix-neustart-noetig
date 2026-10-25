@@ -6,7 +6,9 @@ grund=""
 laufend=$(uname -r)
 # Neuester installierter Kernel (nur die, zu denen es auch ein Kernel-Abbild gibt)
 neuester=$(ls -1 /boot/vmlinuz-* 2>/dev/null | sed 's#^/boot/vmlinuz-##' | sort -V | tail -n1)
-if [ -n "$neuester" ] && [ "$neuester" != "$laufend" ]; then
+# Ein zurueckgehaltener Kernel (ohne NVIDIA-Treiber, siehe biblix-kernel-grafik) ist kein Neustart-Grund
+zurueck=$(cut -d' ' -f1 /var/lib/biblix/kernel-zurueckgehalten 2>/dev/null)
+if [ -n "$neuester" ] && [ "$neuester" != "$laufend" ] && [ "$neuester" != "$zurueck" ]; then
     grund="neuer Kernel $neuester"
 fi
 # NVIDIA: geladener Treiber aelter als der installierte

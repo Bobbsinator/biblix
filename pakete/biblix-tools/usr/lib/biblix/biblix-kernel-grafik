@@ -1,0 +1,80 @@
+#!/bin/sh
+# Biblix: Fehlt einem neuen Kernel der NVIDIA-Treiber (DKMS hat nicht gebaut), bleibt der bisherige
+# Kernel Standard im Bootmenue. Sobald der neue Kernel sein Modul hat, wird er wieder freigegeben.
+# Braucht GRUB_DEFAULT=saved (biblix-system); laeuft als root.
+#   biblix-kernel-grafik VERSION     Hook nach der Installation eines Kernels (/etc/kernel/postinst.d)
+#   biblix-kernel-grafik --pruefen   nach Updates und nach dem Bau von Headern: neuesten Kernel pruefen
+#   biblix-kernel-grafik --zustand   Zustand anzeigen
+MERKER=/var/lib/biblix/kernel-zurueckgehalten
+
+hat_modul() { find "/lib/modules/$1" -name 'nvidia.ko*' 2>/dev/null | grep -q . ; }
+nutzt_nvidia() { [ -e /sys/module/nvidia ] || dkms status 2>/dev/null | grep -q '^nvidia' ; }
+neuester() { ls -1 /boot/vmlinuz-* 2>/dev/null | sed 's#^/boot/vmlinuz-##' | sort -V | tail -n1; }
+
+# GRUB-Kennung des normalen Eintrags fuer Kernel $1 (im Untermenue "Erweiterte Optionen")
+grub_id() {
+    cfg=/boot/grub/grub.cfg
+    [ -r "$cfg" ] || return 1
+    eintrag=$(grep -o "gnulinux-$1-advanced-[0-9a-fA-F-]*" "$cfg" | head -n1)
+    [ -n "$eintrag" ] || return 1
+    unter=$(grep -o "gnulinux-advanced-[0-9a-fA-F-]*" "$cfg" | head -n1)
+    if [ -n "$unter" ]; then echo "$unter>$eintrag"; else echo "$eintrag"; fi
+}
+
+freigeben() {
+    [ -f "$MERKER" ] || return 0
+    rm -f "$MERKER"
+    grub-set-default 0 2>/dev/null || true
+    echo "Biblix: Kernel $1 hat jetzt seinen Grafiktreiber und startet wieder als Standard."
+    logger -t biblix "Kernel $1 freigegeben (NVIDIA-Modul vorhanden)" 2>/dev/null || true
+}
+
+zurueckhalten() {
+    neu=$1
+    lauf=$(uname -r)
+    # Nur wenn der laufende Kernel selbst ein NVIDIA-Modul hat (sonst bringt das Zurueckhalten nichts)
+    [ "$neu" != "$lauf" ] && hat_modul "$lauf" || return 0
+    if ! id=$(grub_id "$lauf"); then
+        echo "Biblix: WARNUNG: Kernel $neu hat keinen NVIDIA-Treiber, Bootmenü-Eintrag für $lauf nicht gefunden." >&2
+        return 0
+    fi
+    grub-set-default "$id" 2>/dev/null || return 0
+    mkdir -p "$(dirname "$MERKER")"
+    echo "$neu $lauf" > "$MERKER"
+    echo "Biblix: Kernel $neu hat keinen NVIDIA-Treiber. Biblix startet weiter mit Kernel $lauf." >&2
+    logger -t biblix "Kernel $neu ohne NVIDIA-Modul, starte weiter mit $lauf" 2>/dev/null || true
+}
+
+pruefen() {
+    k=$1
+    nutzt_nvidia || return 0
+    [ "$k" = "$(neuester)" ] || return 0   # aeltere Kernel aendern den Standard nicht
+    if hat_modul "$k"; then
+        freigeben "$k"
+    else
+        zurueckhalten "$k"
+    fi
+}
+
+case "${1:-}" in
+    --pruefen)
+        k=$(neuester)
+        [ -n "$k" ] && pruefen "$k"
+        ;;
+    --zustand)
+        if [ -f "$MERKER" ]; then
+            read -r neu lauf < "$MERKER"
+            echo "Zurückgehalten: Kernel $neu (ohne NVIDIA-Treiber), Standard ist $lauf."
+        else
+            echo "Nichts zurückgehalten. Neuester Kernel: $(neuester), läuft: $(uname -r)."
+        fi
+        ;;
+    "")
+        echo "Aufruf: biblix-kernel-grafik VERSION | --pruefen | --zustand" >&2
+        exit 2
+        ;;
+    *)
+        pruefen "$1"
+        ;;
+esac
+exit 0

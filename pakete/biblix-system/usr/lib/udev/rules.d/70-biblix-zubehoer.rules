@@ -1,3 +1,11 @@
-# Biblix: angemeldeter Benutzer darf USB-HID-Geraete direkt ansprechen
-# (RGB-Steuerung, Headset-/Maus-Software). Kein SMBus/i2c: RAM-RGB bleibt aus Sicherheitsgruenden aus.
-KERNEL=="hidraw*", SUBSYSTEM=="hidraw", TAG+="uaccess"
+# Biblix: angemeldeter Benutzer darf USB-/Bluetooth-HID-Geraete direkt ansprechen
+# (RGB-Steuerung mit OpenRGB, Maus-Software Piper/Solaar, Headsets, Controller).
+# AUSNAHME Tastaturen: deren Rohdaten (hidraw) enthalten jeden Tastendruck, auch Passwoerter.
+# Hat dasselbe HID-Geraet eine Tastatur (Buchstabentasten), bleibt hidraw nur fuer root lesbar.
+# Kein SMBus/i2c: RAM-RGB bleibt aus Sicherheitsgruenden aus.
+SUBSYSTEM!="hidraw", GOTO="biblix_hid_ende"
+KERNEL!="hidraw*", GOTO="biblix_hid_ende"
+IMPORT{program}="/usr/lib/biblix/biblix-hid-pruefen %k"
+ENV{BIBLIX_TASTATUR}=="1", GOTO="biblix_hid_ende"
+TAG+="uaccess"
+LABEL="biblix_hid_ende"

@@ -1,0 +1,21 @@
+#!/bin/sh
+# Fuer udev (70-biblix-zubehoer.rules): Ist das HID-Geraet hinter /dev/<hidrawN> (auch) eine Tastatur?
+# Gibt BIBLIX_TASTATUR=1 aus, wenn eines seiner Eingabegeraete die Buchstabentasten Q, A und Z kennt.
+# Dann bekommt der Benutzer keinen Rohzugriff (sonst koennte jedes Programm Tastendruecke mitlesen).
+#   biblix-hid-pruefen hidraw3
+geraet="${BIBLIX_SYS:-/sys}/class/hidraw/$1/device"
+[ -d "$geraet" ] || exit 0
+for k in "$geraet"/input/input*/capabilities/key; do
+    [ -r "$k" ] || continue
+    # Bitmaske in Hex-Woertern, hoechste zuerst; das letzte Wort enthaelt die Tasten 0 bis 63.
+    # Nur die letzten 12 Stellen (Tasten 0 bis 47) nehmen, damit die Shell-Rechnung nicht ueberlaeuft.
+    wort=$(awk '{w = $NF; if (length(w) > 12) w = substr(w, length(w) - 11); print w}' "$k")
+    [ -n "$wort" ] || continue
+    wert=$((0x$wort))
+    # KEY_Q = 16, KEY_A = 30, KEY_Z = 44
+    if [ $(( (wert >> 16) & 1 )) -eq 1 ] && [ $(( (wert >> 30) & 1 )) -eq 1 ] && [ $(( (wert >> 44) & 1 )) -eq 1 ]; then
+        echo "BIBLIX_TASTATUR=1"
+        exit 0
+    fi
+done
+exit 0

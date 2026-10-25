@@ -844,6 +844,23 @@ class Main(QMainWindow):
         if getattr(page, "refresh_on_job", False):
             self.rebuild_current()
 
+    def closeEvent(self, ev):
+        """Laeuft noch ein Auftrag, erst fragen. Das System-Update laeuft als eigener Dienst weiter."""
+        if self.jobs.current is None:
+            super().closeEvent(ev)
+            return
+        if self.jobs.current[0] == "@system-update":
+            text = "Das System-Update läuft im Hintergrund sauber zu Ende, auch wenn du den S-Launcher schließt."
+        else:
+            text = f"„{self.jobs.title()}“ läuft noch und wird beim Schließen abgebrochen."
+        antwort = QMessageBox.question(self, "Auftrag läuft noch", text + "\n\nTrotzdem schließen?",
+                                       QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                       QMessageBox.StandardButton.No)
+        if antwort == QMessageBox.StandardButton.Yes:
+            ev.accept()
+        else:
+            ev.ignore()
+
     def neustart_fragen(self):
         """Nach dem System-Update: braucht es einen Neustart (Kernel, NVIDIA)? Dann fragen."""
         grund = run(["biblix-neustart-noetig"]).strip()

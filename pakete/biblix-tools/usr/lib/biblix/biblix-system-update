@@ -1,13 +1,74 @@
 #!/bin/sh
 # Wird vom S-Launcher ueber pkexec gestartet: Debian-Pakete, Kernel und Treiber aktualisieren.
+#
+# Das eigentliche Update laeuft als eigener Systemdienst (systemd-run). Schliesst man den S-Launcher
+# oder stuerzt er ab, laeuft das Update trotzdem sauber zu Ende. Dieser Aufruf zeigt nur das
+# Protokoll an und gibt am Ende das Ergebnis zurueck.
+#   biblix-system-update             starten (oder einem laufenden Update zusehen)
+#   biblix-system-update --im-dienst das Update selbst (nur vom Dienst aufgerufen)
 set -e
 export DEBIAN_FRONTEND=noninteractive
-# Laeuft gerade das automatische Herunterladen im Hintergrund, bis zu 5 Minuten warten statt abzubrechen
-LOCK="-o DPkg::Lock::Timeout=300"
-echo "Paketlisten werden geladen ..."
-# Eine nicht erreichbare Quelle soll nicht alle anderen Updates blockieren
-apt-get $LOCK update || echo "Warnung: nicht alle Paketquellen erreichbar, mache mit den anderen weiter."
-echo "System wird aktualisiert ..."
-apt-get $LOCK -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold full-upgrade
-apt-get $LOCK -y autoremove
-echo "Fertig. Neustart empfohlen."
+DIENST=biblix-system-update
+LOG=/var/log/biblix/system-update.log
+ERGEBNIS=/run/biblix/system-update.ergebnis
+
+laeuft() {
+    case "$(systemctl is-active "$DIENST.service" 2>/dev/null)" in
+        active|activating|reloading|deactivating) return 0 ;;
+    esac
+    return 1
+}
+
+if [ "${1:-}" = "--im-dienst" ]; then
+    mkdir -p "$(dirname "$ERGEBNIS")"
+    trap 'echo $? > "$ERGEBNIS"' EXIT
+    # Laeuft gerade das automatische Herunterladen im Hintergrund, bis zu 5 Minuten warten statt abzubrechen
+    LOCK="-o DPkg::Lock::Timeout=300"
+    KONF="-o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold"
+    # Wurde ein frueheres Update unterbrochen (Stromausfall, Absturz), zuerst zu Ende bringen
+    if [ -n "$(dpkg --audit 2>/dev/null)" ]; then
+        echo "Ein früheres Update wurde unterbrochen, wird jetzt fertig eingerichtet ..."
+    fi
+    dpkg --force-confdef --force-confold --configure -a || echo "Warnung: dpkg --configure -a meldet Fehler, versuche Reparatur ..."
+    apt-get $LOCK -y $KONF -f install || {
+        echo "FEHLER: Die Paketverwaltung ist beschädigt und lässt sich nicht automatisch reparieren."
+        echo "Bitte im Terminal: bibi dpkg --configure -a   und   bibi apt -f install"
+        exit 1
+    }
+    echo "Paketlisten werden geladen ..."
+    # Eine nicht erreichbare Quelle soll nicht alle anderen Updates blockieren
+    apt-get $LOCK update || echo "Warnung: nicht alle Paketquellen erreichbar, mache mit den anderen weiter."
+    echo "System wird aktualisiert ..."
+    apt-get $LOCK -y $KONF full-upgrade
+    apt-get $LOCK -y autoremove
+    # Neuer Kernel ohne NVIDIA-Modul? Dann den bisherigen Kernel weiter starten (oder ihn wieder freigeben)
+    /usr/lib/biblix/biblix-kernel-grafik --pruefen || true
+    echo "Fertig. Neustart empfohlen."
+    exit 0
+fi
+
+# Ohne systemd (z. B. im Installer-Chroot): direkt ausfuehren
+if [ ! -d /run/systemd/system ] || ! command -v systemd-run >/dev/null; then
+    exec "$0" --im-dienst
+fi
+
+mkdir -p "$(dirname "$LOG")" "$(dirname "$ERGEBNIS")"
+if laeuft; then
+    echo "Ein System-Update läuft schon, zeige es an ..."
+else
+    : > "$LOG"
+    rm -f "$ERGEBNIS"
+    systemd-run --quiet --collect --unit="$DIENST" \
+        --description="Biblix System-Update" \
+        -p StandardOutput="append:$LOG" -p StandardError="append:$LOG" \
+        "$0" --im-dienst
+fi
+# Protokoll mitlesen, bis der Dienst fertig ist (--pid: endet mit, falls dieser Aufruf abgebrochen wird)
+tail -n +1 -F --pid=$$ "$LOG" 2>/dev/null &
+T=$!
+sleep 1
+while laeuft; do sleep 1; done
+sleep 1
+kill "$T" 2>/dev/null || true
+rc=$(cat "$ERGEBNIS" 2>/dev/null || echo 1)
+exit "$rc"

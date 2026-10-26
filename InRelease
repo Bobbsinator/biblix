@@ -1,30 +1,30 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA512
 
-Date: Sun, 25 Oct 2026 18:46:08 +0000
+Date: Mon, 26 Oct 2026 08:32:56 +0000
 Label: Biblix
 Origin: Biblix
 Suite: stable
 MD5Sum:
- c8d024318e412b0385c8bb3e52dafd13            50245 Packages
- d82418394318362694bbe3a1014c430e            11993 Packages.gz
- 0cc7082cbfe8f124a113d5e287872e8b               81 Release
+ 668e91a5e52111d3860ec13dda2c1289            51775 Packages
+ 1647faeb082988026cb1d2b8cc0af1c8            12196 Packages.gz
+ 6b0e78e676068209c131a21ac8f3b61e               81 Release
 SHA1:
- 9d7815ce29038df6c3c22290908323af7b107788            50245 Packages
- cc17b95019d79462bd9d4c59cfd6b24c32f32689            11993 Packages.gz
- f5a77d4111ab1431236b26c1739889437352477e               81 Release
+ 699945c18dabb80bd9e6174ae786a0efbdaf5c90            51775 Packages
+ 4db230a8eeb10429229ef8475028a53a57d3edef            12196 Packages.gz
+ 3762cf88b92e2e0c09c32af570e28cdd2242c53f               81 Release
 SHA256:
- f792c0b547f88615d06809334dcb49e3c16827d4fda35a7b3260d1a46ace3aff            50245 Packages
- f92e1709f0bf94245d7028fd80283f26498169fe0ca935b0ad434adf17d5d77c            11993 Packages.gz
- f747acbcc853cdd565f03f51f68111239eaa28a4179e0c1cb6caff16bcc3de2d               81 Release
+ 74d695ce0ec6372185e652a08ebb696d5c4cf3a6ef3eb58d74f1fb4395b18f14            51775 Packages
+ eb10f78b6deac096eca216283aeb6f537c97ea09ad83b5ea36aa7a9d0a376bf6            12196 Packages.gz
+ 769dbf11cd9a4812859e5bc8dfaf254b2ebd969b0703a516433943a533afb2cb               81 Release
 SHA512:
- fe1d4e290a0068e6eacba92cd7c793f471bd85f748a5ea83b7053955bc256c223d9235f7ad2741301af56f08e968b09b8de6ee45ade1749237845ac88d94329e            50245 Packages
- 748f30babfe22dacbe1f316f35cef6a0c53a5f272324d7bd13d17998c88177902a62df24555a420abd1c1bfcdc31a911db30e396088f2bd5cb0024b310df1ea5            11993 Packages.gz
- 6d15b228b7599839bae15e752c4c3bb1160e6da4efb3bc4c055b3c66cf1fc85638c1afb6f6472f8c6733a910391c6182d54fb9c92c8ba97232e4b0d3b0a87a24               81 Release
+ f4af963347c600a2806a5e36c1c55bda93cb4a07b5fa1bd3d2e4673fb1f1cec49b98a1fd05c48ef123e4c2ce01f8ab7069fa6e25b3cc56fe1d7a6196f002150f            51775 Packages
+ 296ca545b3bd004c8a4fd8c393e5727887304fee8602375c42a7bfded537fd702c7ca32781412f223a1b19da72bf446555e17c0bdc7b17aeabcafecaa713bf8c            12196 Packages.gz
+ ec446cf160c6b2a84b4c8895cb4fdb10d2c8e4451d39a6724a44eabf23c481225e0ab9413751afa1ae201f00e8f350920c208f652081afff46dc3cbf232ee384               81 Release
 -----BEGIN PGP SIGNATURE-----
 
-iIcEARYKAC8WIQRJ/JGMv/YJz4gUCaHrF5mybBG3iAUCat5OcBEcYmlibGl4QGxv
-Y2FsaG9zdAAKCRDrF5mybBG3iJbNAQDxSVh3F70QiRR0mTYx0orxHCb35C9FivzO
-oU8Js6y/TQD/fRGhtoP4gz3UnTC6is65FzeucklsprIMPX8Rzbi8dAU=
-=Uu1h
+iIcEARYKAC8WIQRJ/JGMv/YJz4gUCaHrF5mybBG3iAUCat8QOBEcYmlibGl4QGxv
+Y2FsaG9zdAAKCRDrF5mybBG3iHdAAP9rrr4ERuOvkXaz0OklGl6ZvimkndmgUGSJ
+3WKsZNPIrgEAiqJTuEDblxwWJwT3uhGMMXXFkIAQzcA5G5mF/sGxAA4=
+=wyUO
 -----END PGP SIGNATURE-----

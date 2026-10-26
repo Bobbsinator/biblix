@@ -16,3 +16,5 @@ paketquelle/
 # Private Schluessel gehoeren nie ins Repository
 *.asc
 *PRIVAT*
+# Render-Ausgaben (gross, werden aus kunst/blender neu erzeugt)
+kunst/ausgabe/

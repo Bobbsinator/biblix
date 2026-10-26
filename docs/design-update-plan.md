@@ -123,3 +123,9 @@ Technik-Entscheidungen:
 - Lack-Leiste mit Namen, Häkchen der Schalter sichtbar, Vorschaubilder in 960×540.
 - Behoben: Bei animiertem Hintergrund lehnte der Systemhelfer (Bootmenü/Anmeldung) das Motiv ab; jetzt bekommt er das Standbild.
 - Gestaltungsregel für die Zukunft: neue Bildserien stilistisch mischen (nicht nur Flat-Pläne), siehe Galerie-Doku.
+
+## biblix-design 2.6.0 (26.10.2026): erste Blender-Szene
+
+- Lebendiger Hintergrund **„Tower im Regen“**: 4K-Kamerafahrt um den Exabibi Tower bei Nacht und Regen (Video, Schleife,
+  ca. 20 MB). Quellen in `kunst/blender/`, Details in `docs/lebendige-hintergruende.md`.
+- Neue Abhängigkeit `qml6-module-qtmultimedia`. Gemessen: ca. 7 % eines CPU-Kerns während das Video läuft.

@@ -17,7 +17,7 @@ Kirigami.FormLayout {
         ["tunnel", "Muttern-Tunnel"], ["platine", "Stromkreis"], ["equalizer", "Equalizer"], ["synthwave", "Synthwave"],
         ["prompt", "Prompt mit Bibi-Sprüchen"], ["bauplan", "Bauplan"], ["tower", "Tower bei Nacht"],
         ["wafer", "Wafer unterm Laser"], ["kurse", "Zugriffsindex"], ["route", "Route"], ["boegen", "Lächelbögen"],
-        ["donau", "Donau-Abend"], ["saal", "Saallichter"]
+        ["donau", "Donau-Abend"], ["saal", "Saallichter"], ["regenfahrt", "Tower im Regen (Kamerafahrt)"]
     ]
 
     QQC2.ComboBox {

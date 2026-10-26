@@ -894,6 +894,7 @@ FIRMA = {
 # Animierte Hintergruende (Plasma-Modul de.biblix.lebendig, QML-Szenen in den Designfarben).
 # (szene, name, gruppe, standbild) - das Standbild nehmen Sperrbildschirm und Vorschau.
 LEBENDIG_PREFIX = "lebendig-"
+VIDEO_DIR = "/usr/share/plasma/wallpapers/de.biblix.lebendig/contents/videos"
 LEBENDIG = [
     ("sternenflug", "Sternenflug", "allgemein", "punkte"),
     ("sternenhimmel", "Sternenhimmel", "allgemein", "punkte"),
@@ -919,7 +920,11 @@ LEBENDIG = [
     ("boegen", "Lächelbögen", "bibi-mac", "mac-boegen"),
     ("donau", "Donau-Abend", "nassmacher", "nass-donau"),
     ("saal", "Saallichter", "bibiplexx", "plexx-saal"),
+    # in Blender gerenderte Videos (kunst/blender); Standbild = erstes Bild des Videos
+    ("regenfahrt", "Tower im Regen", "bibi-tech", "datei:" + VIDEO_DIR + "/exatower-regen.jpg"),
 ]
+LEBENDIG_NEU = {"regenfahrt"}
+LEBENDIG_TEXT = {"regenfahrt": "Kamerafahrt um den Exabibi Tower bei Nacht und Regen, in Blender gerendert."}
 
 
 def lebendig(mid):
@@ -1016,6 +1021,9 @@ def svg(mid, p, eigene_farben=False):
 def rendern(mid, p, ziel_dir: Path, breite=W, hoehe=H, eigene_farben=False):
     """Rendert ein Motiv als PNG und gibt den Pfad zurueck (mit Zwischenspeicher).
     Eigene Bilder werden nicht gerendert, sondern direkt zurueckgegeben."""
+    leb = lebendig(mid)
+    if leb and eigen_pfad(leb[3]) is not None:  # Video-Szenen: Standbild ist eine Datei
+        mid = leb[3]
     if eigen_pfad(mid) is not None:
         bild = eigenes_bild(mid)
         if bild:

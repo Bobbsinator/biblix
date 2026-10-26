@@ -44,8 +44,9 @@ def motive(e):
     """Alle Motive als Dicts: id, name, gruppe, lebendig, neu, text."""
     liste = []
     for szene, name, gruppe, _ in hintergruende.LEBENDIG:
-        liste.append(dict(id=hintergruende.LEBENDIG_PREFIX + szene, name=name, gruppe=gruppe, lebendig=True, neu=False,
-                          text="Animiert. Pausiert bei Spielen und maximierten Fenstern."))
+        liste.append(dict(id=hintergruende.LEBENDIG_PREFIX + szene, name=name, gruppe=gruppe, lebendig=True,
+                          neu=szene in hintergruende.LEBENDIG_NEU,
+                          text=(hintergruende.LEBENDIG_TEXT.get(szene, "Animiert.") + " Pausiert bei Spielen und maximierten Fenstern.")))
     for mid, name, gruppe in hintergruende.alle():
         st = hintergruende.standort(mid)
         liste.append(dict(id=mid, name=name, gruppe=gruppe, lebendig=False, neu=bool(st),

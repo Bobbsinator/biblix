@@ -397,9 +397,10 @@ Item {
                 }
                 Schraube { symbol: "system-lock-screen"; tipp: "Sperren"; onAusgeloest: { wurzel.schliessen(); sitzung.lock(); } }
                 Schraube { symbol: "system-suspend"; tipp: "Standby"; visible: sitzung.canSuspend; onAusgeloest: { wurzel.schliessen(); sitzung.suspend(); } }
+                Schraube { symbol: "system-log-out"; tipp: "Abmelden"; onAusgeloest: { wurzel.schliessen(); wurzel.zeremonie("abmelden", () => sitzung.requestLogout()); } }
                 Schraube { symbol: "biblix-windows-symbolic"; tipp: "Neustart in Windows"; onAusgeloest: { wurzel.schliessen(); wurzel.ausfuehren("biblix-neustart-windows"); } }
                 Schraube { symbol: "system-reboot"; tipp: "Neustart"; onAusgeloest: { wurzel.schliessen(); sitzung.requestReboot(); } }
-                Schraube { symbol: "system-shutdown"; tipp: "Ausschalten"; gefahr: true; onAusgeloest: { wurzel.schliessen(); sitzung.requestShutdown(); } }
+                Schraube { symbol: "system-shutdown"; tipp: "Ausschalten"; gefahr: true; onAusgeloest: { wurzel.schliessen(); wurzel.zeremonie("herunterfahren", () => sitzung.requestShutdown()); } }
             }
         }
     }

@@ -7,6 +7,9 @@
         <entry name="icon" type="String">
             <default>biblix</default>
         </entry>
+        <!-- symbol (Logo) | bknopf (gelber B-Knopf, Taskleiste "Typenschild") -->
+        <entry name="knopf" type="String"><default>symbol</default></entry>
+        <entry name="knopfFarbe" type="String"><default>#ffd400</default></entry>
         <entry name="stil" type="String">
             <label>panel = Menü über der Taskleiste, vollbild = großer Vollbild-Starter</label>
             <default>panel</default>

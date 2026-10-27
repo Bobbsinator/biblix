@@ -1,0 +1,15 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [{ "Name": "Biblix" }],
+        "Category": "Date and Time",
+        "Description": "Biblix-Uhr: Anzeige im Stil der Welt (Typenschild, Etagenanzeige, Fallblatt, Abholnummer …), Klick zeigt den Kalender",
+        "EnabledByDefault": true,
+        "Icon": "preferences-system-time",
+        "Id": "de.biblix.uhr",
+        "License": "GPL-2.0-or-later",
+        "Name": "Biblix-Uhr",
+        "Version": "1.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

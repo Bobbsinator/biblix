@@ -129,3 +129,14 @@ Technik-Entscheidungen:
 - Lebendiger Hintergrund **„Tower im Regen“**: 4K-Kamerafahrt um den Exabibi Tower bei Nacht und Regen (Video, Schleife,
   ca. 20 MB). Quellen in `kunst/blender/`, Details in `docs/lebendige-hintergruende.md`.
 - Neue Abhängigkeit `qml6-module-qtmultimedia`. Gemessen: ca. 7 % eines CPU-Kerns während das Video läuft.
+
+## biblix-design 2.7.0 (27.10.2026): Taskleiste „Typenschild“
+
+- Neuer Standard: Biblix-Fensterleiste, Biblix-Uhr und gelber B-Knopf; Lack als Schalter; Welten je Preset; Instrumentenfeld um die Symbole unten rechts.
+  Alte KDE-Leiste bleibt als „Klassisch (KDE)“ wählbar. Details: `docs/taskleiste.md`.
+
+## biblix-zeremonien 1.0.0 (27.10.2026): Filme zum Anmelden, Abmelden, Ausschalten
+
+- Neues Paket mit fünf Filmen (Big Bibi, Keynote, Delivery, Monatsabschluss, Netter Versuch) und Player
+  `biblix-zeremonie`; Bibi-Startmenü bekommt einen Abmelden-Knopf; Einstellung in Biblix Design. Details: `docs/zeremonien.md`.
+- Mit dabei: biblix-tools 1.6.1 (Windows-Neustart zeigt den Film), Sammelpaket biblix 1.5.0 zieht biblix-zeremonien.

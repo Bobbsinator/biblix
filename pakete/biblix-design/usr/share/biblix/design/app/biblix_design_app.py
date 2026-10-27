@@ -358,14 +358,34 @@ class Konfigurator(QWidget):
         sy = tr.top() + 6 * k
         sg = th - 12 * k
         # Startknopf
+        typenschild = e.get("leiste_stil", "typenschild") == "typenschild"
         logo = self.app.logo_pixmap()
-        if logo:
+        if typenschild and e["startknopf"] == "biblix":
+            qp.setPen(QPen(QColor("#7a5e00"), 1.5 * k))
+            qp.setBrush(QColor("#ffd400"))
+            qp.drawEllipse(QRectF(sx + 1 * k, sy + 1 * k, sg - 2 * k, sg - 2 * k))
+            self._schrift(qp, sg * 0.55, fett=True)
+            qp.setPen(QColor("#3a2c00"))
+            qp.drawText(QRectF(sx, sy, sg, sg), Qt.AlignmentFlag.AlignCenter, "B")
+        elif logo:
             qp.drawPixmap(QRectF(sx, sy, sg, sg).toRect(), logo)
         self.punkte["startmenue"] = QPointF(sx + sg / 2, sy - 6 * k)
         for i in range(4):
-            qp.setPen(Qt.PenStyle.NoPen)
-            qp.setBrush(qfarbe(p["text"], 60 if i else 110))
-            qp.drawRoundedRect(QRectF(sx + (i + 1) * (sg + 10 * k), sy + 3 * k, sg - 6 * k, sg - 6 * k), 5 * k, 5 * k)
+            r = QRectF(sx + (i + 1) * (sg + 10 * k), sy + 3 * k, sg - 6 * k, sg - 6 * k)
+            if typenschild:
+                qp.setPen(QPen(QColor(p["akzent2"] if i == 1 else p["rand"]), (2 if i == 1 else 1) * k))
+                qp.setBrush(QColor(p["karte"]))
+                qp.drawRoundedRect(r, 5 * k, 5 * k)
+                qp.setPen(Qt.PenStyle.NoPen)
+                qp.setBrush(qfarbe(p["akzent"] if i == 1 else p["text"], 230 if i == 1 else 90))
+                qp.drawEllipse(r.center(), r.width() * 0.22, r.width() * 0.22)
+                if i == 1:
+                    qp.setBrush(QColor(p["akzent2"]))
+                    qp.drawEllipse(QPointF(r.center().x(), r.bottom() + 4 * k), 2 * k, 2 * k)
+            else:
+                qp.setPen(Qt.PenStyle.NoPen)
+                qp.setBrush(qfarbe(p["text"], 60 if i else 110))
+                qp.drawRoundedRect(r, 5 * k, 5 * k)
         self.punkte["taskleiste"] = QPointF(sx + 3 * (sg + 10 * k), tr.top() - 8 * k)
         if tl != "dock":
             self._schrift(qp, 11 * k, mono=True)
@@ -870,6 +890,15 @@ class Fenster(QMainWindow):
             hinweis.setWordWrap(True)
             lay.addWidget(hinweis)
         elif bid == "taskleiste":
+            wahl("Stil", "leiste_stil", 2)
+            schalter("Lack: alle Symbole einfarbig, nur das aktive Fenster in echten Farben", "leiste_lack")
+            schalter("Welten: Fensterleiste und Uhr passen sich dem Preset an", "leiste_welten")
+            hinweis = QLabel("Typenschild: gelber B-Knopf, jede App in derselben Fassung, LED fürs aktive Fenster, "
+                             "Muttern zählen die Fenster. Welten: Bibi Tech wird zum Fahrstuhl, die Bank bekommt eine "
+                             "Fallblatt-Uhr, Bibi Mac eine Abholnummer, Delivery zeigt Downloads als Statuskette.")
+            hinweis.setObjectName("leise")
+            hinweis.setWordWrap(True)
+            lay.addWidget(hinweis)
             wahl("Form", "taskleiste")
             wahl("Durchsichtigkeit", "transparenz")
             wahl("Zwei Monitore", "monitore", 1)
@@ -885,6 +914,17 @@ class Fenster(QMainWindow):
         elif bid == "uhr":
             wahl("Sperrbildschirm", "sperrbildschirm")
             wahl("Ladeanimation nach dem Anmelden", "ladeanimation")
+            wahl("Zeremonien (Filme beim Anmelden, Abmelden, Ausschalten)", "zeremonien")
+            z = QLabel("Big Bibi nach dem Systemstart, die Keynote beim Anmelden, Bibi Delivery beim Abmelden, "
+                       "der Monatsabschluss beim Ausschalten, „Netter Versuch“ beim Neustart in Windows. "
+                       "Jede Taste überspringt, Esc bricht Abmelden und Ausschalten ab. Im Spielmodus immer aus.")
+            z.setObjectName("leise")
+            z.setWordWrap(True)
+            lay.addWidget(z)
+            if Path("/usr/bin/biblix-zeremonie").exists():
+                probe = QPushButton("Zeremonien ansehen …")
+                probe.clicked.connect(self.zeremonie_zeigen)
+                lay.addWidget(probe)
             schalter("Bootmenü und Startbildschirm mitfärben (fragt einmal nach dem Passwort)", "bootmenue_mitfaerben")
         elif bid == "klaenge":
             wahl("Klänge", "klaenge")
@@ -899,6 +939,13 @@ class Fenster(QMainWindow):
     def seite_zeigen(self, nr):
         self.seiten.setCurrentIndex(nr)
         self.seiten_gruppe.buttons()[nr].setChecked(True)
+
+    def zeremonie_zeigen(self):
+        namen = [("hochfahren", "Big Bibi fährt hoch"), ("keynote", "Die Keynote"), ("abmelden", "Delivery holt dich ab"),
+                 ("herunterfahren", "Monatsabschluss"), ("windows", "Netter Versuch")]
+        wahl, ok = QInputDialog.getItem(self, "Zeremonien", "Welcher Film?", [n for _, n in namen], 0, False)
+        if ok:
+            subprocess.Popen(["biblix-zeremonie", "zeigen", dict((n, i) for i, n in namen)[wahl]])
 
     def klang_hoeren(self):
         e = self.e

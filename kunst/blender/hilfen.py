@@ -141,3 +141,99 @@ def nachleuchten(schwelle=1.0, groesse=7, mix=-0.6):
 def rendern():
     bpy.context.scene.render.filepath = ausgabe()
     bpy.ops.render.render(write_still=True)
+
+
+FONT_FETT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+FONT_MONO = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"
+
+
+def text3d(inhalt, ort, groesse, mat, rotation=(math.radians(90), 0, 0), tiefe=0.02, mitte=True, schrift=FONT_FETT):
+    """3D-Text (Standard: steht aufrecht, Blick in -Y)."""
+    kurve = bpy.data.curves.new("Text", "FONT")
+    kurve.body = inhalt
+    kurve.font = bpy.data.fonts.load(schrift, check_existing=True)
+    kurve.size = groesse
+    kurve.extrude = tiefe
+    if mitte:
+        kurve.align_x = "CENTER"
+        kurve.align_y = "CENTER"
+    o = bpy.data.objects.new("Text", kurve)
+    bpy.context.collection.objects.link(o)
+    o.location = ort
+    o.rotation_euler = rotation
+    if mat:
+        o.data.materials.append(mat)
+    return o
+
+
+def schluessel(obj, pfad, werte, interpolation="BEZIER", index=-1):
+    """werte: Liste (bild, wert); setzt Keyframes auf obj.pfad."""
+    for bild, wert in werte:
+        if index >= 0:
+            getattr(obj, pfad)[index] = wert
+        else:
+            setattr(obj, pfad, wert)
+        obj.keyframe_insert(pfad, index=index, frame=bild)
+    anim = obj.animation_data or getattr(obj, "id_data", obj).animation_data
+    if anim and anim.action:
+        for fc in anim.action.fcurves:
+            if fc.data_path == pfad:
+                for k in fc.keyframe_points:
+                    k.interpolation = interpolation
+
+
+def sichtbar(obj, von, bis):
+    """Objekt nur zwischen den Bildern von..bis zeigen (Render)."""
+    for bild, an in ((1, False), (von, True), (bis + 1, False)):
+        if bild < 1:
+            continue
+        obj.hide_render = not an
+        obj.keyframe_insert("hide_render", frame=bild)
+        obj.hide_viewport = not an
+        obj.keyframe_insert("hide_viewport", frame=bild)
+    if von <= 1:
+        obj.hide_render = False
+        obj.keyframe_insert("hide_render", frame=1)
+
+
+def eevee(breite=2560, hoehe=1440, taa=24, fps=24):
+    s = bpy.context.scene
+    s.render.engine = "BLENDER_EEVEE_NEXT"
+    s.eevee.taa_render_samples = taa
+    s.eevee.use_raytracing = True
+    s.eevee.volumetric_tile_size = "4"
+    s.render.fps = fps
+    s.render.resolution_x, s.render.resolution_y = breite, hoehe
+    s.render.resolution_percentage = 100
+    s.render.image_settings.file_format = "PNG"
+    s.view_settings.view_transform = "AgX"
+    s.view_settings.look = "AgX - Medium High Contrast"
+    return s
+
+
+def nebelwuerfel(groesse, ort, dichte, farbe=(0.8, 0.85, 1.0)):
+    m = bpy.data.materials.new("Nebel")
+    m.use_nodes = True
+    n = m.node_tree.nodes
+    n.remove(n["Principled BSDF"])
+    v = n.new("ShaderNodeVolumePrincipled")
+    v.inputs["Density"].default_value = dichte
+    v.inputs["Color"].default_value = (*farbe, 1)
+    m.node_tree.links.new(v.outputs[0], n["Material Output"].inputs["Volume"])
+    return quader("Nebel", groesse, ort, m), v
+
+
+def bilder_rendern():
+    """Animation als Einzelbilder nach ausgabe() (Ordner/Praefix); EINZEL=1,50 rendert nur diese."""
+    import os
+    s = bpy.context.scene
+    ziel = ausgabe()
+    einzel = os.environ.get("EINZEL")
+    if einzel:
+        for f in [int(x) for x in einzel.split(",")]:
+            s.frame_set(f)
+            s.render.filepath = f"{ziel}{f:04d}.png"
+            bpy.ops.render.render(write_still=True)
+    else:
+        s.render.filepath = ziel
+        bpy.ops.render.render(animation=True)

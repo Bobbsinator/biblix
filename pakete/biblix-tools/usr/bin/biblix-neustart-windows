@@ -9,6 +9,10 @@ fehler() { kdialog --title "Neustart in Windows" --error "$1"; }
 if ! frage "Jetzt Windows starten?\n\nNicht gespeicherte Arbeit geht verloren."; then
     exit 0
 fi
+# Biblix-Zeremonie „Netter Versuch“ (falls installiert); Esc bricht den Neustart ab
+if [ -x /usr/bin/biblix-zeremonie ] && ! biblix-zeremonie windows; then
+    exit 0
+fi
 if ! out=$(pkexec "$HELPER" 2>&1); then
     fehler "Windows wurde nicht gefunden.\n\nIst Windows im UEFI-Modus installiert? Im Bootmenü beim Start steht es trotzdem zur Wahl.\n\n$out"
     exit 1

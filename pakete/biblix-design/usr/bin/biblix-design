@@ -107,6 +107,11 @@ def main(argv):
             e["_stand"] = 6
             kern.speichern(e, verlauf=False)
             anwenden.overlay(kern.palette(e), e)
+        # Einmalig (2.7.0): Taskleiste "Typenschild" (Biblix-Fensterleiste, Uhr, B-Knopf, Instrumentenfeld)
+        if gespeichert.get("_stand", 0) < 7:
+            e["_stand"] = 7
+            kern.speichern(e, verlauf=False)
+            anwenden.taskleiste(e, kern.palette(e))
         if e["modus"] == "auto":
             try:
                 import json

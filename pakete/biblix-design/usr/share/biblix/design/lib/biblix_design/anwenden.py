@@ -425,6 +425,18 @@ def plasma_bereit(sekunden=25):
     return False
 
 
+WELTEN = {"bibi-tech": "tower", "bibi-budget-bank": "bank", "bibi-mac": "mac", "bibi-delivery": "delivery",
+          "bibiplexx": "plexx", "nassmacher": "nass"}
+WELT_KNOPF = {"bank": "#c9a227", "mac": "#ffc72c", "plexx": "#ff8a3d", "nass": "#ffb020"}
+
+
+def leisten_welt(e):
+    """Welt der Biblix-Fensterleiste: folgt dem Preset (wenn Welten an), sonst Typenschild."""
+    if not e.get("leiste_welten", True) or e.get("eigene_farben"):
+        return "typenschild"
+    return WELTEN.get(e["preset"], "typenschild")
+
+
 def taskleiste(e, p):
     """Panels per Plasma-Skript einrichten. Biblix-Startmenue rein, Kickoff raus (oder umgekehrt)."""
     if not plasma_bereit():
@@ -433,6 +445,12 @@ def taskleiste(e, p):
     stil = "vollbild" if e["startmenue"] == "vollbild" else "panel"
     deckkraft = {"milchglas": 2, "undurchsichtig": 1, "adaptiv": 0}[e["transparenz"]]
     icon = "biblix" if e["startknopf"] == "biblix" else f"/usr/share/biblix/design/logos/{e['preset']}.svg"
+    biblix_leiste = e.get("leiste_stil", "typenschild") == "typenschild"
+    aufgabe_typ = "de.biblix.leiste" if biblix_leiste else "org.kde.plasma.icontasks"
+    uhr_typ = "de.biblix.uhr" if biblix_leiste else "org.kde.plasma.digitalclock"
+    welt = leisten_welt(e)
+    knopf = "bknopf" if biblix_leiste and e["startknopf"] == "biblix" else "symbol"
+    leisten_farben = json.dumps({k: p[k] for k in ("grund", "flaeche", "karte", "rand", "text", "leise", "akzent", "akzent2")})
     js = f"""
 var menueTyp = "{menue}";
 var umgebaut = false;
@@ -458,10 +476,10 @@ if (modus != "haupt") {{
             n.location = "bottom";
             n.screen = s;
             n.addWidget(menueTyp);
-            var t = n.addWidget("org.kde.plasma.icontasks");
+            var t = n.addWidget("{aufgabe_typ}");
             t.currentConfigGroup = ["General"];
             t.writeConfig("showOnlyCurrentScreen", true);
-            if (modus == "gleich") {{ n.addWidget("org.kde.plasma.systemtray"); n.addWidget("org.kde.plasma.digitalclock"); }}
+            if (modus == "gleich") {{ n.addWidget("org.kde.plasma.systemtray"); n.addWidget("{uhr_typ}"); }}
             vorhanden[s] = n;
         }}
     }}
@@ -477,7 +495,8 @@ panels().forEach(function (p) {{
     // Gewuenschte Reihenfolge: Startmenue zuerst (bei "Mitte": Abstand | Startmenue + Fenster | Abstand),
     // dann alle anderen Widgets wie bisher. Weicht die Leiste davon ab, wird sie neu aufgebaut
     // (angeheftete Apps der Fensterliste bleiben erhalten).
-    var aufgaben = ["org.kde.plasma.icontasks", "org.kde.plasma.taskmanager"];
+    var aufgaben = ["org.kde.plasma.icontasks", "org.kde.plasma.taskmanager", "de.biblix.leiste"];
+    var uhren = ["org.kde.plasma.digitalclock", "de.biblix.uhr"];
     function info(w) {{
         var i = {{ typ: w.type, conf: {{}} }};
         w.currentConfigGroup = ["General"];
@@ -490,6 +509,18 @@ panels().forEach(function (p) {{
     }}
     var jetzt = p.widgets().map(info);
     var behalten = jetzt.filter(function (i) {{ return starter.indexOf(i.typ) < 0 && !i.biblix; }});
+    // Fensterleiste und Uhr: Biblix (Typenschild) oder KDE, angeheftete Apps wandern mit
+    // (Kopien: "jetzt" muss unveraendert bleiben, sonst sieht der Vergleich unten keinen Unterschied)
+    behalten = behalten.map(function (i) {{
+        var typ = i.typ;
+        if (aufgaben.indexOf(typ) >= 0) typ = "{aufgabe_typ}";
+        else if (uhren.indexOf(typ) >= 0) typ = "{uhr_typ}";
+        return {{ typ: typ, conf: i.conf, biblix: i.biblix }};
+    }});
+    // Instrumentenfeld (Fassung der Symbole unten rechts) direkt vor den Systemabschnitt, nur beim Typenschild
+    behalten = behalten.filter(function (i) {{ return i.typ != "de.biblix.instrumentenfeld"; }});
+    var tray = behalten.map(function (i) {{ return i.typ; }}).indexOf("org.kde.plasma.systemtray");
+    if ({str(biblix_leiste).lower()} && tray >= 0) behalten.splice(tray, 0, {{ typ: "de.biblix.instrumentenfeld", conf: {{}} }});
     var mitte = "{e['startmenue_position']}" == "mitte" && "{e['taskleiste']}" != "dock";
     var abstand = {{ typ: "org.kde.plasma.panelspacer", conf: {{ biblix: "1", expanding: true }}, biblix: true }};
     var soll;
@@ -516,6 +547,24 @@ panels().forEach(function (p) {{
             w.currentConfigGroup = ["General"];
             w.writeConfig("icon", "{icon}");
             w.writeConfig("stil", "{stil}");
+            w.writeConfig("knopf", "{knopf}");
+            w.writeConfig("knopfFarbe", "{WELT_KNOPF.get(welt, '#ffd400')}");
+        }}
+        if (w.type == "de.biblix.leiste") {{
+            w.currentConfigGroup = ["General"];
+            w.writeConfig("welt", "{welt}");
+            w.writeConfig("lack", {str(bool(e.get('leiste_lack'))).lower()});
+            w.writeConfig("farben", {json.dumps(leisten_farben)});
+        }}
+        if (w.type == "de.biblix.instrumentenfeld") {{
+            w.currentConfigGroup = ["General"];
+            w.writeConfig("welt", "{welt}");
+            w.writeConfig("farben", {json.dumps(leisten_farben)});
+        }}
+        if (w.type == "de.biblix.uhr") {{
+            w.currentConfigGroup = ["General"];
+            w.writeConfig("welt", "{welt}");
+            w.writeConfig("farben", {json.dumps(leisten_farben)});
         }}
         if (aufgaben.indexOf(w.type) >= 0) {{
             w.currentConfigGroup = ["General"];

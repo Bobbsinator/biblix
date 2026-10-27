@@ -79,6 +79,25 @@ PlasmoidItem {
         befehle.connectSource(befehl);
     }
 
+    // Abmelden/Ausschalten mit Biblix-Zeremonie (Film, danach handelt der Film selbst);
+    // ohne Zeremonien-Paket wie bisher über KDE.
+    property bool zeremonienDa: false
+    function zeremonie(art, ersatz) {
+        if (zeremonienDa)
+            ausfuehren("biblix-zeremonie " + art);
+        else
+            ersatz();
+    }
+    P5Support.DataSource {
+        id: pruefen
+        engine: "executable"
+        connectedSources: ["test -x /usr/bin/biblix-zeremonie && echo ja"]
+        onNewData: (quelle, daten) => {
+            menue.zeremonienDa = (daten.stdout || "").trim() === "ja";
+            disconnectSource(quelle);
+        }
+    }
+
     function starten(desktopId) {
         ausfuehren("kstart --application " + desktopId);
         menue.schliessen();
@@ -127,8 +146,59 @@ PlasmoidItem {
             }
         }
 
+        // Gelber B-Knopf wie an Bibi Phone und Bibi Pad (Taskleiste "Typenschild")
+        Item {
+            id: bk
+            visible: Plasmoid.configuration.knopf === "bknopf"
+            anchors.centerIn: parent
+            width: Math.min(parent.width, parent.height) * 0.86
+            height: width
+            scale: knopf.pressed ? 0.9 : (knopf.containsMouse ? 1.06 : 1.0)
+            Behavior on scale { NumberAnimation { duration: Kirigami.Units.shortDuration; easing.type: Easing.OutBack } }
+            readonly property color farbe: Plasmoid.configuration.knopfFarbe || "#ffd400"
+            Rectangle {
+                anchors.centerIn: parent
+                width: parent.width * 1.5
+                height: width
+                radius: width / 2
+                opacity: knopf.containsMouse ? 0.45 : 0.25
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: "transparent" }
+                    GradientStop { position: 0.5; color: Qt.alpha(bk.farbe, 0.6) }
+                    GradientStop { position: 1.0; color: "transparent" }
+                }
+            }
+            Rectangle {
+                anchors.fill: parent
+                radius: width / 2
+                border.width: Math.max(1, width * 0.05)
+                border.color: Qt.darker(bk.farbe, 2.2)
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Qt.lighter(bk.farbe, 1.25) }
+                    GradientStop { position: 1.0; color: Qt.darker(bk.farbe, 1.2) }
+                }
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: parent.width * 0.12
+                    radius: width / 2
+                    color: "transparent"
+                    border.width: 1
+                    border.color: Qt.rgba(0, 0, 0, 0.14)
+                }
+                Text {
+                    anchors.centerIn: parent
+                    anchors.horizontalCenterOffset: 1
+                    text: "B"
+                    color: Qt.darker(bk.farbe, 3.5)
+                    font.family: "DejaVu Sans"
+                    font.bold: true
+                    font.pixelSize: parent.height * 0.6
+                }
+            }
+        }
         Kirigami.Icon {
             id: symbol
+            visible: Plasmoid.configuration.knopf !== "bknopf"
             anchors.fill: parent
             anchors.margins: Kirigami.Units.smallSpacing / 2
             source: Plasmoid.icon

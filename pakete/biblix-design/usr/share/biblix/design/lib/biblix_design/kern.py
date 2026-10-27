@@ -22,7 +22,7 @@ FARBNAMEN = ["grund", "flaeche", "karte", "rand", "text", "leise", "akzent", "ak
 
 # Der Biblix-Standard. Jede Option der Design-App hat hier ihren Platz.
 STANDARD = {
-    "_stand": 6,                    # Stand der Einstellungen (für einmalige Umstellungen nach Updates)
+    "_stand": 7,                    # Stand der Einstellungen (für einmalige Umstellungen nach Updates)
     "preset": "bibi-tech",
     "modus": "dunkel",              # dunkel | hell | auto (Tag hell, Abend dunkel)
     "eigene_farben": None,          # None oder {"dunkel": {...}, "hell": {...}}
@@ -31,6 +31,9 @@ STANDARD = {
     "startknopf": "biblix",         # biblix | firma
     "taskleiste": "schwebend",      # schwebend | fest | dock
     "transparenz": "undurchsichtig", # undurchsichtig | milchglas | adaptiv
+    "leiste_stil": "typenschild",   # typenschild (Biblix-Fensterleiste und -Uhr) | klassisch (KDE)
+    "leiste_lack": False,           # alle Symbole einfarbig, nur das aktive Fenster in echten Farben
+    "leiste_welten": True,          # Fensterleiste und Uhr wechseln mit dem Preset ihren Charakter
     "monitore": "beide",            # beide | haupt | gleich
     "titelleiste": "nahtlos",       # nahtlos | farbig | schlank
     "knoepfe": "schrauben",         # schrauben | punkte | terminal | klammern | kapsel | balken
@@ -62,6 +65,7 @@ STANDARD = {
     "diashow_monitore": "beide",    # haupt | beide
     "sperrbildschirm": "bibi",      # bibi | terminal | schlicht
     "ladeanimation": "tippen",      # tippen | schrauben | einblenden
+    "zeremonien": "voll",           # Filme beim Anmelden/Abmelden/Ausschalten: voll | kurz | aus (Paket biblix-zeremonien)
     "bootmenue_mitfaerben": True,
     "terminal_farben": True,
     "terminal_prompt": True,
@@ -74,6 +78,8 @@ STANDARD = {
 
 # Fuer die Design-App: Beschriftung jeder Wahl
 WAHL = {
+    "leiste_stil": [("typenschild", "Typenschild"), ("klassisch", "Klassisch (KDE)")],
+    "zeremonien": [("voll", "Voll"), ("kurz", "Kurz"), ("aus", "Aus")],
     "modus": [("dunkel", "Dunkel"), ("hell", "Hell"), ("auto", "Tag hell, Abend dunkel")],
     "startmenue": [("bibi", "Bibi-Startmenü"), ("vollbild", "Vollbild"), ("klassisch", "KDE klassisch")],
     "startmenue_position": [("links", "Links"), ("mitte", "Mitte")],

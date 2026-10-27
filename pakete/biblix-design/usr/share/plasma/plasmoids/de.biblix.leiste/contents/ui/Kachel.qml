@@ -20,7 +20,8 @@ Item {
     readonly property bool starter: model.IsLauncher === true
     readonly property int anzahl: model.IsGroupParent ? model.ChildCount : (model.IsWindow ? 1 : 0)
     readonly property bool ruft: model.IsDemandingAttention === true
-    readonly property real kante: Math.round(groesse * 0.9)
+    // Platz fuer Metallring, Rahmen, Hover-Vergroesserung und die Muttern darunter: nichts darf aus der Leiste ragen
+    readonly property real kante: Math.round(groesse * (s.metall ? 0.68 : (s.form === "rund" ? 0.76 : 0.8)))
 
     width: groesse
     height: groesse
@@ -31,12 +32,12 @@ Item {
         width: kachel.kante
         height: kachel.kante
         anchors.centerIn: parent
-        anchors.verticalCenterOffset: -Math.round(kachel.groesse * 0.04)
+        anchors.verticalCenterOffset: -Math.round(kachel.groesse * 0.05)
         radius: width * s.radius
         color: s.kachel
         border.width: kachel.aktiv || maus.containsMouse ? 2 : 1
         border.color: kachel.aktiv ? s.randAktiv : (maus.containsMouse ? Qt.lighter(s.rand, 1.4) : s.rand)
-        scale: maus.pressed ? 0.92 : (maus.containsMouse ? 1.05 : 1.0)
+        scale: maus.pressed ? 0.94 : (maus.containsMouse ? 1.04 : 1.0)
         Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutBack } }
         Behavior on border.color { ColorAnimation { duration: 160 } }
 
@@ -44,7 +45,7 @@ Item {
         Rectangle {
             visible: s.metall
             anchors.fill: parent
-            anchors.margins: -Math.max(2, kachel.kante * 0.06)
+            anchors.margins: -Math.max(2, kachel.kante * 0.07)
             z: -1
             radius: width / 2
             gradient: Gradient {

@@ -36,3 +36,7 @@ plasma-plasmashell`, per Plasma-Skript auf einer Leiste einsetzen. Danach die Ko
 `biblix-design anmeldung` stellt einmalig (`_stand` 7) beim nächsten Anmelden auf das Typenschild um (beide Monitore,
 angeheftete Apps bleiben). Rückweg: Biblix Design → Taskleiste → Stil „Klassisch (KDE)“ → Übernehmen.
 Live geprüft am 27.10.2026: Umbau hin und zurück, zweiter Lauf ändert nichts.
+
+## 2.7.1 (27.10.2026)
+Knöpfe kleiner (Typenschild 80 %, rund 76 %, Fahrstuhl mit Metallring 68 % der Leistenhöhe), Hover nur noch 4 %,
+B-Knopf 80 % mit kleinerem Schein: nichts ragt mehr aus der Leiste und wird abgeschnitten.

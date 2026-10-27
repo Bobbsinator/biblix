@@ -151,14 +151,14 @@ PlasmoidItem {
             id: bk
             visible: Plasmoid.configuration.knopf === "bknopf"
             anchors.centerIn: parent
-            width: Math.min(parent.width, parent.height) * 0.86
+            width: Math.min(parent.width, parent.height) * 0.8
             height: width
             scale: knopf.pressed ? 0.9 : (knopf.containsMouse ? 1.06 : 1.0)
             Behavior on scale { NumberAnimation { duration: Kirigami.Units.shortDuration; easing.type: Easing.OutBack } }
             readonly property color farbe: Plasmoid.configuration.knopfFarbe || "#ffd400"
             Rectangle {
                 anchors.centerIn: parent
-                width: parent.width * 1.5
+                width: parent.width * 1.18
                 height: width
                 radius: width / 2
                 opacity: knopf.containsMouse ? 0.45 : 0.25

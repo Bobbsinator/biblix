@@ -572,6 +572,32 @@ Description: Biblix-Design: Konfigurator, Firmen-Designs, Bibi-Startmenü, Anima
  viele Hintergründe, Sperrbildschirm, Startbildschirm und Bootmenü.
  Alles einzeln mischbar. Kommt als Update, ohne Neuinstallation.
 
+Package: biblix-design
+Architecture: all
+Version: 2.7.1
+Priority: optional
+Section: x11
+Maintainer: Biblix <biblix@localhost>
+Depends: desktop-base, plymouth, grub-common, python3, python3-pyqt6, python3-pyqt6.qtsvg, librsvg2-bin,
+ x11-apps, pkexec, kde-cli-tools, libkf6config-bin, libglib2.0-bin, plasma-workspace, plasma-desktop,
+ qml6-module-org-kde-ksysguard, qml6-module-org-kde-plasma-plasma5support, qml6-module-org-kde-coreaddons,
+ qml6-module-qtquick-particles, qml6-module-qtmultimedia,
+ qml6-module-qtquick-shapes, fonts-dejavu-core
+Recommends: sddm-theme-breeze, fastfetch, pulseaudio-utils, gamemode, biblix-kwin-wuerfel, playerctl, mangohud
+Filename: ./biblix-design_2.7.1_all.deb
+Size: 22468112
+MD5sum: 3184229200d84bbb6c79fc5a850aee1d
+SHA1: d57b1794994978c64adac2231496d1fb36ccf044
+SHA256: ae24717143ab4d3a2c213dd0d57549a79128f0a0f75136846ebebeb548c626a1
+SHA512: e19fe7c83578b36e7767f1212970f800bd7fcef39c48c85811a4833245556c3a6f0bf855714618e6a2f505bb44f83728ebba6d15334c349b982358c847322c6f
+Description: Biblix-Design: Konfigurator, Firmen-Designs, Bibi-Startmenü, Animationen
+ Das Aussehen von Biblix und die App "Biblix Design": sechs Firmen-Designs
+ (Bibi Tech, Bibi Budget Bank, Bibi Delivery, Bibi Mac, Nassmacher, Bibiplexx)
+ hell und dunkel, eigene Farben, das Bibi-Startmenü, Fensterrahmen mit
+ Schrauben-Knöpfen, Fenster-Animationen, Mauszeiger, Symbole, Klänge,
+ viele Hintergründe, Sperrbildschirm, Startbildschirm und Bootmenü.
+ Alles einzeln mischbar. Kommt als Update, ohne Neuinstallation.
+
 Package: biblix-kwin-wuerfel
 Architecture: amd64
 Version: 1.0.0

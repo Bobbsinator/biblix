@@ -546,6 +546,32 @@ Description: Biblix-Design: Konfigurator, Firmen-Designs, Bibi-Startmenü, Anima
  viele Hintergründe, Sperrbildschirm, Startbildschirm und Bootmenü.
  Alles einzeln mischbar. Kommt als Update, ohne Neuinstallation.
 
+Package: biblix-design
+Architecture: all
+Version: 2.7.0
+Priority: optional
+Section: x11
+Maintainer: Biblix <biblix@localhost>
+Depends: desktop-base, plymouth, grub-common, python3, python3-pyqt6, python3-pyqt6.qtsvg, librsvg2-bin,
+ x11-apps, pkexec, kde-cli-tools, libkf6config-bin, libglib2.0-bin, plasma-workspace, plasma-desktop,
+ qml6-module-org-kde-ksysguard, qml6-module-org-kde-plasma-plasma5support, qml6-module-org-kde-coreaddons,
+ qml6-module-qtquick-particles, qml6-module-qtmultimedia,
+ qml6-module-qtquick-shapes, fonts-dejavu-core
+Recommends: sddm-theme-breeze, fastfetch, pulseaudio-utils, gamemode, biblix-kwin-wuerfel, playerctl, mangohud
+Filename: ./biblix-design_2.7.0_all.deb
+Size: 22466608
+MD5sum: bf1ff30b0943e88b67cb2ac5a1f5afc0
+SHA1: ff50bfd6cd98c022825fdb19986d470754d9b0d4
+SHA256: db6133a9381e59f5e36e896583bdb53301c8b24d836bce6a67c4b3c962f78f71
+SHA512: 762a43e39f63b70ffa6e8b4448cfb05d8355430b2fc43ec0389c87dc44bd5c7c4c624eaeb0a484fb6fab068ada6c6d8965ec30a42fd950d435bc847b9ea0031f
+Description: Biblix-Design: Konfigurator, Firmen-Designs, Bibi-Startmenü, Animationen
+ Das Aussehen von Biblix und die App "Biblix Design": sechs Firmen-Designs
+ (Bibi Tech, Bibi Budget Bank, Bibi Delivery, Bibi Mac, Nassmacher, Bibiplexx)
+ hell und dunkel, eigene Farben, das Bibi-Startmenü, Fensterrahmen mit
+ Schrauben-Knöpfen, Fenster-Animationen, Mauszeiger, Symbole, Klänge,
+ viele Hintergründe, Sperrbildschirm, Startbildschirm und Bootmenü.
+ Alles einzeln mischbar. Kommt als Update, ohne Neuinstallation.
+
 Package: biblix-kwin-wuerfel
 Architecture: amd64
 Version: 1.0.0
@@ -914,6 +940,27 @@ Description: Biblix-Werkzeuge: S-Launcher und Systemhelfer
  .
  AUF BIBLIX GEHT DAS.
 
+Package: biblix-tools
+Architecture: all
+Version: 1.6.1
+Priority: optional
+Section: admin
+Maintainer: Biblix <biblix@localhost>
+Depends: python3, python3-pyqt6, flatpak, pciutils, pkexec, polkitd, libnotify-bin, kdialog, efibootmgr, konsole, curl
+Recommends: mokutil, onedrive, pipewire-bin, libkscreen-bin, dkms, libarchive-tools, gamemode, power-profiles-daemon, vulkan-tools, kio-admin, python3-pil, parted, openssl, python3-evdev
+Filename: ./biblix-tools_1.6.1_all.deb
+Size: 226492
+MD5sum: 8f6d4647c75a9571e5cfd368cc59ee78
+SHA1: d8a464535783a453a61fd3da292e4cda218a6aef
+SHA256: 74f3de6986ae299ed41c21fa4ddf6cad9e7407c46bccb22efd0d5cf36dada8d1
+SHA512: 899896bd86176aea7ddeac13aa5f37fc650804114569ad35d45b7ee0fb3a756ada1392172b907cb8663dd9616a6e965e736aab221bca07a40c3ac89652763b1c
+Description: Biblix-Werkzeuge: S-Launcher und Systemhelfer
+ S-Launcher (App-Browser und Spielezentrale), biblix-gpu (Grafik- und CPU-Check),
+ Update-Benachrichtigungen, Secure-Boot-, OneDrive- und Xbox-Funkadapter-Helfer,
+ Neustart in Windows sowie die Paketquelle fuer kuenftige Biblix-Updates.
+ .
+ AUF BIBLIX GEHT DAS.
+
 Package: biblix-xbox
 Architecture: all
 Version: 1.0.0
@@ -932,6 +979,26 @@ Description: Biblix: Treiber fuer Xbox-Controller
  xone (Xbox-Funkadapter und Kabel) und xpadneo (Bluetooth) als DKMS-Module,
  die bei jedem Kernel-Update automatisch neu gebaut werden. Firmware fuer den
  Funkadapter: bibi biblix-xbox-funkadapter
+
+Package: biblix-zeremonien
+Architecture: all
+Version: 1.0.0
+Priority: optional
+Section: x11
+Maintainer: Biblix <biblix@localhost>
+Depends: python3, mpv
+Recommends: biblix-design (>= 2.7.0)
+Filename: ./biblix-zeremonien_1.0.0_all.deb
+Size: 13141796
+MD5sum: 4affd4c37b4f8f315e1e1fb56d4ab6e9
+SHA1: ccbe8161c1af928389998e1e090cdab95e663287
+SHA256: 0be6e1d1e3421c089c64d8a0d3bc7d3c229087131200bf18d30d5888bc350ed3
+SHA512: 923935434b6814692dcf34210e7a533c50cc85a0257a6c7761936bdca9348b5b5d083745d53fd7940fd3342cdcbddb68559774915cdf0ed184ab05adb8a64e5e
+Description: Biblix-Zeremonien: komplett übertriebene Filme zum Anmelden, Abmelden und Ausschalten
+ Big Bibi fährt hoch (nach dem Systemstart), die Keynote (Anmelden), Bibi Delivery holt dich ab
+ (Abmelden), Monatsabschluss in der Bibi Budget Bank (Ausschalten) und „Netter Versuch“
+ (Neustart in Windows). Jede Taste überspringt, Esc bricht Abmelden und Ausschalten ab.
+ Einstellbar in Biblix Design (voll, kurz, aus); bei aktivem Spielmodus immer aus.
 
 Package: biblix
 Architecture: all
@@ -1026,6 +1093,22 @@ MD5sum: 7ba8c79c3a5bfec2b895a9975f8b2d19
 SHA1: 6d8413f0dd45c4da3804e01a956ab8e7829f6e06
 SHA256: fa0aa601c2af727a3a45ed7c2f896105c78af0e867aaed1cc080c6b0d9940135
 SHA512: dec178b34d474caafdfe59046b7120db720841fba7b685e21f8c5c0996518f7ea0c8356aea682eaebb36fe1db2541072a2b982a0d94be1c09a19411a1155ccac
+Description: Biblix - DEIN SYSTEM. DEIN PROBLEM.
+ Sammelpaket: haelt alle Biblix-Teile aktuell und bringt neue Teile per Update mit.
+
+Package: biblix
+Architecture: all
+Version: 1.5.0
+Priority: optional
+Section: metapackages
+Maintainer: Biblix <biblix@localhost>
+Depends: biblix-tools (>= 1.6.1), biblix-system (>= 1.1.1), biblix-design (>= 2.7.0), biblix-zeremonien (>= 1.0.0), biblix-xbox (>= 1.0.0), biblix-kwin-wuerfel (>= 1.0.0), biblix-bibiplexx (>= 1.0.1), biblix-browser (>= 1.0.0), biblix-arcade (>= 1.0.0)
+Filename: ./biblix_1.5.0_all.deb
+Size: 1068
+MD5sum: ae25bed784273a695f76eafe66386040
+SHA1: a7773e3a4f3518f82d96a679b499e5e8b89002b1
+SHA256: db49270ef7b28102e59d55aab7026885c2362f341578d72b76bc13277f211e2a
+SHA512: c31e8bc4cdc6e964df2c41f473eb51976b677d4eec7b3629010315401d0e89cd1850136c303f1d50df853d6392dbb69c4edcea1eb6f9606eeb27f781fc301f4f
 Description: Biblix - DEIN SYSTEM. DEIN PROBLEM.
  Sammelpaket: haelt alle Biblix-Teile aktuell und bringt neue Teile per Update mit.
 

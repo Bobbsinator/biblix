@@ -79,25 +79,6 @@ PlasmoidItem {
         befehle.connectSource(befehl);
     }
 
-    // Abmelden/Ausschalten mit Biblix-Zeremonie (Film, danach handelt der Film selbst);
-    // ohne Zeremonien-Paket wie bisher über KDE.
-    property bool zeremonienDa: false
-    function zeremonie(art, ersatz) {
-        if (zeremonienDa)
-            ausfuehren("biblix-zeremonie " + art);
-        else
-            ersatz();
-    }
-    P5Support.DataSource {
-        id: pruefen
-        engine: "executable"
-        connectedSources: ["test -x /usr/bin/biblix-zeremonie && echo ja"]
-        onNewData: (quelle, daten) => {
-            menue.zeremonienDa = (daten.stdout || "").trim() === "ja";
-            disconnectSource(quelle);
-        }
-    }
-
     function starten(desktopId) {
         ausfuehren("kstart --application " + desktopId);
         menue.schliessen();

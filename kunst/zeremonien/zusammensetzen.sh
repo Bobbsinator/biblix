@@ -1,10 +1,10 @@
 #!/bin/bash
-# Setzt die gerenderten Zeremonien (Bilder + Ton) zu MP4-Filmen zusammen und legt sie ins Paket biblix-zeremonien.
+# Setzt die gerenderten Zeremonien (Bilder + Ton) zu MP4-Filmen zusammen (Archiv: das Paket biblix-zeremonien gibt es nicht mehr).
 #   kunst/zeremonien/alle_rendern.sh   (Bilder)   dann   kunst/zeremonien/zusammensetzen.sh
 set -e
 K=$(cd "$(dirname "$0")/.." && pwd)
 A=$K/ausgabe/zeremonien
-ZIEL=$K/../pakete/biblix-zeremonien/usr/share/biblix/zeremonien
+ZIEL=${ZIEL:-$A/filme}; mkdir -p $ZIEL
 python3 -I $K/zeremonien/klaenge.py $A/ton
 [ -f $A/hochfahren/bild_0300.png ] || python3 -I $K/zeremonien/titel.py $A/hochfahren
 for n in hochfahren keynote abmelden herunterfahren windows; do

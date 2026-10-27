@@ -4,6 +4,7 @@ Architecture: all
 Section: metapackages
 Priority: optional
 Maintainer: Biblix <biblix@localhost>
-Depends: biblix-tools (>= 1.6.1), biblix-system (>= 1.1.1), biblix-design (>= 2.7.0), biblix-zeremonien (>= 1.0.0), biblix-xbox (>= 1.0.0), biblix-kwin-wuerfel (>= 1.0.0), biblix-bibiplexx (>= 1.0.1), biblix-browser (>= 1.0.0), biblix-arcade (>= 1.0.0)
+Depends: biblix-tools (>= 1.6.2), biblix-system (>= 1.1.1), biblix-design (>= 2.7.2), biblix-xbox (>= 1.0.0), biblix-kwin-wuerfel (>= 1.0.0), biblix-bibiplexx (>= 1.0.1), biblix-browser (>= 1.0.0), biblix-arcade (>= 1.0.0)
+Conflicts: biblix-zeremonien
 Description: Biblix - DEIN SYSTEM. DEIN PROBLEM.
  Sammelpaket: haelt alle Biblix-Teile aktuell und bringt neue Teile per Update mit.

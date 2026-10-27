@@ -138,5 +138,13 @@ Technik-Entscheidungen:
 ## biblix-zeremonien 1.0.0 (27.10.2026): Filme zum Anmelden, Abmelden, Ausschalten
 
 - Neues Paket mit fünf Filmen (Big Bibi, Keynote, Delivery, Monatsabschluss, Netter Versuch) und Player
-  `biblix-zeremonie`; Bibi-Startmenü bekommt einen Abmelden-Knopf; Einstellung in Biblix Design. Details: `docs/zeremonien.md`.
+  `biblix-zeremonie`; Bibi-Startmenü bekommt einen Abmelden-Knopf; Einstellung in Biblix Design. (Mit 2.7.2 wieder entfernt, siehe unten.)
 - Mit dabei: biblix-tools 1.6.1 (Windows-Neustart zeigt den Film), Sammelpaket biblix 1.5.0 zieht biblix-zeremonien.
+
+## biblix-design 2.7.2, biblix-tools 1.6.2, biblix 1.6.0 (27.10.2026): Zeremonien wieder raus
+
+- Die Filme haben nicht überzeugt: Paket biblix-zeremonien entfällt. Das Sammelpaket biblix 1.6.0 hat
+  `Conflicts: biblix-zeremonien`, damit `apt full-upgrade` es von installierten Rechnern entfernt.
+- Biblix Design ohne Zeremonien-Wahl, Startmenü meldet ab und schaltet aus wie vorher über KDE
+  (der Abmelden-Knopf bleibt), Windows-Neustart ohne Film.
+- Die Quellen der Filme bleiben unter `kunst/blender/zeremonien/` und `kunst/zeremonien/` als Archiv.

@@ -1,9 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Biblix-Zeremonie beim Anmelden
-Comment=Big Bibi nach dem Systemstart, sonst die Keynote
-Exec=biblix-zeremonie anmelden
-Icon=biblix
-NoDisplay=true
-OnlyShowIn=KDE;
-X-KDE-autostart-phase=2

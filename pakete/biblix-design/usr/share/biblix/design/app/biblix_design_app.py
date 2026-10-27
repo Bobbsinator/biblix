@@ -914,17 +914,6 @@ class Fenster(QMainWindow):
         elif bid == "uhr":
             wahl("Sperrbildschirm", "sperrbildschirm")
             wahl("Ladeanimation nach dem Anmelden", "ladeanimation")
-            wahl("Zeremonien (Filme beim Anmelden, Abmelden, Ausschalten)", "zeremonien")
-            z = QLabel("Big Bibi nach dem Systemstart, die Keynote beim Anmelden, Bibi Delivery beim Abmelden, "
-                       "der Monatsabschluss beim Ausschalten, „Netter Versuch“ beim Neustart in Windows. "
-                       "Jede Taste überspringt, Esc bricht Abmelden und Ausschalten ab. Im Spielmodus immer aus.")
-            z.setObjectName("leise")
-            z.setWordWrap(True)
-            lay.addWidget(z)
-            if Path("/usr/bin/biblix-zeremonie").exists():
-                probe = QPushButton("Zeremonien ansehen …")
-                probe.clicked.connect(self.zeremonie_zeigen)
-                lay.addWidget(probe)
             schalter("Bootmenü und Startbildschirm mitfärben (fragt einmal nach dem Passwort)", "bootmenue_mitfaerben")
         elif bid == "klaenge":
             wahl("Klänge", "klaenge")
@@ -939,13 +928,6 @@ class Fenster(QMainWindow):
     def seite_zeigen(self, nr):
         self.seiten.setCurrentIndex(nr)
         self.seiten_gruppe.buttons()[nr].setChecked(True)
-
-    def zeremonie_zeigen(self):
-        namen = [("hochfahren", "Big Bibi fährt hoch"), ("keynote", "Die Keynote"), ("abmelden", "Delivery holt dich ab"),
-                 ("herunterfahren", "Monatsabschluss"), ("windows", "Netter Versuch")]
-        wahl, ok = QInputDialog.getItem(self, "Zeremonien", "Welcher Film?", [n for _, n in namen], 0, False)
-        if ok:
-            subprocess.Popen(["biblix-zeremonie", "zeigen", dict((n, i) for i, n in namen)[wahl]])
 
     def klang_hoeren(self):
         e = self.e

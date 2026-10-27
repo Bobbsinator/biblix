@@ -65,7 +65,6 @@ STANDARD = {
     "diashow_monitore": "beide",    # haupt | beide
     "sperrbildschirm": "bibi",      # bibi | terminal | schlicht
     "ladeanimation": "tippen",      # tippen | schrauben | einblenden
-    "zeremonien": "voll",           # Filme beim Anmelden/Abmelden/Ausschalten: voll | kurz | aus (Paket biblix-zeremonien)
     "bootmenue_mitfaerben": True,
     "terminal_farben": True,
     "terminal_prompt": True,
@@ -79,7 +78,6 @@ STANDARD = {
 # Fuer die Design-App: Beschriftung jeder Wahl
 WAHL = {
     "leiste_stil": [("typenschild", "Typenschild"), ("klassisch", "Klassisch (KDE)")],
-    "zeremonien": [("voll", "Voll"), ("kurz", "Kurz"), ("aus", "Aus")],
     "modus": [("dunkel", "Dunkel"), ("hell", "Hell"), ("auto", "Tag hell, Abend dunkel")],
     "startmenue": [("bibi", "Bibi-Startmenü"), ("vollbild", "Vollbild"), ("klassisch", "KDE klassisch")],
     "startmenue_position": [("links", "Links"), ("mitte", "Mitte")],

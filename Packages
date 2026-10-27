@@ -598,6 +598,32 @@ Description: Biblix-Design: Konfigurator, Firmen-Designs, Bibi-Startmenü, Anima
  viele Hintergründe, Sperrbildschirm, Startbildschirm und Bootmenü.
  Alles einzeln mischbar. Kommt als Update, ohne Neuinstallation.
 
+Package: biblix-design
+Architecture: all
+Version: 2.7.2
+Priority: optional
+Section: x11
+Maintainer: Biblix <biblix@localhost>
+Depends: desktop-base, plymouth, grub-common, python3, python3-pyqt6, python3-pyqt6.qtsvg, librsvg2-bin,
+ x11-apps, pkexec, kde-cli-tools, libkf6config-bin, libglib2.0-bin, plasma-workspace, plasma-desktop,
+ qml6-module-org-kde-ksysguard, qml6-module-org-kde-plasma-plasma5support, qml6-module-org-kde-coreaddons,
+ qml6-module-qtquick-particles, qml6-module-qtmultimedia,
+ qml6-module-qtquick-shapes, fonts-dejavu-core
+Recommends: sddm-theme-breeze, fastfetch, pulseaudio-utils, gamemode, biblix-kwin-wuerfel, playerctl, mangohud
+Filename: ./biblix-design_2.7.2_all.deb
+Size: 22468980
+MD5sum: 229f83d8a0aeae5d7891cfdcc1f02946
+SHA1: 4a74a5c5ce94a48523cf4e0ebb7055413046fcad
+SHA256: 3b5bd297fac099b62da68c35ff27217f1069046e068b9d012036ba33fefdcdd7
+SHA512: 3bcd82de3242967e27415cef844a6adf5d9dbb40e629a427ee3d6d39825da2d1cb845f2e4fb6cb440da7fb4f57ef381018933acf6829f22cf7665952093861ed
+Description: Biblix-Design: Konfigurator, Firmen-Designs, Bibi-Startmenü, Animationen
+ Das Aussehen von Biblix und die App "Biblix Design": sechs Firmen-Designs
+ (Bibi Tech, Bibi Budget Bank, Bibi Delivery, Bibi Mac, Nassmacher, Bibiplexx)
+ hell und dunkel, eigene Farben, das Bibi-Startmenü, Fensterrahmen mit
+ Schrauben-Knöpfen, Fenster-Animationen, Mauszeiger, Symbole, Klänge,
+ viele Hintergründe, Sperrbildschirm, Startbildschirm und Bootmenü.
+ Alles einzeln mischbar. Kommt als Update, ohne Neuinstallation.
+
 Package: biblix-kwin-wuerfel
 Architecture: amd64
 Version: 1.0.0
@@ -987,6 +1013,27 @@ Description: Biblix-Werkzeuge: S-Launcher und Systemhelfer
  .
  AUF BIBLIX GEHT DAS.
 
+Package: biblix-tools
+Architecture: all
+Version: 1.6.2
+Priority: optional
+Section: admin
+Maintainer: Biblix <biblix@localhost>
+Depends: python3, python3-pyqt6, flatpak, pciutils, pkexec, polkitd, libnotify-bin, kdialog, efibootmgr, konsole, curl
+Recommends: mokutil, onedrive, pipewire-bin, libkscreen-bin, dkms, libarchive-tools, gamemode, power-profiles-daemon, vulkan-tools, kio-admin, python3-pil, parted, openssl, python3-evdev
+Filename: ./biblix-tools_1.6.2_all.deb
+Size: 226248
+MD5sum: 7c61f9f7971b450ee61d424f4f840247
+SHA1: dc6b5f068d3ca6a8e10923d5551b2e717623a5e2
+SHA256: da02b353fe7c99d489d45b8f7046aba525182741e8b3b3c08b5a63db73b11bd8
+SHA512: 518c2b121b9d89d52f11fd3dbd9676aea466b521c562f8a5ea233a3cf74c307d0f72f3b265b03e535f03f0c72542f7c9f469dc85baa4f63906ddbda0eb7abb48
+Description: Biblix-Werkzeuge: S-Launcher und Systemhelfer
+ S-Launcher (App-Browser und Spielezentrale), biblix-gpu (Grafik- und CPU-Check),
+ Update-Benachrichtigungen, Secure-Boot-, OneDrive- und Xbox-Funkadapter-Helfer,
+ Neustart in Windows sowie die Paketquelle fuer kuenftige Biblix-Updates.
+ .
+ AUF BIBLIX GEHT DAS.
+
 Package: biblix-xbox
 Architecture: all
 Version: 1.0.0
@@ -1135,6 +1182,23 @@ MD5sum: ae25bed784273a695f76eafe66386040
 SHA1: a7773e3a4f3518f82d96a679b499e5e8b89002b1
 SHA256: db49270ef7b28102e59d55aab7026885c2362f341578d72b76bc13277f211e2a
 SHA512: c31e8bc4cdc6e964df2c41f473eb51976b677d4eec7b3629010315401d0e89cd1850136c303f1d50df853d6392dbb69c4edcea1eb6f9606eeb27f781fc301f4f
+Description: Biblix - DEIN SYSTEM. DEIN PROBLEM.
+ Sammelpaket: haelt alle Biblix-Teile aktuell und bringt neue Teile per Update mit.
+
+Package: biblix
+Architecture: all
+Version: 1.6.0
+Priority: optional
+Section: metapackages
+Maintainer: Biblix <biblix@localhost>
+Depends: biblix-tools (>= 1.6.2), biblix-system (>= 1.1.1), biblix-design (>= 2.7.2), biblix-xbox (>= 1.0.0), biblix-kwin-wuerfel (>= 1.0.0), biblix-bibiplexx (>= 1.0.1), biblix-browser (>= 1.0.0), biblix-arcade (>= 1.0.0)
+Conflicts: biblix-zeremonien
+Filename: ./biblix_1.6.0_all.deb
+Size: 1072
+MD5sum: dd56abe3ecac78870bdc77687df91600
+SHA1: 37a3bc0090a872c419deee7b02e0ed3cc93d4633
+SHA256: d67d5f76429890fc225f9a23491e7aa7d2f97a5b878dcbcbf339cef330ebb955
+SHA512: f9b4bc4cffd2a61fd5907dccfc81989ace31eefa252a0b0b5753da90e7709c141250369f439e7d8e1c46e341a3c7dd890d2305a1b7e23182b4101ad398902cf0
 Description: Biblix - DEIN SYSTEM. DEIN PROBLEM.
  Sammelpaket: haelt alle Biblix-Teile aktuell und bringt neue Teile per Update mit.
 

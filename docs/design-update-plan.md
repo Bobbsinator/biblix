@@ -154,4 +154,6 @@ Technik-Entscheidungen:
 - Neue Leistenstile Drei Zonen (Standard), Drei Inseln und Kopfzeile; Typenschild und Klassisch bleiben wählbar.
   Bestehende Typenschild-Einstellungen werden einmalig auf Drei Zonen umgestellt. Details: `docs/taskleiste.md`.
 - B-Knopf blau mit weißem B: Kennzeichen von Biblix gegenüber Bibi OS (gelb). Noch nicht in der Lore festgehalten.
-- Vorgemerkt: Megaaufzug und Skyline als weitere wählbare Leisten; neue Icons für Einstellungen und S-Launcher (Auswahl offen).
+- Neue Icons: Einstellungen als Regler-Trio (Motiv `regler` in `symbole.py`, ersetzt die Mutter), S-Launcher als
+  Paket mit blauem Pfeil (`s-launcher.svg`). Das Symbol-Thema wird beim Anmelden einmalig neu erzeugt.
+- Vorgemerkt: Megaaufzug und Skyline als weitere wählbare Leisten.

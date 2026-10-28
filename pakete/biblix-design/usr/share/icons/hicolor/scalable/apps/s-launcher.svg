@@ -1,8 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0aa5c6"/><stop offset="1" stop-color="#0a2a3a"/></linearGradient></defs>
-  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#g)"/>
-  <g transform="translate(118 130) scale(1.7)" fill="#e3f3f8"><path d="M-22 -14 C-28 -26 -42 -28 -46 -20 C-49 -12 -40 -2 -26 0 Z"/><path d="M22 -14 C28 -26 42 -28 46 -20 C49 -12 40 -2 26 0 Z"/><path d="M0 -40 C22 -40 34 -20 34 0 C34 22 22 38 0 38 C-22 38 -34 22 -34 0 C-34 -20 -22 -40 0 -40 Z"/></g>
-  <g transform="translate(118 130) scale(1.7)" fill="#0a2a3a"><circle cx="-12" cy="-4" r="6"/><circle cx="12" cy="-4" r="6"/></g>
-  <circle cx="188" cy="188" r="44" fill="#ffd23f"/>
-  <path d="M174 166 L210 188 L174 210 Z" fill="#1b1500"/>
+  <!-- S-Launcher: Paket mit Pfeil (Apps holen, Spiele starten, System aktualisieren), Biblix-Blau -->
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="#0f2740"/>
+  <rect x="8" y="8" width="240" height="120" rx="56" fill="#ffffff" fill-opacity="0.05"/>
+  <path d="M120 52 L194 86 V162 L120 196 L46 162 V86 Z" fill="#c69a5a"/>
+  <path d="M46 86 L120 120 L194 86 V100 L120 134 L46 100 Z" fill="#000000" fill-opacity="0.08"/>
+  <path d="M46 86 L120 120 L194 86 M120 120 V196" fill="none" stroke="#8a6630" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M83 69 L157 103 V124" fill="none" stroke="#e8d3a8" stroke-width="10" stroke-linejoin="round"/>
+  <circle cx="176" cy="176" r="52" fill="#378add" stroke="#0f2740" stroke-width="8"/>
+  <path d="M176 202 V152 M154 172 L176 150 L198 172" fill="none" stroke="#ffffff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

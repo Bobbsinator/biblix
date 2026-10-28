@@ -112,13 +112,15 @@ def main(argv):
             e["_stand"] = 7
             kern.speichern(e, verlauf=False)
             anwenden.taskleiste(e, kern.palette(e))
-        # Einmalig (2.8.0): neue Standardleiste "Drei Zonen" statt Typenschild, B-Knopf in Biblix-Blau
+        # Einmalig (2.8.0): neue Standardleiste "Drei Zonen" statt Typenschild, B-Knopf in Biblix-Blau,
+        # neues Einstellungs-Symbol (Regler-Trio)
         if gespeichert.get("_stand", 0) < 8:
             e["_stand"] = 8
             if e.get("leiste_stil") == "typenschild":
                 e["leiste_stil"] = "zonen"
             kern.speichern(e, verlauf=False)
             anwenden.taskleiste(e, kern.palette(e))
+            anwenden.symbole_erneuern(e)
         if e["modus"] == "auto":
             try:
                 import json

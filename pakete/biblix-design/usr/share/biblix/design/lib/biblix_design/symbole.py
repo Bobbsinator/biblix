@@ -2,7 +2,7 @@
 import shutil
 from pathlib import Path
 
-from .grafik import prompt_b_form, SECHSECK
+from .grafik import prompt_b_form
 from .kern import mischen, dunkler, text_auf
 from . import tray
 
@@ -16,7 +16,7 @@ MOTIVE = {
     "video": "M4 6 H20 V18 H4 Z M10.5 9.2 L15 12 L10.5 14.8 Z",
     "bildschirm": "M3.5 5 H20.5 V16 H3.5 Z M9 20 H15 M12 16 V20",
     "terminal": "M5 8 L9 12 L5 16 M11.5 17 H18.5",
-    "zahnrad": "",
+    "regler": "",
     "papierkorb": "M5 7 H19 M9.5 7 V4.5 H14.5 V7 M7 7 L8 20 H16 L17 7 M10.5 10.5 V16.5 M13.5 10.5 V16.5",
     "papierkorb-voll": "M5 7 H19 M9.5 7 V4.5 H14.5 V7 M7 7 L8 20 H16 L17 7 M8.5 12 L15.5 10 M9 15.5 L15 14",
     "palette": "M12 4 a8 8 0 1 0 0 16 c1.4 0 1.8 -1 1.2 -2 -.6 -1 .1 -2 1.3 -2 H17 a3 3 0 0 0 3 -3 c0 -5 -3.6 -9 -8 -9 Z"
@@ -32,7 +32,7 @@ MOTIVE = {
 APPS = {
     "system-file-manager": "ordner", "org.kde.dolphin": "ordner",
     "utilities-terminal": "terminal", "org.kde.konsole": "terminal", "konsole": "terminal",
-    "preferences-system": "zahnrad", "systemsettings": "zahnrad", "preferences-desktop": "zahnrad",
+    "preferences-system": "regler", "systemsettings": "regler", "preferences-desktop": "regler",
     "de.biblix.Design": "palette", "biblix-design": "palette",
     "de.biblix.NeustartWindows": "fenster", "biblix-neustart-windows": "fenster",
     "biblix-windows-spiel": "spiel",
@@ -48,16 +48,18 @@ ORDNER = {
 }
 
 
-def _zahnrad(farbe, breite):
-    # Biblix-Zahnrad: eine Mutter
-    return (f'<g transform="translate(2 2)"><polygon points="{SECHSECK}" fill="none" stroke="{farbe}" '
-            f'stroke-width="{breite}" stroke-linejoin="round"/><circle cx="10" cy="10" r="3.4" fill="none" '
-            f'stroke="{farbe}" stroke-width="{breite}"/></g>')
+def _regler(farbe, breite, mitte=None):
+    # Einstellungen: Regler-Trio, drei Schienen mit Schiebern auf verschiedener Hoehe, der mittlere hervorgehoben
+    schienen = "".join(f'<line x1="{x}" y1="4" x2="{x}" y2="20" stroke="{farbe}" stroke-opacity="0.4" '
+                       f'stroke-width="{breite}" stroke-linecap="round"/>' for x in (6, 12, 18))
+    schieber = "".join(f'<rect x="{x - 3.5}" y="{y - 2}" width="7" height="4" rx="1.5" fill="{f}"/>'
+                       for x, y, f in ((6, 14, farbe), (12, 8, mitte or farbe), (18, 16, farbe)))
+    return schienen + schieber
 
 
-def _motiv(name, farbe, breite=1.8):
-    if name == "zahnrad":
-        return _zahnrad(farbe, breite)
+def _motiv(name, farbe, breite=1.8, mitte=None):
+    if name == "regler":
+        return _regler(farbe, breite, mitte)
     return (f'<path d="{MOTIVE[name]}" fill="none" stroke="{farbe}" stroke-width="{breite}" '
             f'stroke-linecap="round" stroke-linejoin="round"/>')
 
@@ -67,17 +69,19 @@ def app_symbol(p, stil, motiv):
     if stil == "kacheln":
         grund = p["akzent"] if motiv not in ("papierkorb", "papierkorb-voll") else p["karte"]
         vorne = text_auf(grund) if motiv not in ("papierkorb", "papierkorb-voll") else p["text"]
-        if motiv == "terminal":
+        mitte = None
+        if motiv in ("terminal", "regler"):
             grund, vorne = "#0f141c", "#e8ecf2"
+            mitte = p["akzent"]
         inhalt = (f'<rect x="3" y="3" width="42" height="42" rx="11" fill="{grund}"/>'
                   f'<rect x="3" y="3" width="42" height="21" rx="11" fill="#ffffff" fill-opacity="0.08"/>'
-                  f'<g transform="translate(9 9) scale(1.25)">{_motiv(motiv, vorne)}</g>')
+                  f'<g transform="translate(9 9) scale(1.25)">{_motiv(motiv, vorne, mitte=mitte)}</g>')
         if motiv == "terminal":
             inhalt += f'<rect x="25" y="29" width="10" height="3" rx="1" fill="{p["akzent"]}"/>'
     elif stil == "flach":
         inhalt = (f'<g transform="translate(2 2) scale(1.83)">{_motiv(motiv, p["akzent"], 2.2)}</g>')
     else:  # linien
-        inhalt = (f'<g transform="translate(2 2) scale(1.83)">{_motiv(motiv, p["text"], 1.3)}</g>')
+        inhalt = (f'<g transform="translate(2 2) scale(1.83)">{_motiv(motiv, p["text"], 1.3, p["akzent"])}</g>')
     return f'<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">{inhalt}</svg>'
 
 

@@ -1,8 +1,38 @@
-# Taskleiste „Typenschild“ (biblix-design 2.7.0, 27.10.2026)
+# Taskleiste (biblix-design 2.8.0, 28.10.2026)
 
-Standard ab 2.7.0: eigene **Biblix-Fensterleiste** (`de.biblix.leiste`) und **Biblix-Uhr** (`de.biblix.uhr`) statt
-KDE-Fensterleiste und Digitaluhr; Startknopf = **gelber B-Knopf** (`de.biblix.startmenue`, `knopf=bknopf`).
-Biblix Design → Taskleiste: Stil *Typenschild* / *Klassisch (KDE)*, Schalter *Lack*, Schalter *Welten*.
+Standard ab 2.8.0: **Drei Zonen**. Biblix Design → Taskleiste → Stil: *Drei Zonen* (Standard) · *Drei Inseln* ·
+*Kopfzeile* · *Typenschild* · *Klassisch (KDE)*. Alle Biblix-Stile nutzen dieselben Plasmoids, die Form steht in der
+Plasmoid-Konfiguration `form` (`de.biblix.leiste`, `de.biblix.instrumentenfeld`).
+
+## Biblix-Blau
+Der **B-Knopf ist bei Biblix blau** (`anwenden.BIBLIX_BLAU = #378add`, weißes B), damit man Biblix von Bibi OS
+(gelber Knopf) unterscheidet. Bei den flachen Stilen als abgerundete Kachel (`knopfForm=kachel`), beim Typenschild rund;
+dort behalten die Welten Bank, Mac, Bibiplexx und Nassmacher ihre eigene Knopffarbe.
+
+## Drei Zonen (Standard)
+- Start | Fenster | Symbole | Uhr, getrennt durch feine Linien (Linie links zeichnet die Fensterleiste, die beiden
+  rechten das Instrumentenfeld vor und hinter dem Systemabschnitt).
+- Symbole ohne Fassung; Strich darunter: grau = offen (länger bei mehreren Fenstern), breit in Akzentfarbe = aktiv,
+  gelb = will Aufmerksamkeit. Uhr als Klartext (Zeit + Datum). Welten gelten hier nicht.
+
+## Drei Inseln
+- Start, Fenster (mittig) und Symbole + Uhr schweben als eigene Inseln; die Leiste ist immer schwebend.
+- Der Leistenhintergrund wird unsichtbar über einen kleinen Plasma-Stil `biblix-inseln`
+  (`~/.local/share/plasma/desktoptheme/`, nur `widgets/panel-background.svg` leer, sonst Breeze). Biblix Design setzt
+  ihn beim Wechsel auf Inseln und stellt beim Verlassen wieder `default` ein (nur wenn er noch aktiv ist).
+
+## Kopfzeile
+- Wie Drei Zonen, dazu in der Mitte Name und Titel des aktiven Fensters (App-Name am Titelende wird weggelassen).
+
+## Später als weitere Stile vorgemerkt
+- **Megaaufzug** (Fenster als Ebenen, Kabine fährt zum aktiven) und **Skyline** (Apps als Gebäude, Sonne als Uhr).
+
+---
+
+# Typenschild (biblix-design 2.7.0, 27.10.2026)
+
+Bis 2.7.2 Standard, jetzt wählbar. Bestehende Einstellungen mit Typenschild stellt 2.8.0 einmalig auf Drei Zonen um
+(`_stand` 8).
 
 ## Fensterleiste
 - Jede App in derselben Fassung, aktives Fenster mit Rahmen + LED, **Muttern zählen die offenen Fenster** (max. 4),
@@ -21,7 +51,7 @@ Biblix Design → Taskleiste: Stil *Typenschild* / *Klassisch (KDE)*, Schalter *
   darunter eine eingelassene Fassung, so breit wie der rechte Nachbar (sucht ihn im Leisten-Layout, Container `z = -1`).
   Der Systemabschnitt selbst bleibt der von KDE. Je Welt: Schrauben (Typenschild, Tower, Bank), Messing (Bank),
   Kinolichter (Bibiplexx), Beckenrand (Nassmacher) …
-- Biblix Design setzt es beim Typenschild automatisch ein und nimmt es beim Stil „Klassisch“ wieder heraus.
+- Biblix Design setzt es bei allen Biblix-Stilen ein (Fassung nur beim Typenschild) und nimmt es bei „Klassisch“ heraus.
 
 ## Noch nicht drin (bewusst, spätere Updates)
 - Fenstervorschau beim Drüberfahren (nur Tooltip mit Titel), Umsortieren per Ziehen, Dateien auf Apps ziehen.

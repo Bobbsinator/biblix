@@ -1,6 +1,8 @@
 /*
     Biblix-Instrumentenfeld: steht in der Leiste direkt vor den Symbolen unten rechts (Systemabschnitt)
-    und zeichnet darunter eine eingelassene Fassung, so breit wie der Nachbar rechts davon.
+    und zeichnet darunter eine eingelassene Fassung, so breit wie der Nachbar rechts davon (Typenschild).
+    Drei Zonen und Kopfzeile: nur feine Trennlinien vor den Symbolen und vor der Uhr.
+    Inseln: eine schwebende Insel unter Symbolen und Uhr bis zum rechten Rand.
     Der Systemabschnitt selbst bleibt der von KDE und wird nicht veraendert.
 */
 import QtQuick
@@ -21,6 +23,7 @@ PlasmoidItem {
         try { x = JSON.parse(Plasmoid.configuration.farben || "{}"); } catch (e) { x = {}; }
         return Object.assign({}, standard, x);
     }
+    readonly property string form: Plasmoid.configuration.form || "zonen"
     readonly property var stil: {
         const w = {
             typenschild: { fuellung: Qt.darker(f.grund, 1.35), rand: f.rand, licht: Qt.rgba(1, 1, 1, 0.07), radius: 0.32, schrauben: true, lampen: false },
@@ -58,8 +61,34 @@ PlasmoidItem {
         Component.onCompleted: Qt.callLater(suchen)
         Timer { interval: 2000; running: true; repeat: true; onTriggered: halter.suchen() }
 
+        // Drei Zonen und Kopfzeile: Trennlinien
+        Repeater {
+            model: feld.form === "zonen" || feld.form === "kopfzeile" ? 2 : 0
+            Rectangle {
+                required property int index
+                x: index === 0 ? Math.round(halter.rand / 2) : (halter.nachbar ? halter.nachbar.x + halter.nachbar.width - halter.platz.x + halter.rand / 2 : -10)
+                visible: index === 0 || halter.nachbar !== null
+                width: 1
+                height: Math.round(halter.height * 0.55)
+                anchors.verticalCenter: parent.verticalCenter
+                color: feld.f.rand
+            }
+        }
+        // Inseln: Symbole und Uhr auf einer Insel bis zum rechten Rand
+        Rectangle {
+            visible: feld.form === "inseln"
+            x: Math.round(halter.rand * 0.5)
+            height: halter.height
+            width: halter.platz && halter.platz.parent ? halter.platz.parent.width - halter.platz.x - x : halter.width
+            radius: Math.round(height * 0.3)
+            color: Qt.alpha(feld.f.grund, 0.94)
+            border.width: 1
+            border.color: Qt.alpha(feld.f.rand, 0.8)
+        }
+
         Rectangle {
             id: fassung
+            visible: feld.form === "typenschild"
             readonly property real hoehe: halter.height - Kirigami.Units.smallSpacing * 2
             x: Math.round(halter.rand * 0.25)
             y: Math.round((halter.height - hoehe) / 2)

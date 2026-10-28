@@ -1,4 +1,5 @@
-// Eine App in der Fensterleiste: Fassung, Symbol, LED fuers aktive Fenster, Muttern fuer die Fensterzahl.
+// Eine App in der Fensterleiste. Typenschild: Fassung, LED fuers aktive Fenster, Muttern fuer die Fensterzahl.
+// Flache Formen (Drei Zonen, Inseln, Kopfzeile): nur das Symbol, darunter ein Strich je nach Zustand.
 import QtQuick
 import QtQuick.Effects
 import QtQuick.Shapes
@@ -20,6 +21,7 @@ Item {
     readonly property bool starter: model.IsLauncher === true
     readonly property int anzahl: model.IsGroupParent ? model.ChildCount : (model.IsWindow ? 1 : 0)
     readonly property bool ruft: model.IsDemandingAttention === true
+    readonly property bool flach: leisteRoot.flach
     // Platz fuer Metallring, Rahmen, Hover-Vergroesserung und die Muttern darunter: nichts darf aus der Leiste ragen
     readonly property real kante: Math.round(groesse * (s.metall ? 0.68 : (s.form === "rund" ? 0.76 : 0.8)))
 
@@ -34,8 +36,8 @@ Item {
         anchors.centerIn: parent
         anchors.verticalCenterOffset: -Math.round(kachel.groesse * 0.05)
         radius: width * s.radius
-        color: s.kachel
-        border.width: kachel.aktiv || maus.containsMouse ? 2 : 1
+        color: kachel.flach ? (maus.containsMouse || kachel.aktiv ? Qt.alpha(leisteRoot.f.text, kachel.aktiv ? 0.07 : 0.1) : "transparent") : s.kachel
+        border.width: kachel.flach ? 0 : (kachel.aktiv || maus.containsMouse ? 2 : 1)
         border.color: kachel.aktiv ? s.randAktiv : (maus.containsMouse ? Qt.lighter(s.rand, 1.4) : s.rand)
         scale: maus.pressed ? 0.94 : (maus.containsMouse ? 1.04 : 1.0)
         Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutBack } }
@@ -43,7 +45,7 @@ Item {
 
         // Metallring fuer runde Knoepfe (Welt Tower)
         Rectangle {
-            visible: s.metall
+            visible: s.metall && !kachel.flach
             anchors.fill: parent
             anchors.margins: -Math.max(2, kachel.kante * 0.07)
             z: -1
@@ -55,7 +57,7 @@ Item {
         }
         // Glanzkante oben
         Rectangle {
-            visible: s.form === "kachel"
+            visible: s.form === "kachel" && !kachel.flach
             anchors { left: parent.left; right: parent.right; top: parent.top; margins: parent.radius * 0.6 }
             anchors.topMargin: 1
             height: 1
@@ -63,7 +65,7 @@ Item {
         }
         // Wer ruft, blinkt
         SequentialAnimation on border.width {
-            running: kachel.ruft
+            running: kachel.ruft && !kachel.flach
             loops: Animation.Infinite
             NumberAnimation { to: 3; duration: 400 }
             NumberAnimation { to: 1; duration: 400 }
@@ -89,9 +91,23 @@ Item {
         }
     }
 
+    // Flache Formen: Strich unter offenen Fenstern, breit und in Akzentfarbe beim aktiven
+    Rectangle {
+        visible: kachel.flach && (kachel.anzahl > 0 || kachel.ruft)
+        width: Math.round(kachel.groesse * (kachel.aktiv ? 0.5 : (kachel.anzahl > 1 ? 0.36 : 0.22)))
+        height: kachel.aktiv ? 3 : 2
+        radius: height / 2
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 1
+        color: kachel.ruft ? leisteRoot.f.akzent2 : (kachel.aktiv ? leisteRoot.f.akzent : leisteRoot.f.leise)
+        Behavior on width { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+        Behavior on color { ColorAnimation { duration: 160 } }
+    }
+
     // LED unter dem aktiven Fenster
     Rectangle {
-        visible: kachel.aktiv
+        visible: kachel.aktiv && !kachel.flach
         width: Math.round(kachel.groesse * 0.36)
         height: width
         radius: width / 2
@@ -107,6 +123,7 @@ Item {
     }
     // Muttern: eine je offenem Fenster (hoechstens vier)
     Row {
+        visible: !kachel.flach
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 0

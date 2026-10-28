@@ -428,6 +428,28 @@ def plasma_bereit(sekunden=25):
 WELTEN = {"bibi-tech": "tower", "bibi-budget-bank": "bank", "bibi-mac": "mac", "bibi-delivery": "delivery",
           "bibiplexx": "plexx", "nassmacher": "nass"}
 WELT_KNOPF = {"bank": "#c9a227", "mac": "#ffc72c", "plexx": "#ff8a3d", "nass": "#ffb020"}
+BIBLIX_BLAU = "#378add"   # Kennfarbe von Biblix: der B-Knopf ist blau (Bibi OS hat ihn gelb)
+LEISTEN_FORMEN = ("zonen", "inseln", "kopfzeile", "typenschild")
+
+
+def inseln_stil(an):
+    """Drei Inseln: Plasma-Stil mit unsichtbarem Leistenhintergrund (alles andere wie Breeze).
+    Die Inseln zeichnen Startmenue, Fensterleiste und Instrumentenfeld selbst."""
+    aktuell = subprocess.run(["kreadconfig6", "--file", "plasmarc", "--group", "Theme", "--key", "name"],
+                             capture_output=True, text=True).stdout.strip()
+    if an:
+        d = DATEN / "plasma" / "desktoptheme" / "biblix-inseln"
+        (d / "widgets").mkdir(parents=True, exist_ok=True)
+        (d / "metadata.json").write_text(json.dumps({
+            "KPlugin": {"Id": "biblix-inseln", "Name": "Biblix Inseln", "Description": "Breeze mit unsichtbarer Leiste",
+                        "Authors": [{"Name": "Biblix"}], "License": "GPL", "Version": "1.0"},
+            "X-Plasma-API": "5.0"}, indent=1), encoding="utf-8")
+        (d / "widgets" / "panel-background.svg").write_text(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>', encoding="utf-8")
+        if aktuell != "biblix-inseln":
+            kconf("plasmarc", "Theme", "name", "biblix-inseln")
+    elif aktuell == "biblix-inseln":
+        kconf("plasmarc", "Theme", "name", "default")
 
 
 def leisten_welt(e):
@@ -445,11 +467,14 @@ def taskleiste(e, p):
     stil = "vollbild" if e["startmenue"] == "vollbild" else "panel"
     deckkraft = {"milchglas": 2, "undurchsichtig": 1, "adaptiv": 0}[e["transparenz"]]
     icon = "biblix" if e["startknopf"] == "biblix" else f"/usr/share/biblix/design/logos/{e['preset']}.svg"
-    biblix_leiste = e.get("leiste_stil", "typenschild") == "typenschild"
+    form = e.get("leiste_stil", "zonen")
+    biblix_leiste = form in LEISTEN_FORMEN
+    inseln_stil(form == "inseln")
     aufgabe_typ = "de.biblix.leiste" if biblix_leiste else "org.kde.plasma.icontasks"
     uhr_typ = "de.biblix.uhr" if biblix_leiste else "org.kde.plasma.digitalclock"
-    welt = leisten_welt(e)
+    welt = leisten_welt(e) if form == "typenschild" else "typenschild"
     knopf = "bknopf" if biblix_leiste and e["startknopf"] == "biblix" else "symbol"
+    knopf_farbe = WELT_KNOPF.get(welt, BIBLIX_BLAU)
     leisten_farben = json.dumps({k: p[k] for k in ("grund", "flaeche", "karte", "rand", "text", "leise", "akzent", "akzent2")})
     js = f"""
 var menueTyp = "{menue}";
@@ -487,7 +512,7 @@ if (modus != "haupt") {{
     ps.forEach(function (p) {{ if (p.screen != 0) p.remove(); }});
 }}
 panels().forEach(function (p) {{
-    p.floating = {str(e['taskleiste'] == 'schwebend').lower()};
+    p.floating = {str(e['taskleiste'] == 'schwebend' or form == 'inseln').lower()};   // Inseln schweben immer
     p.lengthMode = "{'fit' if e['taskleiste'] == 'dock' else 'fill'}";
     p.alignment = "{'center' if e['taskleiste'] == 'dock' else 'left'}";
     p.height = {44 if e['taskleiste'] != 'dock' else 52};
@@ -517,7 +542,7 @@ panels().forEach(function (p) {{
         else if (uhren.indexOf(typ) >= 0) typ = "{uhr_typ}";
         return {{ typ: typ, conf: i.conf, biblix: i.biblix }};
     }});
-    // Instrumentenfeld (Fassung der Symbole unten rechts) direkt vor den Systemabschnitt, nur beim Typenschild
+    // Instrumentenfeld (Fassung, Trennlinien oder Insel um die Symbole unten rechts) direkt vor den Systemabschnitt
     behalten = behalten.filter(function (i) {{ return i.typ != "de.biblix.instrumentenfeld"; }});
     var tray = behalten.map(function (i) {{ return i.typ; }}).indexOf("org.kde.plasma.systemtray");
     if ({str(biblix_leiste).lower()} && tray >= 0) behalten.splice(tray, 0, {{ typ: "de.biblix.instrumentenfeld", conf: {{}} }});
@@ -548,16 +573,21 @@ panels().forEach(function (p) {{
             w.writeConfig("icon", "{icon}");
             w.writeConfig("stil", "{stil}");
             w.writeConfig("knopf", "{knopf}");
-            w.writeConfig("knopfFarbe", "{WELT_KNOPF.get(welt, '#ffd400')}");
+            w.writeConfig("knopfFarbe", "{knopf_farbe}");
+            w.writeConfig("knopfForm", "{'rund' if form == 'typenschild' else 'kachel'}");
+            w.writeConfig("insel", {str(form == 'inseln').lower()});
+            w.writeConfig("farben", {json.dumps(leisten_farben)});
         }}
         if (w.type == "de.biblix.leiste") {{
             w.currentConfigGroup = ["General"];
+            w.writeConfig("form", "{form}");
             w.writeConfig("welt", "{welt}");
             w.writeConfig("lack", {str(bool(e.get('leiste_lack'))).lower()});
             w.writeConfig("farben", {json.dumps(leisten_farben)});
         }}
         if (w.type == "de.biblix.instrumentenfeld") {{
             w.currentConfigGroup = ["General"];
+            w.writeConfig("form", "{form}");
             w.writeConfig("welt", "{welt}");
             w.writeConfig("farben", {json.dumps(leisten_farben)});
         }}

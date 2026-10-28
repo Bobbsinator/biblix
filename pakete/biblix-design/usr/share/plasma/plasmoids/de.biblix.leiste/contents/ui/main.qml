@@ -1,7 +1,11 @@
 /*
-    Biblix-Fensterleiste ("Typenschild"): jede App sitzt in derselben Fassung, das aktive Fenster hat
-    eine LED, kleine Muttern zaehlen die offenen Fenster. Die Welt (Form und Farben) und der Lack
-    (einfarbige Symbole) kommen aus Biblix Design. Fensterliste und Anheften wie bei KDE (TasksModel).
+    Biblix-Fensterleiste in vier Formen (setzt Biblix Design):
+    zonen:       schlichte Symbole, Trennlinie zum Startknopf, Strich unter offenen Fenstern (Standard)
+    inseln:      dieselben Symbole auf einer eigenen schwebenden Insel in der Mitte
+    kopfzeile:   Symbole links, in der Mitte Name und Titel des aktiven Fensters
+    typenschild: jede App in einer Fassung, LED fuers aktive Fenster, Muttern zaehlen die Fenster;
+                 nur hier wechselt die Welt (Form und Farben) mit dem Preset.
+    Lack (einfarbige Symbole) gilt fuer alle Formen. Fensterliste und Anheften wie bei KDE (TasksModel).
 */
 import QtQuick
 import QtQuick.Layouts
@@ -27,7 +31,9 @@ PlasmoidItem {
         try { x = JSON.parse(Plasmoid.configuration.farben || "{}"); } catch (e) { x = {}; }
         return Object.assign({}, standard, x);
     }
-    readonly property string welt: Plasmoid.configuration.welt || "typenschild"
+    readonly property string form: Plasmoid.configuration.form || "zonen"
+    readonly property bool flach: form !== "typenschild"
+    readonly property string welt: flach ? "typenschild" : (Plasmoid.configuration.welt || "typenschild")
     readonly property bool lack: Plasmoid.configuration.lack
 
     // Form und Farben je Welt. form: "kachel" (abgerundetes Quadrat) oder "rund".
@@ -61,6 +67,32 @@ PlasmoidItem {
         activity: aktivitaeten.currentActivity
         launcherList: Plasmoid.configuration.launchers
         onLauncherListChanged: Plasmoid.configuration.launchers = launcherList
+    }
+
+    // Kopfzeile: Name und Titel des aktiven Fensters (neu lesen, wenn sich etwas aendert)
+    property int stand: 0
+    Connections {
+        target: aufgaben
+        function onDataChanged() { leiste.stand++; }
+        function onActiveTaskChanged() { leiste.stand++; }
+        function onCountChanged() { leiste.stand++; }
+    }
+    readonly property var aktivesFenster: {
+        leiste.stand;
+        if (form !== "kopfzeile") return null;
+        const R = TaskManager.AbstractTasksModel;
+        for (let z = 0; z < aufgaben.count; z++) {
+            const idx = zeilenIndex(z);
+            if (!aufgaben.data(idx, R.IsActive)) continue;
+            let titel = aufgaben.data(idx, 0) || "";
+            const kinder = aufgaben.data(idx, R.ChildCount) || 0;
+            for (let i = 0; i < kinder; i++) {
+                const k = zeilenIndex(z, i);
+                if (aufgaben.data(k, R.IsActive)) titel = aufgaben.data(k, 0) || titel;
+            }
+            return { app: aufgaben.data(idx, R.AppName) || "", titel: titel };
+        }
+        return null;
     }
 
     function zeilenIndex(zeile, kind) {
@@ -129,14 +161,78 @@ PlasmoidItem {
     }
 
     fullRepresentation: Item {
+        id: flaeche
+        // Abstand links (Trennlinie) und Innenrand der Insel
+        readonly property real rand: leiste.flach ? Kirigami.Units.smallSpacing * 2 : 0
+        readonly property real insel: leiste.form === "inseln" ? Kirigami.Units.smallSpacing * 2 : 0
         Layout.fillWidth: !leiste.senkrecht
         Layout.fillHeight: leiste.senkrecht
-        Layout.minimumWidth: leiste.senkrecht ? 0 : liste.contentWidth
-        Layout.preferredWidth: leiste.senkrecht ? -1 : liste.contentWidth
+        Layout.minimumWidth: leiste.senkrecht ? 0 : liste.contentWidth + 2 * (rand + insel)
+        Layout.preferredWidth: leiste.senkrecht ? -1 : Layout.minimumWidth
+
+        // Drei Zonen und Kopfzeile: feine Linie zwischen Startknopf und Fenstern
+        Rectangle {
+            visible: !leiste.senkrecht && (leiste.form === "zonen" || leiste.form === "kopfzeile")
+            x: 0
+            width: 1
+            height: Math.round(parent.height * 0.55)
+            anchors.verticalCenter: parent.verticalCenter
+            color: leiste.f.rand
+        }
+        // Inseln: die Fenster schweben auf einer eigenen Insel
+        Rectangle {
+            visible: leiste.form === "inseln" && !leiste.senkrecht && liste.count > 0
+            x: liste.x - flaeche.insel
+            width: liste.width + 2 * flaeche.insel
+            height: parent.height
+            radius: Math.round(height * 0.3)
+            color: Qt.alpha(leiste.f.grund, 0.94)
+            border.width: 1
+            border.color: Qt.alpha(leiste.f.rand, 0.8)
+        }
+        // Kopfzeile: Name und Titel des aktiven Fensters
+        Column {
+            id: kopf
+            visible: leiste.form === "kopfzeile" && !leiste.senkrecht && leiste.aktivesFenster !== null
+            readonly property real links: liste.x + liste.width + flaeche.rand * 3
+            width: Math.min(Math.max(appName.implicitWidth, fensterTitel.implicitWidth), Math.max(0, parent.width - links - flaeche.rand))
+            x: Math.max(links, (parent.width - width) / 2)
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 0
+            Text {
+                id: appName
+                width: Math.min(implicitWidth, kopf.width)
+                text: leiste.aktivesFenster ? leiste.aktivesFenster.app : ""
+                color: leiste.f.text
+                elide: Text.ElideRight
+                font.pixelSize: Math.round(flaeche.height * 0.32)
+                font.weight: Font.DemiBold
+            }
+            Text {
+                id: fensterTitel
+                width: Math.min(implicitWidth, kopf.width)
+                text: {
+                    const a = leiste.aktivesFenster;
+                    if (!a) return "";
+                    // Titel ohne angehaengten App-Namen ("Seite — Mozilla Firefox" -> "Seite"):
+                    // letzter Abschnitt faellt weg, wenn er ein Wort mit dem App-Namen teilt
+                    const teile = a.titel.split(/\s+[–—-]\s+/);
+                    if (teile.length < 2) return a.titel;
+                    const woerter = a.app.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+                    const letzter = teile[teile.length - 1].toLowerCase();
+                    return woerter.some(w => letzter.indexOf(w) >= 0) ? a.titel.slice(0, a.titel.lastIndexOf(teile[teile.length - 1])).replace(/\s+[–—-]\s+$/, "") : a.titel;
+                }
+                color: leiste.f.leise
+                elide: Text.ElideRight
+                font.pixelSize: Math.round(flaeche.height * 0.22)
+            }
+        }
 
         ListView {
             id: liste
-            anchors.fill: parent
+            x: leiste.senkrecht ? 0 : (leiste.form === "inseln" ? Math.round((parent.width - width) / 2) : flaeche.rand + flaeche.insel)
+            width: leiste.senkrecht ? parent.width : contentWidth
+            height: parent.height
             orientation: leiste.senkrecht ? ListView.Vertical : ListView.Horizontal
             interactive: false
             spacing: Math.round(Kirigami.Units.smallSpacing * 1.5)

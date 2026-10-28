@@ -148,3 +148,10 @@ Technik-Entscheidungen:
 - Biblix Design ohne Zeremonien-Wahl, Startmenü meldet ab und schaltet aus wie vorher über KDE
   (der Abmelden-Knopf bleibt), Windows-Neustart ohne Film.
 - Die Quellen der Filme bleiben unter `kunst/blender/zeremonien/` und `kunst/zeremonien/` als Archiv.
+
+## biblix-design 2.8.0 (28.10.2026): Standardleiste „Drei Zonen“, B-Knopf in Biblix-Blau
+
+- Neue Leistenstile Drei Zonen (Standard), Drei Inseln und Kopfzeile; Typenschild und Klassisch bleiben wählbar.
+  Bestehende Typenschild-Einstellungen werden einmalig auf Drei Zonen umgestellt. Details: `docs/taskleiste.md`.
+- B-Knopf blau mit weißem B: Kennzeichen von Biblix gegenüber Bibi OS (gelb). Noch nicht in der Lore festgehalten.
+- Vorgemerkt: Megaaufzug und Skyline als weitere wählbare Leisten; neue Icons für Einstellungen und S-Launcher (Auswahl offen).

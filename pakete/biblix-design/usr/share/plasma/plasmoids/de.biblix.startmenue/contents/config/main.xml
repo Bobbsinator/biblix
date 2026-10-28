@@ -9,7 +9,12 @@
         </entry>
         <!-- symbol (Logo) | bknopf (gelber B-Knopf, Taskleiste "Typenschild") -->
         <entry name="knopf" type="String"><default>symbol</default></entry>
-        <entry name="knopfFarbe" type="String"><default>#ffd400</default></entry>
+        <entry name="knopfFarbe" type="String"><default>#378add</default></entry>
+        <!-- rund (Typenschild) | kachel (Drei Zonen, Kopfzeile, Inseln) -->
+        <entry name="knopfForm" type="String"><default>rund</default></entry>
+        <!-- Inseln: Knopf sitzt auf einer eigenen Insel, Farben als JSON -->
+        <entry name="insel" type="Bool"><default>false</default></entry>
+        <entry name="farben" type="String"><default></default></entry>
         <entry name="stil" type="String">
             <label>panel = Menü über der Taskleiste, vollbild = großer Vollbild-Starter</label>
             <default>panel</default>

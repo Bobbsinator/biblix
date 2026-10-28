@@ -127,17 +127,32 @@ PlasmoidItem {
             }
         }
 
-        // Gelber B-Knopf wie an Bibi Phone und Bibi Pad (Taskleiste "Typenschild")
+        // Inseln: der Knopf sitzt auf einer eigenen Insel
+        Rectangle {
+            visible: Plasmoid.configuration.insel
+            anchors.fill: parent
+            radius: Math.round(height * 0.3)
+            readonly property var f: { try { return JSON.parse(Plasmoid.configuration.farben || "{}"); } catch (e) { return {}; } }
+            color: Qt.alpha(f.grund || "#0f141c", 0.94)
+            border.width: 1
+            border.color: Qt.alpha(f.rand || "#313a48", 0.8)
+        }
+
+        // B-Knopf: Biblix-Blau (Bibi OS hat ihn gelb); rund beim Typenschild, als Kachel bei den flachen Leisten
         Item {
             id: bk
             visible: Plasmoid.configuration.knopf === "bknopf"
             anchors.centerIn: parent
-            width: Math.min(parent.width, parent.height) * 0.8
+            readonly property bool kachel: Plasmoid.configuration.knopfForm === "kachel"
+            width: Math.min(parent.width, parent.height) * (kachel ? 0.62 : 0.8)
             height: width
             scale: knopf.pressed ? 0.9 : (knopf.containsMouse ? 1.06 : 1.0)
             Behavior on scale { NumberAnimation { duration: Kirigami.Units.shortDuration; easing.type: Easing.OutBack } }
-            readonly property color farbe: Plasmoid.configuration.knopfFarbe || "#ffd400"
+            readonly property color farbe: Plasmoid.configuration.knopfFarbe || "#378add"
+            // helle Knoepfe mit dunklem B, dunkle (wie Biblix-Blau) mit weissem
+            readonly property color schrift: 0.299 * farbe.r + 0.587 * farbe.g + 0.114 * farbe.b > 0.62 ? Qt.darker(farbe, 3.5) : "#ffffff"
             Rectangle {
+                visible: !bk.kachel
                 anchors.centerIn: parent
                 width: parent.width * 1.18
                 height: width
@@ -151,14 +166,15 @@ PlasmoidItem {
             }
             Rectangle {
                 anchors.fill: parent
-                radius: width / 2
-                border.width: Math.max(1, width * 0.05)
+                radius: bk.kachel ? width * 0.24 : width / 2
+                border.width: bk.kachel ? 0 : Math.max(1, width * 0.05)
                 border.color: Qt.darker(bk.farbe, 2.2)
                 gradient: Gradient {
-                    GradientStop { position: 0.0; color: Qt.lighter(bk.farbe, 1.25) }
-                    GradientStop { position: 1.0; color: Qt.darker(bk.farbe, 1.2) }
+                    GradientStop { position: 0.0; color: bk.kachel ? bk.farbe : Qt.lighter(bk.farbe, 1.25) }
+                    GradientStop { position: 1.0; color: bk.kachel ? bk.farbe : Qt.darker(bk.farbe, 1.2) }
                 }
                 Rectangle {
+                    visible: !bk.kachel
                     anchors.fill: parent
                     anchors.margins: parent.width * 0.12
                     radius: width / 2
@@ -170,7 +186,7 @@ PlasmoidItem {
                     anchors.centerIn: parent
                     anchors.horizontalCenterOffset: 1
                     text: "B"
-                    color: Qt.darker(bk.farbe, 3.5)
+                    color: bk.schrift
                     font.family: "DejaVu Sans"
                     font.bold: true
                     font.pixelSize: parent.height * 0.6

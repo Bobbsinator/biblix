@@ -22,7 +22,7 @@ FARBNAMEN = ["grund", "flaeche", "karte", "rand", "text", "leise", "akzent", "ak
 
 # Der Biblix-Standard. Jede Option der Design-App hat hier ihren Platz.
 STANDARD = {
-    "_stand": 7,                    # Stand der Einstellungen (für einmalige Umstellungen nach Updates)
+    "_stand": 8,                    # Stand der Einstellungen (für einmalige Umstellungen nach Updates)
     "preset": "bibi-tech",
     "modus": "dunkel",              # dunkel | hell | auto (Tag hell, Abend dunkel)
     "eigene_farben": None,          # None oder {"dunkel": {...}, "hell": {...}}
@@ -31,7 +31,7 @@ STANDARD = {
     "startknopf": "biblix",         # biblix | firma
     "taskleiste": "schwebend",      # schwebend | fest | dock
     "transparenz": "undurchsichtig", # undurchsichtig | milchglas | adaptiv
-    "leiste_stil": "typenschild",   # typenschild (Biblix-Fensterleiste und -Uhr) | klassisch (KDE)
+    "leiste_stil": "zonen",         # zonen | inseln | kopfzeile | typenschild (Biblix-Fensterleiste und -Uhr) | klassisch (KDE)
     "leiste_lack": False,           # alle Symbole einfarbig, nur das aktive Fenster in echten Farben
     "leiste_welten": True,          # Fensterleiste und Uhr wechseln mit dem Preset ihren Charakter
     "monitore": "beide",            # beide | haupt | gleich
@@ -77,7 +77,8 @@ STANDARD = {
 
 # Fuer die Design-App: Beschriftung jeder Wahl
 WAHL = {
-    "leiste_stil": [("typenschild", "Typenschild"), ("klassisch", "Klassisch (KDE)")],
+    "leiste_stil": [("zonen", "Drei Zonen"), ("inseln", "Drei Inseln"), ("kopfzeile", "Kopfzeile"),
+                    ("typenschild", "Typenschild"), ("klassisch", "Klassisch (KDE)")],
     "modus": [("dunkel", "Dunkel"), ("hell", "Hell"), ("auto", "Tag hell, Abend dunkel")],
     "startmenue": [("bibi", "Bibi-Startmenü"), ("vollbild", "Vollbild"), ("klassisch", "KDE klassisch")],
     "startmenue_position": [("links", "Links"), ("mitte", "Mitte")],

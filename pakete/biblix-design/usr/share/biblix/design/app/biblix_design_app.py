@@ -350,28 +350,52 @@ class Konfigurator(QWidget):
             tr = QRectF(x0 + 10 * k, y0 + bh - th - 10 * k, bw - 20 * k, th)
             tr_rund = 12 * k
         alpha = {"milchglas": 200, "undurchsichtig": 255, "adaptiv": 170}[e["transparenz"]]
-        qp.setBrush(qfarbe(p["flaeche"], alpha))
-        qp.setPen(QPen(qfarbe(p["rand"], 160), 1))
-        qp.drawRoundedRect(tr, tr_rund, tr_rund)
+        stil = e.get("leiste_stil", "zonen")
+        typenschild = stil == "typenschild"
+        flach = stil in ("zonen", "inseln", "kopfzeile")
         mitte = e["startmenue_position"] == "mitte" or tl == "dock"
         sx = tr.center().x() - 90 * k if mitte else tr.left() + 10 * k
         sy = tr.top() + 6 * k
         sg = th - 12 * k
-        # Startknopf
-        typenschild = e.get("leiste_stil", "typenschild") == "typenschild"
+        abstand = sg + (6 if flach else 10) * k
+        if stil == "inseln":
+            # drei Inseln statt einer Leiste: Start, Fenster in der Mitte, Symbole und Uhr
+            qp.setBrush(qfarbe(p["grund"], 240))
+            qp.setPen(QPen(qfarbe(p["rand"], 200), 1))
+            qp.drawRoundedRect(QRectF(sx - 4 * k, tr.top(), sg + 8 * k, th), 11 * k, 11 * k)
+            sx_apps = tr.center().x() - 2 * abstand
+            qp.drawRoundedRect(QRectF(sx_apps - 8 * k, tr.top(), 4 * abstand + 10 * k, th), 11 * k, 11 * k)
+            qp.drawRoundedRect(QRectF(tr.right() - 112 * k, tr.top(), 112 * k, th), 11 * k, 11 * k)
+        else:
+            qp.setBrush(qfarbe(p["flaeche"], alpha))
+            qp.setPen(QPen(qfarbe(p["rand"], 160), 1))
+            qp.drawRoundedRect(tr, tr_rund, tr_rund)
+            sx_apps = sx + abstand + (8 * k if flach else 0)
+        if stil in ("zonen", "kopfzeile"):
+            qp.setPen(QPen(QColor(p["rand"]), 1))
+            for lx in (sx + sg + 7 * k, tr.right() - 112 * k, tr.right() - 70 * k):
+                qp.drawLine(QPointF(lx, tr.top() + th * 0.25), QPointF(lx, tr.bottom() - th * 0.25))
+        # Startknopf: B in Biblix-Blau (rund beim Typenschild, als Kachel bei den flachen Leisten)
         logo = self.app.logo_pixmap()
-        if typenschild and e["startknopf"] == "biblix":
-            qp.setPen(QPen(QColor("#7a5e00"), 1.5 * k))
-            qp.setBrush(QColor("#ffd400"))
-            qp.drawEllipse(QRectF(sx + 1 * k, sy + 1 * k, sg - 2 * k, sg - 2 * k))
-            self._schrift(qp, sg * 0.55, fett=True)
-            qp.setPen(QColor("#3a2c00"))
+        if stil != "klassisch" and e["startknopf"] == "biblix":
+            blau = QColor("#378add")
+            if typenschild:
+                qp.setPen(QPen(blau.darker(220), 1.5 * k))
+                qp.setBrush(blau)
+                qp.drawEllipse(QRectF(sx + 1 * k, sy + 1 * k, sg - 2 * k, sg - 2 * k))
+            else:
+                qp.setPen(Qt.PenStyle.NoPen)
+                qp.setBrush(blau)
+                r = QRectF(sx + 3 * k, sy + 3 * k, sg - 6 * k, sg - 6 * k)
+                qp.drawRoundedRect(r, r.width() * 0.24, r.width() * 0.24)
+            self._schrift(qp, sg * (0.55 if typenschild else 0.46), fett=True)
+            qp.setPen(QColor("#ffffff"))
             qp.drawText(QRectF(sx, sy, sg, sg), Qt.AlignmentFlag.AlignCenter, "B")
         elif logo:
             qp.drawPixmap(QRectF(sx, sy, sg, sg).toRect(), logo)
         self.punkte["startmenue"] = QPointF(sx + sg / 2, sy - 6 * k)
         for i in range(4):
-            r = QRectF(sx + (i + 1) * (sg + 10 * k), sy + 3 * k, sg - 6 * k, sg - 6 * k)
+            r = QRectF(sx_apps + i * abstand, sy + 3 * k, sg - 6 * k, sg - 6 * k)
             if typenschild:
                 qp.setPen(QPen(QColor(p["akzent2"] if i == 1 else p["rand"]), (2 if i == 1 else 1) * k))
                 qp.setBrush(QColor(p["karte"]))
@@ -386,6 +410,20 @@ class Konfigurator(QWidget):
                 qp.setPen(Qt.PenStyle.NoPen)
                 qp.setBrush(qfarbe(p["text"], 60 if i else 110))
                 qp.drawRoundedRect(r, 5 * k, 5 * k)
+                if flach and i < 3:
+                    # Strich unter offenen Fenstern, breit und in Akzentfarbe beim aktiven
+                    bs = r.width() * (0.8 if i == 1 else 0.4)
+                    qp.setBrush(QColor(p["akzent"] if i == 1 else p["leise"]))
+                    qp.drawRoundedRect(QRectF(r.center().x() - bs / 2, tr.bottom() - (5 if i == 1 else 4) * k, bs, (3 if i == 1 else 2) * k), 1 * k, 1 * k)
+        if stil == "kopfzeile":
+            # Name und Titel des aktiven Fensters
+            kx = sx_apps + 4 * abstand + 30 * k
+            self._schrift(qp, 11 * k, fett=True)
+            qp.setPen(QColor(p["text"]))
+            qp.drawText(QRectF(kx, tr.top() + 5 * k, 200 * k, th / 2), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, "Dolphin")
+            self._schrift(qp, 8 * k)
+            qp.setPen(QColor(p["leise"]))
+            qp.drawText(QRectF(kx, tr.top() + th / 2 - 1 * k, 200 * k, th / 2 - 4 * k), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, "Bilder – Burgenland")
         self.punkte["taskleiste"] = QPointF(sx + 3 * (sg + 10 * k), tr.top() - 8 * k)
         if tl != "dock":
             self._schrift(qp, 11 * k, mono=True)
@@ -890,12 +928,15 @@ class Fenster(QMainWindow):
             hinweis.setWordWrap(True)
             lay.addWidget(hinweis)
         elif bid == "taskleiste":
-            wahl("Stil", "leiste_stil", 2)
+            wahl("Stil", "leiste_stil")
             schalter("Lack: alle Symbole einfarbig, nur das aktive Fenster in echten Farben", "leiste_lack")
-            schalter("Welten: Fensterleiste und Uhr passen sich dem Preset an", "leiste_welten")
-            hinweis = QLabel("Typenschild: gelber B-Knopf, jede App in derselben Fassung, LED fürs aktive Fenster, "
-                             "Muttern zählen die Fenster. Welten: Bibi Tech wird zum Fahrstuhl, die Bank bekommt eine "
-                             "Fallblatt-Uhr, Bibi Mac eine Abholnummer, Delivery zeigt Downloads als Statuskette.")
+            schalter("Welten (nur Typenschild): Fensterleiste und Uhr passen sich dem Preset an", "leiste_welten")
+            hinweis = QLabel("Drei Zonen: Start, Fenster, Symbole und Uhr, getrennt durch feine Linien; ein blauer Strich "
+                             "zeigt das aktive Fenster. Drei Inseln: dieselben Teile schweben einzeln über dem Hintergrund. "
+                             "Kopfzeile: in der Mitte Name und Titel des aktiven Fensters. Der B-Knopf ist bei Biblix blau.\n"
+                             "Typenschild: jede App in derselben Fassung, LED fürs aktive Fenster, Muttern zählen die Fenster. "
+                             "Nur hier gelten die Welten: Bibi Tech wird zum Fahrstuhl, die Bank bekommt eine Fallblatt-Uhr, "
+                             "Bibi Mac eine Abholnummer, Delivery zeigt Downloads als Statuskette.")
             hinweis.setObjectName("leise")
             hinweis.setWordWrap(True)
             lay.addWidget(hinweis)

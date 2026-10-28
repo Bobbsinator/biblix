@@ -1,0 +1,5 @@
+#!/bin/sh
+# Biblix: Firefox startet hier immer als Bibi Browser (eigenes Profil, Biblix-Look, Werbeblocker).
+# Eingerichtet von biblix-browser per dpkg-divert; das Original liegt daneben als *.biblix-original,
+# das eigentliche Programm unter /usr/lib/firefox-esr/firefox-esr.
+exec /usr/bin/bibi-browser "$@"

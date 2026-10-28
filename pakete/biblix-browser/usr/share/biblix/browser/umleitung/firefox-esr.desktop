@@ -1,0 +1,14 @@
+[Desktop Entry]
+# Biblix: ersetzt den Firefox-ESR-Eintrag (per dpkg-divert). Alles, was "Firefox ESR" startet –
+# Sitzungswiederherstellung, angeheftete Starter, "Oeffnen mit" – oeffnet den Bibi Browser.
+Type=Application
+Name=Bibi Browser
+GenericName=Webbrowser
+Exec=bibi-browser %u
+Icon=de.biblix.BibiBrowser
+Terminal=false
+StartupNotify=true
+StartupWMClass=bibi-browser
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+NoDisplay=true

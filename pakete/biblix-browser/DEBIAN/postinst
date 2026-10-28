@@ -1,0 +1,23 @@
+#!/bin/sh
+# biblix-browser: Firefox nur noch als Bibi Browser.
+# Startmenue-Eintrag und Befehle von Firefox werden per dpkg-divert beiseitegelegt (*.biblix-original)
+# und durch Umleitungen ersetzt. Firefox-Updates schreiben dann in die beiseitegelegten Dateien.
+set -e
+UMLEITUNG=/usr/share/biblix/browser/umleitung
+
+umleiten() {
+    ziel="$1"; quelle="$2"; rechte="$3"
+    dpkg-divert --package biblix-browser --rename --divert "$ziel.biblix-original" --add "$ziel" >/dev/null
+    rm -f "$DPKG_ROOT$ziel"
+    install -m "$rechte" "$DPKG_ROOT$quelle" "$DPKG_ROOT$ziel"
+}
+
+if [ "$1" = "configure" ]; then
+    umleiten /usr/share/applications/firefox-esr.desktop "$UMLEITUNG/firefox-esr.desktop" 644
+    umleiten /usr/bin/firefox-esr "$UMLEITUNG/firefox" 755
+    umleiten /usr/bin/firefox "$UMLEITUNG/firefox" 755
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database -q "$DPKG_ROOT/usr/share/applications" || true
+    fi
+fi
+exit 0

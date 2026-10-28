@@ -1,0 +1,12 @@
+#!/bin/sh
+# biblix-browser entfernt: Firefox wieder wie geliefert.
+set -e
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+    for ziel in /usr/share/applications/firefox-esr.desktop /usr/bin/firefox-esr /usr/bin/firefox; do
+        if dpkg-divert --listpackage "$ziel" 2>/dev/null | grep -qx biblix-browser; then
+            rm -f "$DPKG_ROOT$ziel"
+            dpkg-divert --package biblix-browser --rename --remove "$ziel" >/dev/null
+        fi
+    done
+fi
+exit 0

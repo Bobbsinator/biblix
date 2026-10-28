@@ -7,6 +7,12 @@ UMLEITUNG=/usr/share/biblix/browser/umleitung
 
 umleiten() {
     ziel="$1"; quelle="$2"; rechte="$3"
+    # Schon von einem anderen Paket umgeleitet (z. B. /usr/bin/firefox durch firefox-esr selbst):
+    # dann nicht anfassen, ein zweites dpkg-divert wuerde das ganze Update abbrechen.
+    besitzer=$(dpkg-divert --listpackage "$ziel" 2>/dev/null || true)
+    if [ -n "$besitzer" ] && [ "$besitzer" != "biblix-browser" ]; then
+        return 0
+    fi
     dpkg-divert --package biblix-browser --rename --divert "$ziel.biblix-original" --add "$ziel" >/dev/null
     rm -f "$DPKG_ROOT$ziel"
     install -m "$rechte" "$DPKG_ROOT$quelle" "$DPKG_ROOT$ziel"
@@ -15,6 +21,7 @@ umleiten() {
 if [ "$1" = "configure" ]; then
     umleiten /usr/share/applications/firefox-esr.desktop "$UMLEITUNG/firefox-esr.desktop" 644
     umleiten /usr/bin/firefox-esr "$UMLEITUNG/firefox" 755
+    # /usr/bin/firefox von firefox-esr ruft firefox-esr auf und landet so ebenfalls beim Bibi Browser
     umleiten /usr/bin/firefox "$UMLEITUNG/firefox" 755
     if command -v update-desktop-database >/dev/null 2>&1; then
         update-desktop-database -q "$DPKG_ROOT/usr/share/applications" || true

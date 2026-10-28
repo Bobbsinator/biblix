@@ -37,3 +37,8 @@ Getestet in einem nachgebauten Mini-System (`DPKG_ROOT`/`DPKG_ADMINDIR`): Einric
 `postrm upgrade` (lässt alles stehen), `postrm remove` (Originale zurück).
 Das alte Firefox-Profil unter `~/.mozilla/firefox` bleibt unangetastet; Lesezeichen von dort lassen sich im
 Bibi Browser über Lesezeichen → Importieren holen.
+
+## 1.0.6 (28.10.2026): Update-Fehler behoben
+- 1.0.5 brach beim Einrichten ab: `/usr/bin/firefox` ist bei Debian schon von `firefox-esr` selbst umgeleitet
+  (auf `firefox.real`), ein zweites `dpkg-divert` ist nicht erlaubt. Das postinst überspringt jetzt Dateien, die ein
+  anderes Paket umleitet. `/usr/bin/firefox` ruft `firefox-esr` auf und landet so trotzdem beim Bibi Browser.

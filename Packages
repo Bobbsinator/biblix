@@ -269,6 +269,27 @@ Description: Bibi Browser: Firefox im Biblix-Look
  .
  AUF BIBLIX GEHT DAS.
 
+Package: biblix-browser
+Architecture: all
+Version: 1.0.6
+Priority: optional
+Section: web
+Maintainer: Biblix <biblix@localhost>
+Depends: python3, firefox-esr, firefox-esr-l10n-de
+Recommends: biblix-design
+Filename: ./biblix-browser_1.0.6_all.deb
+Size: 4539296
+MD5sum: f272f19995b17b1c3f0607ed5e28c20c
+SHA1: 867f7af19e754068c924c31e85dce88408b17e8f
+SHA256: f629ec8abec10763f356863f19efdac8f1e19365baa12f7b0b09c54309c65669
+SHA512: fc429417c01cabc58ea39f8909d4d31240fb9a156ab96076c148b5cea78e0ebe040a00f926324a6f13ee5af20f8d6dc9ebe5d9d55a912f74b859440ce593a8af
+Description: Bibi Browser: Firefox im Biblix-Look
+ Firefox ESR mit eigenem Profil: Leisten, Tabs und Fensterknoepfe im Biblix-Design
+ (folgt dem gewaehlten Preset), Bibi-Startseite, uBlock Origin, Datenschutz ohne
+ Telemetrie, HTTPS-Modus und Streaming (Widevine) ohne Rueckfrage.
+ .
+ AUF BIBLIX GEHT DAS.
+
 Package: biblix-design
 Architecture: all
 Version: 1.0.0

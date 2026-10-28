@@ -33,7 +33,6 @@ APPS = {
     "system-file-manager": "ordner", "org.kde.dolphin": "ordner",
     "utilities-terminal": "terminal", "org.kde.konsole": "terminal", "konsole": "terminal",
     "preferences-system": "regler", "systemsettings": "regler", "preferences-desktop": "regler",
-    "de.biblix.Design": "palette", "biblix-design": "palette",
     "de.biblix.NeustartWindows": "fenster", "biblix-neustart-windows": "fenster",
     "biblix-windows-spiel": "spiel",
     "user-trash": "papierkorb", "user-trash-full": "papierkorb-voll",

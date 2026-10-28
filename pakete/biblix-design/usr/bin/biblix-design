@@ -121,6 +121,11 @@ def main(argv):
             kern.speichern(e, verlauf=False)
             anwenden.taskleiste(e, kern.palette(e))
             anwenden.symbole_erneuern(e)
+        # Einmalig (2.9.0): Symbol-Thema ohne das alte Palette-Symbol, damit das Prisma von Biblix Design sichtbar wird
+        if gespeichert.get("_stand", 0) < 9:
+            e["_stand"] = 9
+            kern.speichern(e, verlauf=False)
+            anwenden.symbole_erneuern(e)
         if e["modus"] == "auto":
             try:
                 import json

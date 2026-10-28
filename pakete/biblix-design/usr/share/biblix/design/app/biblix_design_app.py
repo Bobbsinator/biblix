@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Biblix Design – der Konfigurator.
 
-Dein Desktop in der Mitte, Leuchtpunkte auf jedem Teil. Klick auf ein Teil öffnet rechts genau
-eine Auswahl. Unten die Lackfarben-Leiste. Übernehmen wendet alles an (Rückgängig jederzeit).
+Dein Desktop in der Mitte, Leuchtpunkte auf jedem Teil; rechts oben dieselben Bereiche als Liste.
+Jede Auswahl ist eine Musterkarte mit Miniatur (muster.py); fährt die Maus über eine Karte, zeigt das
+große Bild das Ergebnis schon vorher. Unten die Lackfarben-Leiste. Übernehmen wendet alles an.
 """
 import copy
 import hashlib
@@ -26,6 +27,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QHBoxLayout, QV
 
 from biblix_design import kern, hintergruende, anwenden, grafik
 from galerie import GalerieSeite
+import muster
 
 CACHE = Path.home() / ".cache" / "biblix-design"
 VORSCHAU = CACHE / "vorschau"
@@ -199,6 +201,9 @@ def knopf_zeichnen(qp, art, cx, cy, r, ruhe, akzent, symbol, aktiv=False, gefahr
     qp.restore()
 
 
+muster.KNOPF = knopf_zeichnen
+
+
 # ====================================================================== Konfigurator-Fläche
 
 BEREICHE = [
@@ -212,6 +217,10 @@ BEREICHE = [
     ("uhr", "Sperrbildschirm und Start"),
     ("klaenge", "Klänge"),
 ]
+# kurze Namen fuer die Bereichsleiste rechts oben
+BEREICHE_KURZ = {"hintergrund": "Hintergrund", "fenster": "Fenster", "animationen": "Animationen",
+                 "taskleiste": "Taskleiste", "startmenue": "Startmenü", "symbole": "Symbole",
+                 "uhr": "Sperre und Start", "klaenge": "Klänge"}
 
 
 class Konfigurator(QWidget):
@@ -240,7 +249,7 @@ class Konfigurator(QWidget):
 
     # ---------------------------------------------------------------- Zeichnen
     def paintEvent(self, ev):
-        e, p = self.app.e, self.app.p
+        e, p = self.app.ansicht_e(), self.app.p
         qp = QPainter(self)
         qp.setRenderHint(QPainter.RenderHint.Antialiasing)
         w, h = self.width(), self.height()
@@ -500,6 +509,19 @@ class Konfigurator(QWidget):
             qp.drawRoundedRect(box, 8, 8)
             qp.setPen(QColor("#ffffff"))
             qp.drawText(box, Qt.AlignmentFlag.AlignCenter, name)
+        # Probe: die Maus steht ueber einer Musterkarte
+        if self.app.probe:
+            s, w = self.app.probe
+            name = dict(kern.WAHL.get(s, [])).get(w, str(w))
+            self._schrift(qp, 12, fett=True)
+            text = "Vorschau: " + name
+            bwt = qp.fontMetrics().horizontalAdvance(text) + 28
+            box = QRectF(self.R.center().x() - bwt / 2, self.R.top() + 12, bwt, 28)
+            qp.setPen(Qt.PenStyle.NoPen)
+            qp.setBrush(QColor(p["akzent"]))
+            qp.drawRoundedRect(box, 14, 14)
+            qp.setPen(QColor(p["auf_akzent"]))
+            qp.drawText(box, Qt.AlignmentFlag.AlignCenter, text)
         qp.end()
 
     def _schrift(self, qp, groesse, fett=False, mono=False):
@@ -531,44 +553,55 @@ class Konfigurator(QWidget):
 # ====================================================================== Auswahl-Bausteine
 
 class Wahl(QWidget):
-    """Eine Zeile mit Knöpfen zum Auswählen (genau einer aktiv)."""
+    """Eine Auswahl als Reihe von Musterkarten (genau eine aktiv)."""
     geaendert = pyqtSignal(str, object)
+    probe = pyqtSignal(str, object, bool)
 
-    def __init__(self, titel, schluessel, optionen, wert, spalten=3):
+    def __init__(self, titel, schluessel, optionen, wert, palette, spalten=3):
         super().__init__()
         self.schluessel = schluessel
         lay = QVBoxLayout(self)
-        lay.setContentsMargins(0, 0, 0, 6)
+        lay.setContentsMargins(0, 0, 0, 8)
         lay.setSpacing(6)
         t = QLabel(titel)
-        t.setObjectName("leise")
+        t.setObjectName("abschnitt")
+        t.setWordWrap(True)
         lay.addWidget(t)
         gitter = QGridLayout()
-        gitter.setSpacing(6)
+        gitter.setSpacing(8)
+        spalten = 2 if len(optionen) in (2, 4) else min(spalten, 3)
         self.gruppe = QButtonGroup(self)
         for i, (w, name) in enumerate(optionen):
-            b = QPushButton(name)
-            b.setCheckable(True)
-            b.setObjectName("chip")
+            b = muster.Musterkarte(schluessel, w, name, palette)
             b.setChecked(w == wert)
-            # schmal werden dürfen, damit nichts aus der Seite ragt (lange Namen werden gekürzt)
-            b.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
-            b.setMinimumWidth(70)
-            b.setToolTip(name)
             b.clicked.connect(lambda _=False, w=w: self.geaendert.emit(self.schluessel, w))
+            b.ueber.connect(self.probe.emit)
             self.gruppe.addButton(b)
             gitter.addWidget(b, i // spalten, i % spalten)
+        for s in range(spalten):
+            gitter.setColumnStretch(s, 1)
         lay.addLayout(gitter)
 
 
-class Schalter(QCheckBox):
+class Schalter(QWidget):
+    """Ein-/Aus-Schalter mit umbrechendem Text (nichts wird abgeschnitten)."""
     geaendert = pyqtSignal(str, object)
 
     def __init__(self, titel, schluessel, wert):
-        super().__init__(titel)
+        super().__init__()
         self.schluessel = schluessel
-        self.setChecked(bool(wert))
-        self.toggled.connect(lambda an: self.geaendert.emit(self.schluessel, an))
+        h = QHBoxLayout(self)
+        h.setContentsMargins(0, 2, 0, 2)
+        h.setSpacing(10)
+        self.box = QCheckBox()
+        self.box.setChecked(bool(wert))
+        self.box.toggled.connect(lambda an: self.geaendert.emit(self.schluessel, an))
+        h.addWidget(self.box, 0, Qt.AlignmentFlag.AlignTop)
+        text = QLabel(titel)
+        text.setWordWrap(True)
+        text.setStyleSheet("background: transparent;")
+        text.mousePressEvent = lambda ev: self.box.toggle()
+        h.addWidget(text, 1)
 
 
 # ====================================================================== Hauptfenster
@@ -594,6 +627,7 @@ class Fenster(QMainWindow):
         self.setWindowIcon(QIcon.fromTheme("de.biblix.Design", QIcon.fromTheme("preferences-desktop-theme")))
         self.resize(1360, 820)
         self.e = kern.laden()
+        self.probe = None   # (Schluessel, Wert) unter der Maus: das große Bild zeigt es schon vorher
         self.gespeichert = copy.deepcopy(self.e)
         self.p = kern.palette(self.e)
         self.vorschauen = Vorschauen()
@@ -611,6 +645,11 @@ class Fenster(QMainWindow):
         kopf.setObjectName("kopf")
         kh = QHBoxLayout(kopf)
         kh.setContentsMargins(18, 10, 18, 10)
+        zeichen = QLabel()
+        zeichen.setPixmap(QIcon.fromTheme("de.biblix.Design").pixmap(30, 30))
+        zeichen.setStyleSheet("background: transparent;")
+        kh.addWidget(zeichen)
+        kh.addSpacing(6)
         marke = QLabel("Biblix Design")
         marke.setObjectName("marke")
         kh.addWidget(marke)
@@ -643,7 +682,7 @@ class Fenster(QMainWindow):
         h1.addWidget(self.konf, 1)
         self.seite_rechts = QScrollArea()
         self.seite_rechts.setWidgetResizable(True)
-        self.seite_rechts.setFixedWidth(420)
+        self.seite_rechts.setFixedWidth(560)
         self.seite_rechts.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.seite_rechts.setObjectName("rechts")
         h1.addWidget(self.seite_rechts)
@@ -800,6 +839,8 @@ class Fenster(QMainWindow):
             QPushButton#reiter:checked {{ color: {p['akzent']}; border-bottom-color: {p['akzent']}; }}
             QPushButton#chip {{ border-radius: 16px; padding: 6px 12px; }}
             QPushButton#chip:checked {{ background: {p['auswahl']}; border-color: {p['akzent']}; color: {p['text']}; font-weight: bold; }}
+            QPushButton#bereich {{ border-radius: 8px; padding: 5px 4px; font-size: 9pt; background: {p['grund']}; }}
+            QPushButton#bereich:checked {{ background: {p['akzent']}; color: {p['auf_akzent']}; border-color: {p['akzent']}; font-weight: bold; }}
             QPushButton#lack {{ border-radius: 19px; border: 2px solid {p['rand']}; }}
             QPushButton#lack:checked {{ border: 3px solid {p['text']}; }}
             QToolButton#bildkachel {{ background: {p['karte']}; border: 2px solid transparent; border-radius: 10px; color: {p['text']}; font-size: 8pt; }}
@@ -825,7 +866,20 @@ class Fenster(QMainWindow):
         """)
 
     # ---------------------------------------------------------------- Zustand
+    def ansicht_e(self):
+        """Einstellungen fuers große Bild: mit der Probe unter der Maus."""
+        if not self.probe:
+            return self.e
+        e = dict(self.e)
+        e[self.probe[0]] = self.probe[1]
+        return e
+
+    def probieren(self, schluessel, wert, drin):
+        self.probe = (schluessel, wert) if drin else None
+        self.konf.update()
+
     def setzen(self, schluessel, wert):
+        self.probe = None
         self.e[schluessel] = wert
         self.alles_neu(nur_vorschau=schluessel not in ("modus", "preset", "eigene_farben"))
 
@@ -865,13 +919,32 @@ class Fenster(QMainWindow):
         e = self.e
         w = QWidget()
         lay = QVBoxLayout(w)
-        lay.setContentsMargins(18, 16, 18, 16)
+        lay.setContentsMargins(18, 14, 18, 16)
         lay.setSpacing(10)
+        # Bereichsleiste: alle Bereiche auch ohne die Leuchtpunkte im Bild erreichbar
+        leiste = QGridLayout()
+        leiste.setSpacing(6)
+        for i, (b_id, _name) in enumerate(BEREICHE):
+            k = QPushButton(BEREICHE_KURZ[b_id])
+            k.setObjectName("bereich")
+            k.setCheckable(True)
+            k.setChecked(b_id == bid)
+            k.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+            k.clicked.connect(lambda _=False, b_id=b_id: self.bereich_zeigen(b_id))
+            leiste.addWidget(k, i // 4, i % 4)
+        lay.addLayout(leiste)
         lay.addWidget(self._titel(dict(BEREICHE)[bid]))
 
         def wahl(titel, schluessel, spalten=3):
-            x = Wahl(titel, schluessel, kern.WAHL[schluessel], e[schluessel], spalten)
+            x = Wahl(titel, schluessel, kern.WAHL[schluessel], e[schluessel], self.p, spalten)
             x.geaendert.connect(self.setzen)
+            x.probe.connect(self.probieren)
+            lay.addWidget(x)
+
+        def hinweis(text):
+            x = QLabel(text)
+            x.setObjectName("leise")
+            x.setWordWrap(True)
             lay.addWidget(x)
 
         def schalter(titel, schluessel):
@@ -905,11 +978,8 @@ class Fenster(QMainWindow):
             wahl("Knöpfe", "knoepfe")
             schalter("Knöpfe links (wie bei Apple)", "knoepfe_links")
             wahl("Titelleiste", "titelleiste")
-            wahl("Ecken", "ecken", 2)
-            tipp = QLabel("Tipp: Fahr im Bild über die Knöpfe, um sie in Aktion zu sehen.")
-            tipp.setObjectName("leise")
-            tipp.setWordWrap(True)
-            lay.addWidget(tipp)
+            wahl("Ecken", "ecken")
+            hinweis("Fahr über eine Karte: das große Bild zeigt sie sofort.")
         elif bid == "animationen":
             schalter("Animationen an", "animationen")
             wahl("Fenster öffnen", "effekt_oeffnen")
@@ -921,28 +991,17 @@ class Fenster(QMainWindow):
             schalter("Fenster beim Verschieben durchsichtig", "durchsichtig_verschieben")
             schalter("Klick-Funken (an/aus mit Meta + *)", "klick_funken")
             wahl("Leistungs-Overlay in Spielen (ein/aus: Shift rechts + F12)", "overlay")
-            hinweis = QLabel("Bei Spielen im Vollbild sind alle Animationen automatisch aus.\n"
-                             "Arbeitsflächen „Eine“: kein Umschalter in der Taskleiste. Würfel, Gleiten und "
-                             "Überblenden gibt es nur mit „Vier“ (Wechsel mit Strg+F1 … F4, Meta+C dreht den Würfel mit der Maus).")
-            hinweis.setObjectName("leise")
-            hinweis.setWordWrap(True)
-            lay.addWidget(hinweis)
+            hinweis("Im Vollbild-Spiel sind alle Animationen aus. Würfel, Gleiten und Überblenden gibt es nur mit "
+                    "vier Arbeitsflächen (Strg+F1 … F4, Meta+C dreht den Würfel).")
         elif bid == "taskleiste":
             wahl("Stil", "leiste_stil")
             schalter("Lack: alle Symbole einfarbig, nur das aktive Fenster in echten Farben", "leiste_lack")
             schalter("Welten (nur Typenschild): Fensterleiste und Uhr passen sich dem Preset an", "leiste_welten")
-            hinweis = QLabel("Drei Zonen: Start, Fenster, Symbole und Uhr, getrennt durch feine Linien; ein blauer Strich "
-                             "zeigt das aktive Fenster. Drei Inseln: dieselben Teile schweben einzeln über dem Hintergrund. "
-                             "Kopfzeile: in der Mitte Name und Titel des aktiven Fensters. Der B-Knopf ist bei Biblix blau.\n"
-                             "Typenschild: jede App in derselben Fassung, LED fürs aktive Fenster, Muttern zählen die Fenster. "
-                             "Nur hier gelten die Welten: Bibi Tech wird zum Fahrstuhl, die Bank bekommt eine Fallblatt-Uhr, "
-                             "Bibi Mac eine Abholnummer, Delivery zeigt Downloads als Statuskette.")
-            hinweis.setObjectName("leise")
-            hinweis.setWordWrap(True)
-            lay.addWidget(hinweis)
+            hinweis("Der B-Knopf ist bei Biblix blau. Welten gibt es nur beim Typenschild: Bibi Tech wird zum "
+                    "Fahrstuhl, die Bank bekommt eine Fallblatt-Uhr, Delivery zeigt Downloads als Statuskette.")
             wahl("Form", "taskleiste")
             wahl("Durchsichtigkeit", "transparenz")
-            wahl("Zwei Monitore", "monitore", 1)
+            wahl("Zwei Monitore", "monitore")
         elif bid == "startmenue":
             wahl("Startmenü", "startmenue")
             wahl("Position", "startmenue_position", 2)

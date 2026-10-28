@@ -157,3 +157,15 @@ Technik-Entscheidungen:
 - Neue Icons: Einstellungen als Regler-Trio (Motiv `regler` in `symbole.py`, ersetzt die Mutter), S-Launcher als
   Paket mit blauem Pfeil (`s-launcher.svg`). Das Symbol-Thema wird beim Anmelden einmalig neu erzeugt.
 - Vorgemerkt: Megaaufzug und Skyline als weitere wählbare Leisten.
+
+## biblix-design 2.9.0 (28.10.2026): Design-App mit Musterkarten, Prisma-Icon
+
+- Jede Auswahl im Konfigurator ist eine **Musterkarte** mit gezeichneter Miniatur (`app/muster.py`): Knöpfe,
+  Titelleisten, Leisten, Startmenüs, Zeiger und Symbole sind gezeichnet; Animationen, Lade-Zeiger, Ladeanimation und
+  Klänge laufen in der Karte als Schleife. Namen brechen um statt abgeschnitten zu werden.
+- **Probe:** Fährt die Maus über eine Karte, zeigt das große Bild das Ergebnis schon vorher („Vorschau: …“).
+- Rechte Spalte 560 statt 420 px, oben eine **Bereichsleiste** (alle acht Bereiche ohne die Leuchtpunkte erreichbar),
+  Schalter mit umbrechendem Text, kürzere Hinweise.
+- **Neues App-Symbol: Prisma** (weißer Strahl fächert in Biblix-Blau, Cyan und Gelb), erzeugt in `vorbereiten.sh`,
+  auch im App-Kopf. Das alte Palette-Symbol ist aus dem Symbol-Thema raus; `_stand` 9 erzeugt das Thema einmalig neu.
+- Noch offen: Meine Mischungen (Verlauf mit Vorschaubildern statt Zeitstempeln), Presets-Seite.

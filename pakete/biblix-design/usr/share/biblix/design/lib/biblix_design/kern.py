@@ -22,7 +22,7 @@ FARBNAMEN = ["grund", "flaeche", "karte", "rand", "text", "leise", "akzent", "ak
 
 # Der Biblix-Standard. Jede Option der Design-App hat hier ihren Platz.
 STANDARD = {
-    "_stand": 8,                    # Stand der Einstellungen (für einmalige Umstellungen nach Updates)
+    "_stand": 9,                    # Stand der Einstellungen (für einmalige Umstellungen nach Updates)
     "preset": "bibi-tech",
     "modus": "dunkel",              # dunkel | hell | auto (Tag hell, Abend dunkel)
     "eigene_farben": None,          # None oder {"dunkel": {...}, "hell": {...}}

@@ -28,15 +28,17 @@ logos = d / "logos"
 logos.mkdir(exist_ok=True)
 for pid, f in grafik.FIRMENLOGOS.items():
     (logos / f"{pid}.svg").write_text(f(), encoding="utf-8")
-# App-Symbol "Biblix Design" (Palette auf Kachel)
+# App-Symbol "Biblix Design": Prisma, ein weisser Strahl faechert in Biblix-Blau, Cyan und Gelb auf
 icon = Path(sys.argv[1]).parents[1] / "icons/hicolor/scalable/apps/de.biblix.Design.svg"
 icon.parent.mkdir(parents=True, exist_ok=True)
 icon.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">'
-                '<rect x="3" y="3" width="42" height="42" rx="11" fill="#378add"/>'
-                '<path d="M24 11 a13 13 0 1 0 0 26 c2.2 0 2.9 -1.6 1.9 -3.2 -1 -1.6 .2 -3.2 2.1 -3.2 H31 '
-                'a6 6 0 0 0 6 -6 c0 -7.6 -5.8 -13.6 -13 -13.6 Z" fill="#ffffff"/>'
-                '<circle cx="17.5" cy="22" r="2.4" fill="#e24b4a"/><circle cx="22" cy="16.5" r="2.4" fill="#ffd400"/>'
-                '<circle cx="29" cy="17" r="2.4" fill="#1d9e75"/></svg>', encoding="utf-8")
+                '<rect x="2" y="2" width="44" height="44" rx="11" fill="#0f141c"/>'
+                '<line x1="6" y1="26.5" x2="19.5" y2="24.5" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>'
+                '<polygon points="24,11 35,33 13,33" fill="#1a2230" stroke="#e8ecf2" stroke-width="1.8" stroke-linejoin="round"/>'
+                '<line x1="19.5" y1="24.5" x2="30" y2="24" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1.4"/>'
+                '<g stroke-width="2.4" stroke-linecap="round"><line x1="30.5" y1="23" x2="43" y2="19" stroke="#378add"/>'
+                '<line x1="31" y1="24.5" x2="43" y2="24.5" stroke="#22d3e6"/>'
+                '<line x1="31.5" y1="26" x2="43" y2="30" stroke="#ffd400"/></g></svg>', encoding="utf-8")
 EOF
 
 # --- Klaenge (Synthese, dauert etwas)

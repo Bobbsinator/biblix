@@ -169,3 +169,6 @@ Technik-Entscheidungen:
 - **Neues App-Symbol: Prisma** (weißer Strahl fächert in Biblix-Blau, Cyan und Gelb), erzeugt in `vorbereiten.sh`,
   auch im App-Kopf. Das alte Palette-Symbol ist aus dem Symbol-Thema raus; `_stand` 9 erzeugt das Thema einmalig neu.
 - Noch offen: Meine Mischungen (Verlauf mit Vorschaubildern statt Zeitstempeln), Presets-Seite.
+
+## biblix-design 2.10.0 (29.10.2026): eigener Anmeldebildschirm
+- SDDM-Thema „Biblix“ statt Breeze, Farben und Hintergrund aus dem Design. Details: `docs/anmeldung.md`.

@@ -10,7 +10,7 @@ biblix_lauf() {
 }
 if [ "$1" = remove ] || [ "$1" = purge ]; then
     # Erzeugte Systemteile entfernen; Debian-Standard fuer Bootmenue und Startbildschirm zurueck
-    rm -f /etc/default/grub.d/zz-biblix-design.cfg /usr/share/sddm/themes/breeze/theme.conf.user
+    rm -f /etc/default/grub.d/zz-biblix-design.cfg /usr/share/sddm/themes/breeze/theme.conf.user /usr/share/sddm/themes/biblix/theme.conf.user
     if [ "$(plymouth-set-default-theme 2>/dev/null)" = biblix-aktuell ]; then
         plymouth-set-default-theme -r 2>/dev/null || true
     fi

@@ -265,7 +265,7 @@ def grub(p, hintergrund_svg=None, ziel=GRUB):
     return ziel
 
 
-# ---------------------------------------------------------------- SDDM (Anmeldung): Breeze mit Biblix-Hintergrund
+# ---------------------------------------------------------------- SDDM (Anmeldung): Biblix-Thema (usr/share/sddm/themes/biblix), Hintergrund von hier
 
 def sddm(p, hintergrund_svg=None):
     """Anmeldebildschirm: Breeze-SDDM mit dem Biblix-Hintergrund des aktuellen Designs."""

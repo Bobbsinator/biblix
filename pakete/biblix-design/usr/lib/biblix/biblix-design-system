@@ -17,7 +17,8 @@ sys.path.insert(0, "/usr/share/biblix/design/lib")
 from biblix_design import kern, system, hintergruende  # noqa: E402
 
 GRUB_CFG = Path("/etc/default/grub.d/zz-biblix-design.cfg")
-SDDM_CFG = Path("/usr/share/sddm/themes/breeze/theme.conf.user")
+SDDM_CFG = Path("/usr/share/sddm/themes/breeze/theme.conf.user")          # Rueckfall, falls biblix fehlt
+SDDM_BIBLIX = Path("/usr/share/sddm/themes/biblix/theme.conf.user")
 FARBE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
@@ -61,9 +62,12 @@ def main():
     p, motiv, bootmenue = pruefen(auftrag)
     svg = hintergruende.svg(motiv, p)
 
-    # Anmeldebildschirm (Breeze-SDDM mit Biblix-Hintergrund)
+    # Anmeldebildschirm: Biblix-SDDM-Thema mit Hintergrund und Farben des Designs (Breeze als Rueckfall)
     bild = system.sddm(p, svg)
     SDDM_CFG.write_text(f"[General]\nbackground={bild}\ntype=image\ncolor={p['grund']}\n", encoding="utf-8")
+    if SDDM_BIBLIX.parent.is_dir():
+        farben = "".join(f"{k}={p[k]}\n" for k in ("grund", "karte", "rand", "text", "leise", "akzent", "gefahr"))
+        SDDM_BIBLIX.write_text(f"[General]\nbackground={bild}\n{farben}", encoding="utf-8")
 
     if not bootmenue:
         return

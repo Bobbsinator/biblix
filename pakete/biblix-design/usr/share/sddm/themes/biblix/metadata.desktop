@@ -1,0 +1,12 @@
+[SddmGreeterTheme]
+Name=Biblix
+Description=Biblix-Anmeldung: Standort-Hintergrund, blaues B, Passwortzeile im Terminal-Stil
+Author=Biblix
+License=GPL-3.0-or-later
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=biblix
+Theme-API=2.0
+QtVersion=6

@@ -1,0 +1,183 @@
+#!/usr/bin/env python3
+"""Biblix-Dialog: Rückfragen und Meldungen im Biblix-Look statt der grauen KDE-Fenster.
+
+Aufruf wie kdialog (nur das, was Biblix braucht), Rückgabe wie kdialog: 0 = ja/ok, 1 = nein/abbrechen.
+  biblix-dialog --title "Neustart in Windows" --warningyesno "Text" [--yes-label "Neu starten"] [--no-label "Abbrechen"]
+  biblix-dialog --title "…" --yesno "Text"
+  biblix-dialog --title "…" --error "Text"      (auch --sorry)
+  biblix-dialog --title "…" --msgbox "Text"
+  Zusätzlich: --symbol windows|spiel|platte|info (Bild links), \\n im Text wird zum Zeilenumbruch.
+Ohne grafische Sitzung oder ohne PyQt6 fällt es auf kdialog zurück.
+"""
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+ARTEN = {"--warningyesno": "warnung", "--yesno": "frage", "--error": "fehler", "--sorry": "fehler", "--msgbox": "info"}
+
+
+def argumente(argv):
+    a = {"titel": "Biblix", "art": "info", "text": "", "ja": None, "nein": None, "symbol": None}
+    i = 0
+    while i < len(argv):
+        x = argv[i]
+        wert = argv[i + 1] if i + 1 < len(argv) else ""
+        if x == "--title":
+            a["titel"] = wert
+        elif x in ARTEN:
+            a["art"], a["text"] = ARTEN[x], wert
+        elif x == "--yes-label":
+            a["ja"] = wert
+        elif x == "--no-label":
+            a["nein"] = wert
+        elif x == "--symbol":
+            a["symbol"] = wert
+        else:
+            i += 1
+            continue
+        i += 2
+    a["text"] = a["text"].replace("\\n", "\n")
+    return a
+
+
+def rueckfall(argv):
+    if shutil.which("kdialog"):
+        ohne = []
+        it = iter(argv)
+        for x in it:
+            if x == "--symbol":
+                next(it, None)   # kdialog kennt kein Symbol
+            else:
+                ohne.append(x)
+        sys.exit(subprocess.run(["kdialog", *ohne]).returncode)
+    print(" ".join(argv), file=sys.stderr)
+    sys.exit(1)
+
+
+def main():
+    argv = sys.argv[1:]
+    a = argumente(argv)
+    try:
+        from PyQt6.QtCore import Qt, QRectF, QPointF
+        from PyQt6.QtGui import QPainter, QColor, QPen, QFont, QIcon
+        from PyQt6.QtWidgets import QApplication, QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+    except ImportError:
+        rueckfall(argv)
+    if not (os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY")):
+        rueckfall(argv)
+
+    F = {"grund": "#0f141c", "flaeche": "#1a2029", "karte": "#232a35", "rand": "#313a48", "text": "#e8ecf2",
+         "leise": "#8b95a5", "akzent": "#378add", "gefahr": "#e24b4a", "auf_akzent": "#ffffff"}
+    try:
+        pal = Path(os.environ.get("BIBLIX_KONFIG_DIR") or Path.home() / ".config/biblix") / "palette.json"
+        F.update({k: v for k, v in json.loads(pal.read_text(encoding="utf-8")).items() if k in F})
+    except (OSError, ValueError):
+        pass
+    farbe = {"warnung": "#ffb020", "fehler": F["gefahr"], "frage": F["akzent"], "info": F["akzent"]}[a["art"]]
+
+    class Bild(QWidget):
+        """Symbol links: Windows-Fenster, Spiel, Platte oder Ausrufe-/Fragezeichen in der Farbe der Art."""
+        def __init__(self):
+            super().__init__()
+            self.setFixedSize(64, 64)
+
+        def paintEvent(self, ev):
+            qp = QPainter(self)
+            qp.setRenderHint(QPainter.RenderHint.Antialiasing)
+            qp.setPen(Qt.PenStyle.NoPen)
+            qp.setBrush(QColor(F["karte"]))
+            qp.drawRoundedRect(QRectF(0, 0, 64, 64), 16, 16)
+            qp.setBrush(QColor(farbe))
+            s = a["symbol"]
+            if s == "windows":
+                for x, y in ((17, 17), (33, 17), (17, 33), (33, 33)):
+                    qp.drawRoundedRect(QRectF(x, y, 14, 14), 2, 2)
+            elif s == "spiel":
+                qp.drawRoundedRect(QRectF(12, 22, 40, 22), 11, 11)
+                qp.setBrush(QColor(F["karte"]))
+                qp.drawRect(QRectF(19, 31, 10, 3))
+                qp.drawRect(QRectF(22.5, 27.5, 3, 10))
+                qp.drawEllipse(QPointF(42, 30), 2.5, 2.5)
+                qp.drawEllipse(QPointF(46, 35), 2.5, 2.5)
+            elif s == "platte":
+                qp.drawRoundedRect(QRectF(14, 20, 36, 26), 5, 5)
+                qp.setBrush(QColor(F["karte"]))
+                qp.drawEllipse(QPointF(42, 33), 3, 3)
+            else:
+                zeichen = {"warnung": "!", "fehler": "×", "frage": "?", "info": "i"}[a["art"]]
+                qp.drawEllipse(QRectF(14, 14, 36, 36))
+                f = QFont("DejaVu Sans")
+                f.setBold(True)
+                f.setPixelSize(24)
+                qp.setFont(f)
+                qp.setPen(QColor(F["grund"]))
+                qp.drawText(QRectF(14, 13, 36, 36), Qt.AlignmentFlag.AlignCenter, zeichen)
+            qp.end()
+
+    app = QApplication(sys.argv[:1])
+    app.setDesktopFileName("de.biblix.Dialog")
+    d = QDialog()
+    d.setWindowTitle(a["titel"])
+    d.setWindowIcon(QIcon.fromTheme("biblix"))
+    d.setMinimumWidth(460)
+    d.setStyleSheet(f"""
+        QDialog {{ background: {F['flaeche']}; border-top: 4px solid {farbe}; }}
+        QLabel {{ color: {F['text']}; background: transparent; }}
+        QLabel#titel {{ font-size: 13pt; font-weight: bold; }}
+        QLabel#text {{ color: {F['leise']}; font-size: 10.5pt; }}
+        QPushButton {{ background: {F['karte']}; color: {F['text']}; border: 1px solid {F['rand']}; border-radius: 9px;
+                      padding: 8px 18px; font-size: 10.5pt; min-width: 90px; }}
+        QPushButton:hover {{ border-color: {F['akzent']}; }}
+        QPushButton#haupt {{ background: {farbe if a['art'] != 'warnung' else F['akzent']}; color: {F['auf_akzent']};
+                            border-color: transparent; font-weight: bold; }}
+    """)
+    v = QVBoxLayout(d)
+    v.setContentsMargins(24, 24, 24, 20)
+    v.setSpacing(18)
+    oben = QHBoxLayout()
+    oben.setSpacing(18)
+    oben.addWidget(Bild(), 0, Qt.AlignmentFlag.AlignTop)
+    spalte = QVBoxLayout()
+    spalte.setSpacing(6)
+    # erste Zeile als Überschrift, der Rest als Erklärung
+    teile = a["text"].strip().split("\n", 1)
+    kopf = QLabel(teile[0])
+    kopf.setObjectName("titel")
+    kopf.setWordWrap(True)
+    spalte.addWidget(kopf)
+    if len(teile) > 1 and teile[1].strip():
+        rest = QLabel(teile[1].strip())
+        rest.setObjectName("text")
+        rest.setWordWrap(True)
+        rest.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        spalte.addWidget(rest)
+    spalte.addStretch(1)
+    oben.addLayout(spalte, 1)
+    v.addLayout(oben)
+    knoepfe = QHBoxLayout()
+    knoepfe.addStretch(1)
+    if a["art"] in ("warnung", "frage"):
+        nein = QPushButton(a["nein"] or "Abbrechen")
+        nein.clicked.connect(d.reject)
+        knoepfe.addWidget(nein)
+        ja = QPushButton(a["ja"] or "Ja")
+    else:
+        ja = QPushButton(a["ja"] or "OK")
+    ja.setObjectName("haupt")
+    ja.setDefault(True)
+    ja.clicked.connect(d.accept)
+    knoepfe.addWidget(ja)
+    v.addLayout(knoepfe)
+    # Bei Warnungen liegt der Fokus auf Abbrechen: Enter allein startet nichts Unumkehrbares
+    if a["art"] == "warnung":
+        nein.setDefault(True)
+        nein.setFocus()
+        ja.setDefault(False)
+    sys.exit(0 if d.exec() == QDialog.DialogCode.Accepted else 1)
+
+
+if __name__ == "__main__":
+    main()

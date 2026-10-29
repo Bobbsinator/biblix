@@ -8,10 +8,10 @@ import sys
 import tempfile
 from pathlib import Path
 
-from PyQt6.QtCore import QProcess, Qt, QTimer
-from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import QProcess, Qt, QTimer, QRectF, QPointF, pyqtSignal
+from PyQt6.QtGui import QIcon, QPainter, QColor, QPen, QFont
 from PyQt6.QtWidgets import (
-    QApplication, QComboBox, QFrame, QHBoxLayout, QInputDialog, QLabel, QLineEdit, QListWidget,
+    QApplication, QComboBox, QFrame, QGridLayout, QHBoxLayout, QInputDialog, QLabel, QLineEdit, QListWidget,
     QListWidgetItem, QMainWindow, QMessageBox, QPlainTextEdit, QPushButton, QScrollArea, QStackedWidget,
     QVBoxLayout, QWidget,
 )
@@ -46,6 +46,7 @@ QPushButton:disabled {{ color: {F['leise']}; }}
 QPlainTextEdit {{ background: #05070a; color: {F['akzent2']}; border: 1px solid {F['rand']}; border-radius: 8px;
                   font-family: "DejaVu Sans Mono"; font-size: 9.5pt; }}
 QComboBox {{ background: {F['karte']}; color: {F['text']}; border: 1px solid {F['rand']}; border-radius: 8px; padding: 6px 10px; }}
+QFrame#meldung {{ border-radius: 14px; }}
 QScrollArea {{ border: none; background: transparent; }}
 QScrollArea > QWidget > QWidget {{ background: transparent; }}
 """
@@ -159,6 +160,132 @@ def neustart_grund():
     return out.strip() if rc == 0 else ""
 
 
+# ---------------------------------------------------------------- Schaltwarte (Uebersicht)
+
+LAMPE = {"gruen": "#3ad07a", "gelb": "#ffb020", "rot": "#e24b4a", "grau": "#5b6575"}
+RANG = {"grau": 0, "gruen": 1, "gelb": 2, "rot": 3}
+
+
+class Instrument(QFrame):
+    """Eine Kachel der Schaltwarte: Lampe, Name, Wert und ein kleines Bild (Monitore, Fuellstand)."""
+    geklickt = pyqtSignal()
+
+    def __init__(self, titel, wert, zustand, bild=None, daten=None):
+        super().__init__()
+        self.titel, self.wert, self.zustand, self.bild, self.daten = titel, wert, zustand, bild, daten
+        self.drin = False
+        self.setMinimumSize(300, 168)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setToolTip("Öffnen")
+
+    def enterEvent(self, ev):
+        self.drin = True
+        self.update()
+
+    def leaveEvent(self, ev):
+        self.drin = False
+        self.update()
+
+    def mouseReleaseEvent(self, ev):
+        if ev.button() == Qt.MouseButton.LeftButton:
+            self.geklickt.emit()
+
+    def paintEvent(self, ev):
+        qp = QPainter(self)
+        qp.setRenderHint(QPainter.RenderHint.Antialiasing)
+        r = QRectF(self.rect()).adjusted(1, 1, -1, -1)
+        lampe = QColor(LAMPE[self.zustand])
+        qp.setPen(QPen(QColor(F["akzent"] if self.drin else F["rand"]), 1.5 if self.drin else 1))
+        qp.setBrush(QColor(F["karte"]))
+        qp.drawRoundedRect(r, 14, 14)
+        # Lampe mit Schein
+        mitte = QPointF(r.left() + 30, r.top() + 32)
+        schein = QColor(lampe)
+        schein.setAlpha(60)
+        qp.setPen(Qt.PenStyle.NoPen)
+        qp.setBrush(schein)
+        qp.drawEllipse(mitte, 15, 15)
+        qp.setBrush(lampe)
+        qp.drawEllipse(mitte, 8, 8)
+        # Name in Typenschild-Schrift
+        f = QFont("DejaVu Sans Mono")
+        f.setPixelSize(14)
+        f.setBold(True)
+        f.setLetterSpacing(QFont.SpacingType.AbsoluteSpacing, 1.5)
+        qp.setFont(f)
+        qp.setPen(QColor(F["text"]))
+        qp.drawText(QRectF(r.left() + 54, r.top() + 20, r.width() - 70, 24), Qt.AlignmentFlag.AlignVCenter, self.titel.upper())
+        f2 = QFont("DejaVu Sans")
+        f2.setPixelSize(13)
+        qp.setFont(f2)
+        qp.setPen(QColor(F["leise"]))
+        qp.drawText(QRectF(r.left() + 20, r.bottom() - 34, r.width() - 40, 22), Qt.AlignmentFlag.AlignVCenter, self.wert)
+        bild = QRectF(r.left() + 20, r.top() + 58, r.width() - 40, r.height() - 100)
+        if self.bild == "monitore":
+            self._monitore(qp, bild)
+        elif self.bild == "fuellstand":
+            self._fuellstand(qp, bild)
+        elif self.bild == "schild":
+            self._schild(qp, bild)
+        qp.end()
+
+    def _monitore(self, qp, b):
+        mons = self.daten or []
+        if not mons:
+            return
+        breite = min(110, (b.width() - 16 * (len(mons) - 1)) / len(mons))
+        x = b.left()
+        for m in mons:
+            h = breite * 0.58
+            rr = QRectF(x, b.top() + (b.height() - h - 10) / 2, breite, h)
+            voll = m["jetzt"] >= m["moeglich"]
+            qp.setPen(QPen(QColor(F["akzent"] if voll else LAMPE["gelb"]), 2))
+            qp.setBrush(QColor(F["grund"]))
+            qp.drawRoundedRect(rr, 4, 4)
+            qp.drawLine(QPointF(rr.center().x(), rr.bottom()), QPointF(rr.center().x(), rr.bottom() + 8))
+            f = QFont("DejaVu Sans Mono")
+            f.setPixelSize(13)
+            f.setBold(True)
+            qp.setFont(f)
+            qp.setPen(QColor(F["text"]))
+            qp.drawText(rr, Qt.AlignmentFlag.AlignCenter, f"{m['jetzt']} Hz")
+            x += breite + 16
+
+    def _fuellstand(self, qp, b):
+        anteil = (self.daten or {}).get("anteil", 0)
+        balken = QRectF(b.left(), b.center().y() - 8, b.width(), 16)
+        qp.setPen(Qt.PenStyle.NoPen)
+        qp.setBrush(QColor(F["grund"]))
+        qp.drawRoundedRect(balken, 8, 8)
+        qp.setBrush(QColor(LAMPE[self.zustand] if self.zustand in ("gelb", "rot") else F["akzent"]))
+        qp.drawRoundedRect(QRectF(balken.left(), balken.top(), max(16, balken.width() * anteil), balken.height()), 8, 8)
+        for i in range(1, 10):   # Skala
+            x = balken.left() + balken.width() * i / 10
+            qp.setPen(QPen(QColor(F["rand"]), 1))
+            qp.drawLine(QPointF(x, balken.bottom() + 4), QPointF(x, balken.bottom() + (9 if i == 5 else 6)))
+
+    def _schild(self, qp, b):
+        # Schloss: zu (gruen) oder offen
+        cx, cy = b.left() + 24, b.center().y()
+        zu = self.zustand == "gruen"
+        qp.setPen(QPen(QColor(F["akzent"] if zu else LAMPE[self.zustand]), 3))
+        qp.setBrush(Qt.BrushStyle.NoBrush)
+        bogen = QRectF(cx - 11, cy - 24, 22, 26)
+        qp.drawArc(bogen.translated(0, 0 if zu else -6), 0, 180 * 16)
+        if zu:
+            qp.drawLine(QPointF(cx - 11, cy - 11), QPointF(cx - 11, cy - 4))
+        qp.drawLine(QPointF(cx + 11, cy - (11 if zu else 17)), QPointF(cx + 11, cy - 4))
+        qp.setPen(Qt.PenStyle.NoPen)
+        qp.setBrush(QColor(F["akzent"] if zu else LAMPE[self.zustand]))
+        qp.drawRoundedRect(QRectF(cx - 17, cy - 4, 34, 26), 5, 5)
+        f = QFont("DejaVu Sans")
+        f.setPixelSize(13)
+        qp.setFont(f)
+        qp.setPen(QColor(F["text"]))
+        qp.drawText(QRectF(cx + 34, cy - 14, b.width() - 60, 28), Qt.AlignmentFlag.AlignVCenter,
+                    (self.daten or {}).get("zeile", ""))
+
+
 # ---------------------------------------------------------------- Fenster
 
 class Haustechnik(QMainWindow):
@@ -185,7 +312,9 @@ class Haustechnik(QMainWindow):
         for text in ("Übersicht", "Secure Boot", "Bildschirme", "Platten"):
             self.nav.addItem(QListWidgetItem(text))
         sl.addWidget(self.nav, 1)
-        sl.addWidget(label("  AUF BIBLIX GEHT DAS.", "leise"))
+        spruch = label("AUF BIBLIX GEHT DAS.", "leise")
+        spruch.setStyleSheet("padding: 0 18px; font-family: 'DejaVu Sans Mono'; font-size: 8.5pt;")
+        sl.addWidget(spruch)
         h.addWidget(seiten)
         self.stack = QStackedWidget()
         h.addWidget(self.stack, 1)
@@ -209,33 +338,66 @@ class Haustechnik(QMainWindow):
     # ---- Uebersicht
 
     def seite_uebersicht(self):
+        """Schaltwarte: oben die Gesamtmeldung, darunter eine Kachel mit Lampe je Bereich."""
         s, lay = seite()
         lay.addWidget(label("Übersicht", "h1"))
-        grund = neustart_grund()
-        if grund:
-            k, kl = karte()
-            kl.addWidget(label(f"<b>Neustart nötig:</b> {grund}."))
-            kl.addWidget(knopf("Jetzt neu starten", True, self.neustarten), 0, Qt.AlignmentFlag.AlignLeft)
-            lay.addWidget(k)
         sb, schl = secureboot_zustand()
-        zeilen = []
-        zeilen.append(("Secure Boot", {True: "an", False: "aus", None: "unbekannt"}[sb],
-                       "secureboot"))
-        zeilen.append(("Treiber-Schlüssel", {"angemeldet": "angemeldet ✓", "vorgemerkt": "vorgemerkt (Neustart nötig)",
-                                             "fehlt": "noch nicht eingerichtet", "unbekannt": "unbekannt"}[schl], "secureboot"))
         b = bildschirme()
         voll = sum(1 for x in b if x["jetzt"] >= x["moeglich"])
-        zeilen.append(("Bildschirme", f"{voll} von {len(b)} auf höchster Bildrate" if b else "keine Angaben", "bildschirme"))
         p = leere_platten()
-        zeilen.append(("Leere Platten", f"{len(p)} gefunden" if p else "keine", "platten"))
-        for titel, wert, ziel in zeilen:
-            k, kl = karte()
-            r = QHBoxLayout()
-            r.addWidget(label(f"<b>{titel}</b>"), 1)
-            r.addWidget(label(wert, "leise", wrap=False))
-            r.addWidget(knopf("Öffnen", cb=lambda _=False, z=ziel: self.nav.setCurrentRow(self.schluessel.index(z))))
-            kl.addLayout(r)
-            lay.addWidget(k)
+        try:
+            platz = shutil.disk_usage(str(Path.home()))
+            anteil = platz.used / platz.total
+        except OSError:
+            platz, anteil = None, 0
+        kacheln = [
+            ("Secure Boot", {True: "an", False: "aus: Windows-Spiele mit Anti-Cheat starten evtl. nicht",
+                             None: "Zustand unbekannt"}[sb],
+             {True: "gruen", False: "gelb", None: "grau"}[sb], "schild",
+             {"zeile": {True: "Startkette geprüft", False: "nicht geprüft", None: ""}[sb]}, "secureboot"),
+            ("Treiber-Schlüssel", {"angemeldet": "angemeldet", "vorgemerkt": "vorgemerkt: beim Neustart bestätigen",
+                                   "fehlt": "noch nicht eingerichtet", "unbekannt": "unbekannt"}[schl],
+             {"angemeldet": "gruen", "vorgemerkt": "gelb", "fehlt": "rot" if sb else "gelb", "unbekannt": "grau"}[schl],
+             "schild", {"zeile": "NVIDIA-Treiber darf laden" if schl == "angemeldet" else "Treiber gesperrt"
+                        if schl == "fehlt" and sb else ""}, "secureboot"),
+            ("Bildschirme", f"{voll} von {len(b)} auf höchster Bildrate" if b else "keine Angaben",
+             "grau" if not b else ("gruen" if voll == len(b) else "gelb"), "monitore", b, "bildschirme"),
+            ("Platten", (f"{round(anteil * 100)} % belegt · {round(platz.free / 1e9)} GB frei" if platz else "")
+             + (f" · {len(p)} leere Platte bereit" if len(p) == 1 else f" · {len(p)} leere Platten bereit" if p else ""),
+             "rot" if anteil > 0.92 else "gelb" if anteil > 0.82 or p else "gruen", "fuellstand", {"anteil": anteil}, "platten"),
+        ]
+        grund = neustart_grund()
+        schlimmste = max([k[2] for k in kacheln] + (["gelb"] if grund else []), key=lambda z: RANG[z])
+        hinweise = sum(1 for k in kacheln if k[2] in ("gelb", "rot")) + (1 if grund else 0)
+        text = {"gruen": "ALLES IN BETRIEB", "grau": "ALLES IN BETRIEB",
+                "gelb": f"{hinweise} {'HINWEIS' if hinweise == 1 else 'HINWEISE'}",
+                "rot": "STÖRUNG: BITTE ANSEHEN"}[schlimmste]
+        farbe = LAMPE["gruen" if schlimmste == "grau" else schlimmste]
+        meldung = QFrame()
+        meldung.setObjectName("meldung")
+        meldung.setStyleSheet(f"QFrame#meldung {{ background: {F['flaeche']}; border: 1px solid {farbe}; }}")
+        ml = QHBoxLayout(meldung)
+        ml.setContentsMargins(18, 14, 18, 14)
+        lampe = QLabel("●")
+        lampe.setStyleSheet(f"color: {farbe}; font-size: 22pt;")
+        ml.addWidget(lampe)
+        zeile = QVBoxLayout()
+        kopf = label(text)
+        kopf.setStyleSheet(f"color: {farbe}; font-family: 'DejaVu Sans Mono'; font-weight: 800; font-size: 14pt; letter-spacing: 2px;")
+        zeile.addWidget(kopf)
+        zeile.addWidget(label(f"Neustart nötig: {grund}." if grund else "Haustechnik überwacht Startkette, Treiber, Bildschirme und Platten.", "leise"))
+        ml.addLayout(zeile, 1)
+        if grund:
+            ml.addWidget(knopf("Jetzt neu starten", True, self.neustarten))
+        lay.addWidget(meldung)
+        gitter = QGridLayout()
+        gitter.setSpacing(14)
+        for i, (titel, wert, zustand, bild, daten, ziel) in enumerate(kacheln):
+            k = Instrument(titel, wert, zustand, bild, daten)
+            k.geklickt.connect(lambda z=ziel: self.nav.setCurrentRow(self.schluessel.index(z)))
+            gitter.addWidget(k, i // 2, i % 2)
+        lay.addLayout(gitter)
+        lay.addWidget(label("Klick auf eine Kachel öffnet den Bereich.", "leise"))
         return s
 
     def neustarten(self):

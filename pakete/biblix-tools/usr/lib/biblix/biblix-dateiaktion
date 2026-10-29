@@ -13,8 +13,9 @@ from pathlib import Path
 
 
 def melden(titel, text, fehler=False):
-    if shutil.which("kdialog"):
-        subprocess.run(["kdialog", "--title", titel, "--sorry" if fehler else "--msgbox", text])
+    if shutil.which("biblix-dialog") or shutil.which("kdialog"):
+        prog = "biblix-dialog" if shutil.which("biblix-dialog") else "kdialog"
+        subprocess.run([prog, "--title", titel, "--sorry" if fehler else "--msgbox", text])
     else:
         print(f"{titel}: {text}", file=sys.stderr)
 

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Biblix-Dialog
+Comment=Rückfragen und Meldungen von Biblix
+Exec=biblix-dialog
+Icon=biblix
+NoDisplay=true

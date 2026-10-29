@@ -20,7 +20,7 @@ from PyQt6.QtCore import (Qt, QRectF, QPointF, QTimer, QThread, pyqtSignal, QObj
                           QThreadPool, QSize)
 from PyQt6.QtGui import (QPainter, QColor, QPainterPath, QPixmap, QFont, QPen, QBrush, QIcon,
                          QLinearGradient, QPolygonF, QImage)
-from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QHBoxLayout, QVBoxLayout, QLabel,
+from PyQt6.QtWidgets import (QApplication, QWidget, QAbstractButton, QMainWindow, QHBoxLayout, QVBoxLayout, QLabel,
                              QPushButton, QScrollArea, QFrame, QGridLayout, QButtonGroup, QCheckBox,
                              QSpinBox, QColorDialog, QInputDialog, QMessageBox, QStackedWidget,
                              QSizePolicy, QToolButton, QProgressBar, QListWidget, QListWidgetItem)
@@ -484,6 +484,9 @@ class Konfigurator(QWidget):
                                p["knopf_ruhe"], p["akzent"], "x" if i == 0 else "-", False, p["gefahr"])
 
         qp.setClipping(False)
+        if getattr(self, "ohne_punkte", False):
+            qp.end()
+            return
         # Leuchtpunkte
         for bid, punkt in self.punkte.items():
             gewaehlt = bid == self.aktiv
@@ -604,6 +607,92 @@ class Schalter(QWidget):
         h.addWidget(text, 1)
 
 
+# ====================================================================== Mischungen und Verlauf als Bilder
+
+class _Abbild:
+    """Stellvertreter fuer das Hauptfenster, damit der Konfigurator eine fremde Einstellung zeichnen kann."""
+    def __init__(self, fenster, e):
+        self.e = {**kern.STANDARD, **{k: v for k, v in e.items() if not k.startswith("_")}}
+        self.p = kern.palette(self.e)
+        self.vorschauen = fenster.vorschauen
+        self.probe = None
+        self._logo = None
+
+    def ansicht_e(self):
+        return self.e
+
+    def logo_pixmap(self):
+        return Fenster.logo_pixmap(self)
+
+
+def abbild(fenster, e, breite=320):
+    """Kleines Bild einer Einstellung: derselbe Desktop wie im Konfigurator, ohne Leuchtpunkte."""
+    k = Konfigurator(_Abbild(fenster, e))
+    k.ohne_punkte = True
+    k.resize(640, 380)
+    bild = k.grab().scaledToWidth(breite * 2, Qt.TransformationMode.SmoothTransformation)
+    k.deleteLater()
+    return bild
+
+
+class MischungsKarte(QAbstractButton):
+    """Eine gespeicherte Mischung oder ein Verlaufseintrag: Bild, Name, Zeile darunter."""
+    loeschen = pyqtSignal()
+
+    def __init__(self, bild, name, zeile, palette, loeschbar=False, breite=260):
+        super().__init__()
+        self.bild, self.name, self.zeile, self.p, self.loeschbar = bild, name, zeile, palette, loeschbar
+        self.drin = False
+        self.setFixedSize(breite, int(breite * 0.56) + 56)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setToolTip("Klick: laden" + (" · Rechtsklick: löschen" if loeschbar else ""))
+
+    def enterEvent(self, ev):
+        self.drin = True
+        self.update()
+
+    def leaveEvent(self, ev):
+        self.drin = False
+        self.update()
+
+    def mousePressEvent(self, ev):
+        if ev.button() == Qt.MouseButton.RightButton and self.loeschbar:
+            self.loeschen.emit()
+            return
+        super().mousePressEvent(ev)
+
+    def paintEvent(self, ev):
+        p = self.p
+        qp = QPainter(self)
+        qp.setRenderHint(QPainter.RenderHint.Antialiasing)
+        qp.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        r = QRectF(self.rect()).adjusted(1, 1, -1, -1)
+        qp.setPen(QPen(QColor(p["akzent"] if self.drin else p["rand"]), 2 if self.drin else 1))
+        qp.setBrush(QColor(p["karte"]))
+        qp.drawRoundedRect(r, 12, 12)
+        bild = QRectF(r.left() + 6, r.top() + 6, r.width() - 12, r.width() * 0.56 - 12)
+        pfad = QPainterPath()
+        pfad.addRoundedRect(bild, 8, 8)
+        qp.save()
+        qp.setClipPath(pfad)
+        qp.drawPixmap(bild.toRect(), self.bild)
+        qp.restore()
+        f = QFont("DejaVu Sans")
+        f.setPixelSize(13)
+        f.setBold(True)
+        qp.setFont(f)
+        qp.setPen(QColor(p["text"]))
+        qp.drawText(QRectF(r.left() + 10, bild.bottom() + 6, r.width() - 20, 20), Qt.AlignmentFlag.AlignVCenter,
+                    qp.fontMetrics().elidedText(self.name, Qt.TextElideMode.ElideRight, int(r.width() - 20)))
+        f.setBold(False)
+        f.setPixelSize(11)
+        qp.setFont(f)
+        qp.setPen(QColor(p["leise"]))
+        qp.drawText(QRectF(r.left() + 10, bild.bottom() + 26, r.width() - 20, 18), Qt.AlignmentFlag.AlignVCenter,
+                    qp.fontMetrics().elidedText(self.zeile, Qt.TextElideMode.ElideRight, int(r.width() - 20)))
+        qp.end()
+
+
 # ====================================================================== Hauptfenster
 
 class Anwender(QThread):
@@ -660,7 +749,7 @@ class Fenster(QMainWindow):
             b.setCheckable(True)
             b.setObjectName("reiter")
             b.setChecked(i == 0)
-            b.clicked.connect(lambda _=False, i=i: self.seiten.setCurrentIndex(i))
+            b.clicked.connect(lambda _=False, i=i: self.seite_zeigen(i))
             self.seiten_gruppe.addButton(b)
             kh.addWidget(b)
         kh.addStretch(1)
@@ -697,33 +786,42 @@ class Fenster(QMainWindow):
         self.presets_seite.setWidgetResizable(True)
         self.seiten.addWidget(self.presets_seite)
 
-        # --- Seite 4: Meine Mischungen
-        s3 = QWidget()
-        v3 = QVBoxLayout(s3)
+        # --- Seite 4: Meine Mischungen (Karten mit Bild) und Verlauf (Bildstreifen)
+        s3 = QScrollArea()
+        s3.setWidgetResizable(True)
+        innen3 = QWidget()
+        v3 = QVBoxLayout(innen3)
         v3.setContentsMargins(24, 20, 24, 20)
-        v3.addWidget(self._titel("Meine Mischungen"))
-        hinweis = QLabel("Speichere deine aktuelle Mischung unter einem Namen und hole sie jederzeit zurück.")
+        v3.setSpacing(12)
+        kopf3 = QHBoxLayout()
+        kopf3.addWidget(self._titel("Meine Mischungen"))
+        kopf3.addStretch(1)
+        speichern = QPushButton("Aktuelle Mischung speichern …")
+        speichern.setObjectName("haupt")
+        speichern.clicked.connect(self.mischung_speichern)
+        kopf3.addWidget(speichern)
+        v3.addLayout(kopf3)
+        hinweis = QLabel("Klick auf eine Karte lädt die Mischung (erst „Übernehmen“ wendet sie an). Rechtsklick löscht.")
         hinweis.setObjectName("leise")
         hinweis.setWordWrap(True)
         v3.addWidget(hinweis)
-        zeile = QHBoxLayout()
-        speichern = QPushButton("Aktuelle Mischung speichern …")
-        speichern.clicked.connect(self.mischung_speichern)
-        zeile.addWidget(speichern)
-        laden = QPushButton("Laden")
-        laden.clicked.connect(self.mischung_laden)
-        zeile.addWidget(laden)
-        loeschen = QPushButton("Löschen")
-        loeschen.clicked.connect(self.mischung_loeschen)
-        zeile.addWidget(loeschen)
-        zeile.addStretch(1)
-        v3.addLayout(zeile)
-        self.mischungen = QListWidget()
-        v3.addWidget(self.mischungen, 1)
-        v3.addWidget(self._titel("Verlauf (Rückgängig)"))
-        self.verlauf = QListWidget()
-        self.verlauf.itemDoubleClicked.connect(self.verlauf_laden)
-        v3.addWidget(self.verlauf, 1)
+        self.mischungen_gitter = QGridLayout()
+        self.mischungen_gitter.setSpacing(14)
+        self.mischungen_gitter.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        v3.addLayout(self.mischungen_gitter)
+        v3.addSpacing(12)
+        v3.addWidget(self._titel("Verlauf"))
+        hinweis2 = QLabel("Deine letzten Stände, der neueste links. Klick holt ihn zurück.")
+        hinweis2.setObjectName("leise")
+        v3.addWidget(hinweis2)
+        self.verlauf_reihe = QScrollArea()
+        self.verlauf_reihe.setWidgetResizable(True)
+        self.verlauf_reihe.setFixedHeight(int(220 * 0.56) + 56 + 34)
+        self.verlauf_reihe.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        v3.addWidget(self.verlauf_reihe)
+        v3.addStretch(1)
+        s3.setWidget(innen3)
+        self._abbilder = {}
         self.seiten.addWidget(s3)
 
         # --- Seite 5: Extras
@@ -790,7 +888,12 @@ class Fenster(QMainWindow):
         fh.addWidget(self.uebernehmen_knopf)
         v.addWidget(fuss)
 
-        self.vorschauen.neu.connect(lambda _m: (self.konf.update(), self.galerie.aktualisieren()))
+        self.vorschauen.neu.connect(lambda _m: (self.konf.update(), self.galerie.aktualisieren(), self._bilder_spaeter()))
+        # Vorschaubilder der Mischungen neu zeichnen, sobald die Hintergründe fertig gerechnet sind (gebündelt)
+        self._bilder_takt = QTimer(self)
+        self._bilder_takt.setSingleShot(True)
+        self._bilder_takt.setInterval(600)
+        self._bilder_takt.timeout.connect(lambda: (self._abbilder.clear(), self.mischungen_laden()))
         self.aktueller_bereich = "hintergrund"
         self.alles_neu()
         self.konf.aktiv = "hintergrund"
@@ -1027,6 +1130,8 @@ class Fenster(QMainWindow):
 
     def seite_zeigen(self, nr):
         self.seiten.setCurrentIndex(nr)
+        if nr == 3:
+            self.mischungen_laden()
         self.seiten_gruppe.buttons()[nr].setChecked(True)
 
     def klang_hoeren(self):
@@ -1139,15 +1244,70 @@ class Fenster(QMainWindow):
             self.statusBar().showMessage("Ging nicht: Rechtsklick auf den Desktop → „Miniprogramme hinzufügen“ → „Bibi …“", 8000)
 
     # ---------------------------------------------------------------- Mischungen und Verlauf
+    def _bilder_spaeter(self):
+        if self.seiten.currentIndex() == 3:
+            self._bilder_takt.start()
+
+    def _abbild(self, e, breite):
+        schluessel = json.dumps({k: v for k, v in e.items() if not k.startswith("_")}, sort_keys=True) + str(breite)
+        if schluessel not in self._abbilder:
+            self._abbilder[schluessel] = abbild(self, e, breite)
+        return self._abbilder[schluessel]
+
+    def _zeile(self, e):
+        namen = {m["id"]: m["name"] for m in self.galerie.alle}
+        return kern.preset(e.get("preset", "bibi-tech"))["name"] + " · " + namen.get(e.get("hintergrund"), e.get("hintergrund", ""))
+
     def mischungen_laden(self):
-        self.mischungen.clear()
+        # nur neu bauen, wenn die Seite sichtbar ist oder gleich wird (Bilder kosten etwas)
+        if self.seiten.currentIndex() != 3:
+            self._mischungen_veraltet = True
+            return
+        self._mischungen_veraltet = False
+        while self.mischungen_gitter.count():
+            w = self.mischungen_gitter.takeAt(0).widget()
+            if w:
+                w.deleteLater()
         kern.MISCHUNGEN.mkdir(parents=True, exist_ok=True)
-        for f in sorted(kern.MISCHUNGEN.glob("*.json")):
-            self.mischungen.addItem(QListWidgetItem(f.stem))
-        self.verlauf.clear()
+        dateien = sorted(kern.MISCHUNGEN.glob("*.json"))
+        spalten = max(1, (self.width() - 60) // 274)
+        for i, f in enumerate(dateien):
+            try:
+                daten = json.loads(f.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            k = MischungsKarte(self._abbild(daten, 260), f.stem, self._zeile(daten), self.p, loeschbar=True)
+            k.clicked.connect(lambda _=False, d=daten: self._laden(d))
+            k.loeschen.connect(lambda f=f: self.mischung_loeschen(f))
+            self.mischungen_gitter.addWidget(k, i // spalten, i % spalten)
+        if not dateien:
+            leer = QLabel("Noch keine Mischung gespeichert. Stell dir im Konfigurator etwas zusammen und speichere es hier.")
+            leer.setObjectName("leise")
+            leer.setWordWrap(True)
+            self.mischungen_gitter.addWidget(leer, 0, 0)
+        reihe = QWidget()
+        h = QHBoxLayout(reihe)
+        h.setContentsMargins(0, 4, 0, 4)
+        h.setSpacing(12)
+        wochentag = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+        import datetime
         for v in kern.verlauf():
-            name = kern.preset(v.get("preset", "bibi-tech"))["name"]
-            self.verlauf.addItem(QListWidgetItem(f"{v.get('_zeit', '')}  ·  {name}  ·  {v.get('hintergrund', '')}"))
+            try:
+                z = datetime.datetime.fromisoformat(v.get("_zeit", ""))
+                wann = f"{wochentag[z.weekday()]} {z:%d.%m. · %H:%M}"
+            except ValueError:
+                wann = ""
+            k = MischungsKarte(self._abbild(v, 220), wann or "früher", self._zeile(v), self.p, breite=220)
+            k.clicked.connect(lambda _=False, d=dict(v): self._laden(d))
+            h.addWidget(k)
+        h.addStretch(1)
+        self.verlauf_reihe.setWidget(reihe)
+
+    def _laden(self, daten):
+        daten = {k: v for k, v in daten.items() if not k.startswith("_")}
+        self.e = {**kern.STANDARD, **daten, "_stand": self.e.get("_stand", kern.STANDARD["_stand"])}
+        self.alles_neu()
+        self.status.setText("Geladen, noch nicht übernommen")
 
     def mischung_speichern(self):
         name, ok = QInputDialog.getText(self, "Mischung speichern", "Name deiner Mischung:")
@@ -1156,24 +1316,10 @@ class Fenster(QMainWindow):
             (kern.MISCHUNGEN / f"{name}.json").write_text(json.dumps(self.e, indent=1, ensure_ascii=False), encoding="utf-8")
             self.mischungen_laden()
 
-    def mischung_laden(self):
-        it = self.mischungen.currentItem()
-        if it:
-            daten = json.loads((kern.MISCHUNGEN / f"{it.text()}.json").read_text(encoding="utf-8"))
-            self.e = {**kern.STANDARD, **daten}
-            self.alles_neu()
-
-    def mischung_loeschen(self):
-        it = self.mischungen.currentItem()
-        if it:
-            (kern.MISCHUNGEN / f"{it.text()}.json").unlink(missing_ok=True)
+    def mischung_loeschen(self, datei):
+        if QMessageBox.question(self, "Mischung löschen", f"„{datei.stem}“ löschen?") == QMessageBox.StandardButton.Yes:
+            datei.unlink(missing_ok=True)
             self.mischungen_laden()
-
-    def verlauf_laden(self, item):
-        v = kern.verlauf()[self.verlauf.row(item)]
-        v.pop("_zeit", None)
-        self.e = {**kern.STANDARD, **v}
-        self.alles_neu()
 
     def rueckgaengig(self):
         if self.e != self.gespeichert:

@@ -172,3 +172,17 @@ Technik-Entscheidungen:
 
 ## biblix-design 2.10.0 (29.10.2026): eigener Anmeldebildschirm
 - SDDM-Thema „Biblix“ statt Breeze, Farben und Hintergrund aus dem Design. Details: `docs/anmeldung.md`.
+
+## biblix-design 2.11.0 und biblix-tools 1.7.0 (29.10.2026): Schaltwarte, Biblix-Dialog, Startmenü, Mischungen
+- **Haustechnik als Schaltwarte** (`haustechnik.py`, Übersicht): Gesamtmeldung oben (ALLES IN BETRIEB / n HINWEISE /
+  STÖRUNG), darunter je Bereich eine Kachel mit Lampe (grün, gelb, rot, grau) und kleinem Bild: Schloss für Secure Boot
+  und Treiber-Schlüssel, Monitore mit Bildrate, Füllstand der Home-Platte (gelb ab 82 %, rot ab 92 %). Klick öffnet den Bereich.
+- **biblix-dialog** (biblix-tools): Rückfragen und Meldungen im Biblix-Look, Aufruf und Rückgabe wie kdialog
+  (`--warningyesno`, `--yesno`, `--error`/`--sorry`, `--msgbox`, `--yes-label`, `--no-label`, dazu `--symbol windows|spiel|platte`).
+  Erste Zeile wird Überschrift; bei Warnungen liegt der Fokus auf Abbrechen. Ohne Sitzung oder PyQt6 fällt es auf kdialog
+  zurück. Eingesetzt in Neustart in Windows, Windows-Spielstarter und den Meldungen der Dateiaktionen
+  (Auswahllisten und Ordnerwahl dort weiter kdialog).
+- **Startmenü:** blaues B im Kopf, „Angeheftet“ mit größeren Kacheln bei wenigen Apps (4 Spalten bis 8 Apps),
+  Spruch läuft durch statt abgeschnitten zu werden, Knöpfe unten mit Beschriftung (Sperren … Aus).
+- **Meine Mischungen:** Karten mit Vorschaubild (derselbe Desktop wie im Konfigurator, ohne Leuchtpunkte), Klick lädt,
+  Rechtsklick löscht; Verlauf als Bildstreifen mit Datum („Mi 28.10. · 18:07“), Preset und Hintergrund.

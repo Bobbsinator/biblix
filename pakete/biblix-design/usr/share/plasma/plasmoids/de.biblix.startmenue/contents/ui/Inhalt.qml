@@ -89,14 +89,20 @@ Item {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: inhalt.gu * 0.6
+                // Biblix-Kennzeichen: blaues B (Bibi OS hat es gelb)
                 Rectangle {
                     Layout.preferredWidth: inhalt.gu * 2.6
                     Layout.preferredHeight: inhalt.gu * 2.6
-                    radius: inhalt.gu * 0.6
-                    color: inhalt.karte
-                    Kirigami.Icon {
-                        anchors.fill: parent
-                        source: "biblix"
+                    radius: inhalt.gu * 0.62
+                    color: "#378add"
+                    Text {
+                        anchors.centerIn: parent
+                        anchors.horizontalCenterOffset: 1
+                        text: "B"
+                        color: "#ffffff"
+                        font.family: "DejaVu Sans"
+                        font.bold: true
+                        font.pixelSize: parent.height * 0.58
                     }
                 }
                 ColumnLayout {
@@ -326,12 +332,15 @@ Item {
                         Layout.fillHeight: true
                         interactive: contentHeight > height
                         clip: true
-                        cellWidth: Math.floor(width / inhalt.spalten)
-                        cellHeight: cellWidth * 1.05
+                        // wenige Apps: weniger Spalten, größere Kacheln, damit keine halb leere Fläche bleibt
+                        readonly property int favSpalten: count <= 8 && !inhalt.gross ? 4 : inhalt.spalten
+                        cellWidth: Math.floor(width / favSpalten)
+                        cellHeight: Math.min(cellWidth * 1.05, Math.max(inhalt.gu * 4, height / Math.max(1, Math.ceil(count / favSpalten))))
                         model: wurzel.rootModel.favoritesModel
                         delegate: Kachel {
                             width: favGitter.cellWidth
                             height: favGitter.cellHeight
+                            symbolGroesse: Math.min(favGitter.cellWidth * 0.42, inhalt.gu * 3.2)
                             angeheftet: true
                             onAusgeloest: { favGitter.model.trigger(index, "", null); wurzel.schliessen(); }
                             onAnheften: if (model.favoriteId) wurzel.rootModel.favoritesModel.removeFavorite(model.favoriteId)
@@ -379,28 +388,74 @@ Item {
                 Layout.preferredHeight: 1
                 color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.12)
             }
-            RowLayout {
+            // Spruch: läuft durch, wenn er nicht in eine Zeile passt (statt abgeschnitten zu werden)
+            Item {
+                id: spruchFeld
                 Layout.fillWidth: true
-                spacing: inhalt.gu * 0.35
+                Layout.preferredHeight: spruchText.implicitHeight
+                clip: true
+                readonly property bool zuLang: spruchText.implicitWidth > width
                 PC3.Label {
-                    Layout.fillWidth: true
+                    id: spruchText
                     text: inhalt.spruch
-                    elide: Text.ElideRight
                     opacity: 0.7
                     font.family: "DejaVu Sans Mono"
                     font.pixelSize: inhalt.gu * 0.65
                     font.letterSpacing: 0.5
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: inhalt.neuerSpruch()
+                    x: 0
+                    SequentialAnimation on x {
+                        running: spruchFeld.zuLang && inhalt.offen
+                        loops: Animation.Infinite
+                        PauseAnimation { duration: 1800 }
+                        NumberAnimation { to: spruchFeld.width - spruchText.implicitWidth; duration: Math.max(1500, (spruchText.implicitWidth - spruchFeld.width) * 28) }
+                        PauseAnimation { duration: 1800 }
+                        NumberAnimation { to: 0; duration: 500; easing.type: Easing.OutCubic }
                     }
                 }
-                Schraube { symbol: "system-lock-screen"; tipp: "Sperren"; onAusgeloest: { wurzel.schliessen(); sitzung.lock(); } }
-                Schraube { symbol: "system-suspend"; tipp: "Standby"; visible: sitzung.canSuspend; onAusgeloest: { wurzel.schliessen(); sitzung.suspend(); } }
-                Schraube { symbol: "system-log-out"; tipp: "Abmelden"; onAusgeloest: { wurzel.schliessen(); sitzung.requestLogout(); } }
-                Schraube { symbol: "biblix-windows-symbolic"; tipp: "Neustart in Windows"; onAusgeloest: { wurzel.schliessen(); wurzel.ausfuehren("biblix-neustart-windows"); } }
-                Schraube { symbol: "system-reboot"; tipp: "Neustart"; onAusgeloest: { wurzel.schliessen(); sitzung.requestReboot(); } }
-                Schraube { symbol: "system-shutdown"; tipp: "Ausschalten"; gefahr: true; onAusgeloest: { wurzel.schliessen(); sitzung.requestShutdown(); } }
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: { spruchText.x = 0; inhalt.neuerSpruch(); }
+                }
+            }
+            // Knöpfe mit Beschriftung, gleichmäßig verteilt
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 0
+                Repeater {
+                    model: [
+                        { s: "system-lock-screen", n: "Sperren", a: "sperren" },
+                        { s: "system-suspend", n: "Standby", a: "standby" },
+                        { s: "system-log-out", n: "Abmelden", a: "abmelden" },
+                        { s: "biblix-windows-symbolic", n: "Windows", a: "windows" },
+                        { s: "system-reboot", n: "Neustart", a: "neustart" },
+                        { s: "system-shutdown", n: "Aus", a: "aus" }
+                    ]
+                    delegate: Item {
+                        required property var modelData
+                        visible: modelData.a !== "standby" || sitzung.canSuspend
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: knopf.implicitHeight
+                        Schraube {
+                            id: knopf
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            symbol: modelData.s
+                            tipp: modelData.n
+                            beschriftung: modelData.n
+                            gefahr: modelData.a === "aus"
+                            onAusgeloest: {
+                                wurzel.schliessen();
+                                switch (modelData.a) {
+                                case "sperren": sitzung.lock(); break;
+                                case "standby": sitzung.suspend(); break;
+                                case "abmelden": sitzung.requestLogout(); break;
+                                case "windows": wurzel.ausfuehren("biblix-neustart-windows"); break;
+                                case "neustart": sitzung.requestReboot(); break;
+                                case "aus": sitzung.requestShutdown(); break;
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -411,6 +466,7 @@ Item {
         required property int index
         required property var model
         property bool angeheftet: false
+        property real symbolGroesse: inhalt.gu * (inhalt.gross ? 3 : 2.2)
         signal ausgeloest()
         signal anheften()
 
@@ -427,7 +483,7 @@ Item {
             spacing: 2
             Kirigami.Icon {
                 Layout.alignment: Qt.AlignHCenter
-                implicitWidth: inhalt.gu * (inhalt.gross ? 3 : 2.2)
+                implicitWidth: kachel.symbolGroesse
                 implicitHeight: implicitWidth
                 source: kachel.model.decoration
                 scale: kachelMaus.pressed ? 0.9 : (kachelMaus.containsMouse ? 1.08 : 1)

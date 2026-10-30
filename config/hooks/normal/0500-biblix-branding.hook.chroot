@@ -2,6 +2,9 @@
 # Installer (Calamares) im Biblix-Look. Alles andere am Aussehen kommt aus dem Paket
 # biblix-design und laesst sich per Update aendern; der Installer betrifft nur neue Installationen.
 set -e
+# ISO-Version (schreibt build.sh nach /etc/biblix-iso)
+ISO_VERSION=2.0
+[ -r /etc/biblix-iso ] && . /etc/biblix-iso
 BR=/usr/share/biblix/branding
 png() { rsvg-convert -w "$2" -h "$3" -o "$4" "$1"; }
 
@@ -13,16 +16,27 @@ if [ -d /etc/calamares/branding/debian ]; then
         sed -i "s|^\( *$key: *\).*|\1Biblix|" $CB/branding.desc
     done
     for key in version shortVersion; do
-        sed -i "s|^\( *$key: *\).*|\1\"1.0\"|" $CB/branding.desc
+        sed -i "s|^\( *$key: *\).*|\1\"$ISO_VERSION\"|" $CB/branding.desc
     done
     for key in versionedName shortVersionedName; do
-        sed -i "s|^\( *$key: *\).*|\1\"Biblix 1.0\"|" $CB/branding.desc
+        sed -i "s|^\( *$key: *\).*|\1\"Biblix $ISO_VERSION\"|" $CB/branding.desc
     done
     sed -i "s|^componentName:.*|componentName: biblix|" $CB/branding.desc
     for key in productLogo productIcon; do
         img=$(sed -n "s|^ *$key: *\"\{0,1\}\([^\"]*\)\"\{0,1\} *$|\1|p" $CB/branding.desc)
         [ -n "$img" ] && png $BR/biblix-logo.svg 256 256 "$CB/$img"
     done
+    # Diashow und Farben im Bibi-Tech-Look (show.qml kommt aus includes.chroot)
+    if [ -f /usr/share/biblix/branding/calamares/show.qml ]; then
+        cp /usr/share/biblix/branding/calamares/show.qml $CB/show.qml
+    fi
+    sed -i -e 's|^\( *SidebarBackground: *\).*|\1"#1a2029"|' \
+           -e 's|^\( *SidebarText: *\).*|\1"#e8ecf2"|' \
+           -e 's|^\( *SidebarTextCurrent: *\).*|\1"#ffffff"|' \
+           -e 's|^\( *SidebarBackgroundCurrent: *\).*|\1"#378add"|' $CB/branding.desc
+    sed -i -e 's|^\( *productUrl: *\).*|\1https://github.com/Bobbsinator/biblix|' \
+           -e 's|^\( *supportUrl: *\).*|\1https://github.com/Bobbsinator/biblix|' \
+           -e 's|^\( *knownIssuesUrl: *\).*|\1https://github.com/Bobbsinator/biblix/issues|' $CB/branding.desc
     sed -i "s|^branding:.*|branding: biblix|" /etc/calamares/settings.conf
 fi
 

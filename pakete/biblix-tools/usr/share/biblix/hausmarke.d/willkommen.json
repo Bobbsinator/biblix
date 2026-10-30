@@ -1,0 +1,9 @@
+{
+  "id": "willkommen",
+  "name": "Willkommen bei Biblix",
+  "beschreibung": "Der Einrichtungs-Assistent: Design, Bildschirme, Sicherheit, Spiele und Konten in ein paar Schritten.",
+  "symbol": "biblix",
+  "befehl": ["biblix-willkommen"],
+  "status": "fertig",
+  "reihenfolge": 5
+}

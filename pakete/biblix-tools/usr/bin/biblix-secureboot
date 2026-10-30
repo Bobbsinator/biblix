@@ -6,8 +6,12 @@
 #   bibi biblix-secureboot                       im Terminal (fragt das Einmal-Passwort ab)
 #   biblix-secureboot --hash-datei DATEI         aus der Haustechnik-App (Passwort-Hash kommt
 #                                                von "mokutil --generate-hash", keine Rueckfragen)
+#   biblix-secureboot --nur-schluessel           nur eigenen Schluessel erzeugen und Treiber neu signieren
+#                                                (ohne Anmelden beim UEFI; biblix-erststart nach der Installation)
 set -e
 HASH=""
+NUR_SCHLUESSEL=""
+[ "${1:-}" = "--nur-schluessel" ] && NUR_SCHLUESSEL=1
 if [ "${1:-}" = "--hash-datei" ]; then
     HASH="${2:-}"
     [ -f "$HASH" ] || { echo "Hash-Datei fehlt."; exit 2; }
@@ -83,6 +87,11 @@ if [ ! -f "$MARK" ]; then
     mkdir -p "$(dirname "$MARK")"
     date > "$MARK"
     rm -rf "$SICHER"
+fi
+
+if [ -n "$NUR_SCHLUESSEL" ]; then
+    echo "Eigener Schluessel bereit. Anmelden beim UEFI: Haustechnik -> Secure Boot."
+    exit 0
 fi
 
 # 2. Schluessel beim UEFI anmelden

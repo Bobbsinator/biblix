@@ -1,0 +1,33 @@
+#!/bin/sh
+# Biblix: einmalige Einrichtung beim ersten Start eines frisch installierten Systems (ISO 2.0 und neuer).
+# Laeuft als root (biblix-erststart.service), nur wenn /etc/biblix-iso da ist, und nur einmal.
+#  1. Zeitmaschine: liegt / auf Btrfs, richtet Snapper ein. Danach macht apt vor und nach jedem Update
+#     automatisch einen Schnappschuss (Hook /etc/apt/apt.conf.d/80snapper aus dem Paket snapper).
+#  2. Secure Boot: der Treiber-Schluessel aus dem ISO-Bau wurde aus der ISO entfernt; hier bekommt
+#     dieser PC seinen eigenen und alle DKMS-Treiber werden damit neu signiert. Anmelden beim UEFI
+#     (blauer Bildschirm) bietet danach der Willkommens-Assistent an.
+MERKER=/var/lib/biblix/erststart-erledigt
+[ -e "$MERKER" ] && exit 0
+mkdir -p /var/lib/biblix
+
+if [ "$(findmnt -n -o FSTYPE /)" = btrfs ] && command -v snapper >/dev/null && [ ! -e /etc/snapper/configs/root ]; then
+    echo "Biblix: richte die Zeitmaschine (Snapper) ein"
+    if snapper -c root create-config /; then
+        # Nur Schnappschuesse rund um Updates (keine stuendlichen), die letzten 10 Paare behalten.
+        # Mitglieder der Gruppe sudo duerfen die Liste sehen (Haustechnik, Btrfs Assistant).
+        snapper -c root set-config TIMELINE_CREATE=no NUMBER_LIMIT=20 NUMBER_LIMIT_IMPORTANT=10 \
+            ALLOW_GROUPS=sudo SYNC_ACL=yes || true
+        snapper -c root create -d "Biblix frisch installiert" -c number --userdata important=yes || true
+        systemctl enable --now snapper-cleanup.timer 2>/dev/null || true
+    else
+        echo "Biblix: WARNUNG: Snapper liess sich nicht einrichten" >&2
+    fi
+fi
+
+if [ ! -e /var/lib/biblix/mok-eigener-schluessel ] && command -v dkms >/dev/null && [ -x /usr/bin/biblix-secureboot ]; then
+    echo "Biblix: eigener Treiber-Schluessel fuer diesen PC"
+    /usr/bin/biblix-secureboot --nur-schluessel || echo "Biblix: WARNUNG: Treiber-Schluessel nicht erzeugt" >&2
+fi
+
+date > "$MERKER"
+exit 0

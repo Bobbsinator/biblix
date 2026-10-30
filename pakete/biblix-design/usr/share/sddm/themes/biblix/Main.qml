@@ -34,7 +34,9 @@ Rectangle {
     Repeater { id: sitzungsListe; model: sessionModel
         delegate: Item { required property string name } }
     readonly property var aktuell: benutzerListe.count > 0 ? benutzerListe.itemAt(Math.min(benutzer, benutzerListe.count - 1)) : null
-    readonly property string anmeldeName: aktuell ? aktuell.name : ""
+    // Zeigt SDDM keine Benutzerliste (z. B. versteckte Benutzer), wird der Name von Hand eingetippt
+    readonly property bool nameVonHand: benutzerListe.count === 0
+    readonly property string anmeldeName: aktuell ? aktuell.name : nameFeld.text.trim()
     readonly property string anzeigeName: aktuell ? (aktuell.realName || aktuell.name) : ""
     readonly property string sitzungsName: sitzungsListe.count > 0 && sitzungsListe.itemAt(sitzung) ? sitzungsListe.itemAt(sitzung).name : ""
 
@@ -181,6 +183,36 @@ Rectangle {
                 }
             }
 
+            // Benutzername von Hand (nur wenn es keine Benutzerliste gibt)
+            Rectangle {
+                visible: wurzel.nameVonHand
+                width: parent.width
+                height: 56 * wurzel.s
+                radius: 12 * wurzel.s
+                color: Qt.darker(wurzel.grund, 1.2)
+                border.width: nameFeld.activeFocus ? 2 : 1
+                border.color: nameFeld.activeFocus ? wurzel.akzent : wurzel.rand
+                Text {
+                    id: namePrompt
+                    anchors { left: parent.left; leftMargin: 18 * wurzel.s; verticalCenter: parent.verticalCenter }
+                    text: "name>"
+                    color: wurzel.akzent
+                    font { family: "DejaVu Sans Mono"; bold: true; pixelSize: 18 * wurzel.s }
+                }
+                TextInput {
+                    id: nameFeld
+                    anchors { left: namePrompt.right; leftMargin: 12 * wurzel.s; right: parent.right; rightMargin: 18 * wurzel.s
+                              verticalCenter: parent.verticalCenter }
+                    color: wurzel.text
+                    selectionColor: wurzel.akzent
+                    font { family: "DejaVu Sans Mono"; pixelSize: 20 * wurzel.s }
+                    clip: true
+                    enabled: !wurzel.arbeitet
+                    KeyNavigation.tab: passwort
+                    onAccepted: passwort.forceActiveFocus()
+                }
+            }
+
             // Passwortzeile im Terminal-Stil
             Rectangle {
                 width: parent.width
@@ -292,10 +324,10 @@ Rectangle {
     Row {
         anchors { right: parent.right; bottom: parent.bottom; margins: 40 * wurzel.s }
         spacing: 12 * wurzel.s
-        Knopf { visible: sddm.canSuspend; zeichen: "☾"; beschriftung: "Ruhezustand"; onAusgeloest: sddm.suspend() }
+        Knopf { visible: sddm.canSuspend; zeichen: "☾"; beschriftung: "Standby"; onAusgeloest: sddm.suspend() }
         Knopf { visible: sddm.canReboot; zeichen: "↻"; beschriftung: "Neustart"; onAusgeloest: sddm.reboot() }
         Knopf { visible: sddm.canPowerOff; zeichen: "⏻"; beschriftung: "Ausschalten"; warnung: true; onAusgeloest: sddm.powerOff() }
     }
 
-    Component.onCompleted: passwort.forceActiveFocus()
+    Component.onCompleted: nameVonHand ? nameFeld.forceActiveFocus() : passwort.forceActiveFocus()
 }

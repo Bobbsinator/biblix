@@ -2,6 +2,9 @@
 # Was nur im ISO geht: Installer (Calamares), Schreibtisch neuer Benutzer, Anmeldetexte.
 # Systemeinstellungen, Dienste und Systemname kommen aus dem Paket biblix-system (per Update aenderbar).
 set -e
+# ISO-Version (schreibt build.sh nach /etc/biblix-iso)
+ISO_VERSION=2.0
+[ -r /etc/biblix-iso ] && . /etc/biblix-iso
 chmod 0755 /usr/lib/live/config/9990-biblix-desktop 2>/dev/null || true
 
 # Uhr (Ortszeit fuer Dual-Boot): siehe Hook 9100, live-build setzt sie in Schritt 8000 sonst zurueck
@@ -52,11 +55,11 @@ for f in de.biblix.NeustartWindows.desktop de.biblix.WindowsSpiel.cod.desktop; d
 done
 
 # Anmeldetexte auf der Konsole
-cat > /etc/issue <<'OS'
-Biblix 1.0 \n \l
+cat > /etc/issue <<OS
+Biblix $ISO_VERSION \n \l
 DEIN SYSTEM. DEIN PROBLEM.
 
 OS
-echo "Biblix 1.0" > /etc/issue.net
+echo "Biblix $ISO_VERSION" > /etc/issue.net
 
 update-desktop-database -q /usr/share/applications || true

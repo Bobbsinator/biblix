@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Willkommen bei Biblix
+Comment=Assistent beim ersten Anmelden (nur frisch installiert oder im Live-System)
+Exec=biblix-willkommen --autostart
+Icon=biblix
+Terminal=false
+NoDisplay=true
+X-KDE-autostart-phase=2
+OnlyShowIn=KDE;

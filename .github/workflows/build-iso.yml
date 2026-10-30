@@ -1,9 +1,14 @@
 name: Biblix ISO bauen
 
+# Von Hand (Actions -> "Biblix ISO bauen" -> Run workflow) oder mit einem Tag wie v2.0.
+# Bei einem Tag entsteht zusaetzlich ein GitHub-Release mit der ISO (Dateien ueber 2 GB in Teilen).
 on:
   workflow_dispatch:
   push:
     tags: ["v*"]
+
+permissions:
+  contents: write
 
 jobs:
   iso:
@@ -17,19 +22,51 @@ jobs:
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
           df -h /
 
-      - name: ISO bauen (Debian-13-Container)
+      - name: ISO bauen (Debian-13-Container, Biblix-Pakete aus der Paketquelle)
         run: |
           docker run --rm --privileged -v "$PWD:/build" -w /build debian:trixie \
-            bash -c "apt-get update && apt-get install -y live-build python3 && ./build.sh"
+            bash -c "apt-get update && apt-get install -y live-build python3 curl gpgv && ./build.sh"
 
-      - name: ISO hochladen
+      - name: Name und Teile
+        id: iso
+        run: |
+          . ./iso.conf
+          NAME="$ISO_NAME-$ISO_VERSION-amd64.iso"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          ls -la "$NAME"
+          # GitHub-Releases nehmen hoechstens 2 GB pro Datei
+          if [ "$(stat -c %s "$NAME")" -gt 2000000000 ]; then
+            split -b 1900M -d -a 2 "$NAME" "$NAME.teil"
+            cat > ZUSAMMENSETZEN.txt <<EOF
+          Die ISO ist in Teile zerlegt (GitHub erlaubt hoechstens 2 GB pro Datei).
+          Linux:   cat $NAME.teil* > $NAME
+          Windows: copy /b $NAME.teil00+$NAME.teil01+$NAME.teil02 $NAME   (alle Teile der Reihe nach)
+          Pruefen: sha256sum -c $NAME.sha256
+          EOF
+          fi
+
+      - name: ISO hochladen (Artifact)
         uses: actions/upload-artifact@v4
         with:
-          name: Biblix-1.0-amd64
+          name: ${{ steps.iso.outputs.name }}
           path: |
-            Biblix-1.0-amd64.iso
-            Biblix-1.0-amd64.iso.sha256
+            ${{ steps.iso.outputs.name }}
+            ${{ steps.iso.outputs.name }}.sha256
           compression-level: 0
+
+      - name: GitHub-Release (nur bei Tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NAME="${{ steps.iso.outputs.name }}"
+          if ls "$NAME".teil* >/dev/null 2>&1; then
+            DATEIEN="$NAME.teil* $NAME.sha256 ZUSAMMENSETZEN.txt"
+          else
+            DATEIEN="$NAME $NAME.sha256"
+          fi
+          gh release create "$GITHUB_REF_NAME" $DATEIEN --title "Biblix ${GITHUB_REF_NAME#v}" \
+            --notes "Biblix ${GITHUB_REF_NAME#v}. Prüfsumme: $NAME.sha256. Signatur der Prüfsumme folgt lokal (pakete/iso-signieren.sh)."
 
       - name: Build-Log hochladen
         if: always()

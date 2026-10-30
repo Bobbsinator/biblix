@@ -8,3 +8,10 @@ printf '0.0 0 0.0\n0\nLOCAL\n' > /etc/adjtime
 # Wieder auf die Biblix-Datei aus biblix-system zeigen lassen.
 ln -sfn ../usr/lib/os-release /etc/os-release
 grep -q Biblix /etc/os-release
+# Secure Boot: Der DKMS-Signierschluessel aus dem ISO-Bau darf nicht in jeder Kopie stecken.
+# Die Treiber im Image bleiben damit signiert (fuer Secure Boot aus egal); beim ersten Start erzeugt
+# biblix-erststart einen eigenen Schluessel fuer den PC und signiert alles neu.
+rm -f /var/lib/dkms/mok.key /var/lib/dkms/mok.pub /var/lib/shim-signed/mok/MOK.priv
+echo "Biblix: Treiber-Schluessel aus dem ISO entfernt"
+# Einmalige Einrichtung nach der Installation (Zeitmaschine, eigener Treiber-Schluessel)
+systemctl enable biblix-erststart.service

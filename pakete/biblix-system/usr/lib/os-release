@@ -1,7 +1,7 @@
-PRETTY_NAME="Biblix 1.0 (Debian 13 trixie)"
+PRETTY_NAME="Biblix 2.0 (Debian 13 trixie)"
 NAME="Biblix"
-VERSION_ID="1.0"
-VERSION="1.0"
+VERSION_ID="2.0"
+VERSION="2.0"
 VERSION_CODENAME=trixie
 ID=biblix
 ID_LIKE=debian

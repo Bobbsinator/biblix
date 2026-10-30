@@ -18,3 +18,7 @@ paketquelle/
 *PRIVAT*
 # Render-Ausgaben (gross, werden aus kunst/blender neu erzeugt)
 kunst/ausgabe/
+# Biblix-Pakete fuer die ISO holt build.sh aus der Paketquelle (keine Kopien mehr in Git)
+config/packages.chroot/*.deb
+# schreibt build.sh bei jedem Bau
+config/includes.chroot/etc/biblix-iso

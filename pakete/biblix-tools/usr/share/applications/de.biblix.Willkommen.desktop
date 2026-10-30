@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Willkommen bei Biblix
+Comment=Biblix einrichten: Design, Bildschirme, Sicherheit, Spiele, Konten
+Exec=biblix-willkommen
+Icon=biblix
+Terminal=false
+Categories=Settings;System;
+Keywords=Einrichtung;Assistent;Erster Start;Installieren;

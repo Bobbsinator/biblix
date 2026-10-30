@@ -1,0 +1,31 @@
+#!/bin/sh
+# Biblix-Zeitmaschine (Snapper, nur auf Btrfs). Laeuft als root ueber pkexec (Policy de.biblix.zeitmaschine).
+#   biblix-zeitmaschine liste              Schnappschuesse als JSON (fuer die Haustechnik)
+#   biblix-zeitmaschine neu                jetzt einen Schnappschuss machen ("Von Hand")
+#   biblix-zeitmaschine zurueck VOR NACH   die Aenderungen zwischen zwei Schnappschuessen rueckgaengig machen
+#                                          (z. B. ein Update: VOR = Schnappschuss vor dem Update, NACH = danach)
+# Deine Dateien in /home liegen in einem eigenen Teil und werden nie zurueckgedreht.
+set -e
+[ -e /etc/snapper/configs/root ] || { echo "Die Zeitmaschine ist auf diesem PC nicht eingerichtet (nur mit Btrfs)."; exit 3; }
+zahl() { case "$1" in ''|*[!0-9]*) echo "Ungültige Nummer: $1" >&2; exit 2 ;; esac; }
+case "${1:-}" in
+    liste)
+        snapper --jsonout -c root list --columns number,type,pre-number,date,description,userdata
+        ;;
+    neu)
+        snapper -c root create -c number -d "Von Hand (Haustechnik)" --userdata important=yes
+        echo "Schnappschuss gemacht."
+        ;;
+    zurueck)
+        zahl "${2:-}"; zahl "${3:-}"
+        [ "$2" -lt "$3" ] || { echo "Der erste Schnappschuss muss älter sein als der zweite." >&2; exit 2; }
+        # Vorher selbst sichern: auch das Zurueckdrehen laesst sich zurueckdrehen
+        snapper -c root create -c number -d "Vor dem Zurückdrehen $2..$3" --userdata important=yes
+        snapper -c root undochange "$2..$3"
+        echo "Zurückgedreht. Bitte neu starten, damit alles wieder zusammenpasst."
+        ;;
+    *)
+        echo "Aufruf: biblix-zeitmaschine liste | neu | zurueck VOR NACH" >&2
+        exit 2
+        ;;
+esac

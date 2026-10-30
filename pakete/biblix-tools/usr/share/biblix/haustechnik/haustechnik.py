@@ -19,6 +19,8 @@ from PyQt6.QtWidgets import (
 PALETTE = Path(os.environ.get("BIBLIX_KONFIG_DIR") or Path.home() / ".config/biblix") / "palette.json"
 MOK_PUB = Path("/var/lib/dkms/mok.pub")
 MERKER_MOK = Path("/var/lib/biblix/mok-eigener-schluessel")
+ZEITMASCHINE = Path("/etc/snapper/configs/root")   # Snapper eingerichtet (Btrfs, biblix-erststart)
+ZEITMASCHINE_HELFER = "/usr/lib/biblix/biblix-zeitmaschine"
 
 F = {"grund": "#0f141c", "flaeche": "#1a2029", "karte": "#232a35", "rand": "#313a48", "text": "#e8ecf2",
      "leise": "#8b95a5", "akzent": "#378add", "akzent2": "#ffd400", "auf_akzent": "#ffffff"}
@@ -153,6 +155,30 @@ def leere_platten():
         ergebnis.append({"path": d.get("path") or "/dev/" + d["name"], "model": (d.get("model") or "").strip(),
                          "groesse": round(groesse / 1e9)})
     return ergebnis
+
+
+def schnappschuesse(mit_passwort=False):
+    """Snapper-Liste: (Liste, Fehlertext). Ohne Passwort fuer Mitglieder von sudo (ALLOW_GROUPS)."""
+    argv = ["pkexec", ZEITMASCHINE_HELFER, "liste"] if mit_passwort else \
+        ["snapper", "--jsonout", "-c", "root", "list", "--columns", "number,type,pre-number,date,description,userdata"]
+    rc, out = run(argv, 60)
+    try:
+        # Nur das JSON lesen: davor oder danach koennen Warnungen stehen (z. B. "Failed to set locale")
+        daten, _ = json.JSONDecoder().raw_decode(out[out.index("{"):])
+        return daten.get("root", []), ""
+    except ValueError:
+        return [], out.strip() or "Snapper antwortet nicht."
+
+
+def update_paare(liste):
+    """Vorher/Nachher-Paare (z. B. ein Update), neueste zuerst: (vor, nach, datum, beschreibung)."""
+    nach_nummer = {s.get("number"): s for s in liste}
+    paare = []
+    for s in liste:
+        vor = s.get("pre-number")
+        if s.get("type") == "post" and vor in nach_nummer:
+            paare.append((vor, s["number"], (s.get("date") or "")[:16], nach_nummer[vor].get("description") or ""))
+    return sorted(paare, key=lambda p: -p[1])
 
 
 def neustart_grund():
@@ -309,7 +335,11 @@ class Haustechnik(QMainWindow):
         sl.addWidget(kopf)
         self.nav = QListWidget()
         self.schluessel = ["uebersicht", "secureboot", "bildschirme", "platten"]
-        for text in ("Übersicht", "Secure Boot", "Bildschirme", "Platten"):
+        namen = ["Übersicht", "Secure Boot", "Bildschirme", "Platten"]
+        if ZEITMASCHINE.exists():   # nur auf Btrfs mit Snapper (Biblix-ISO 2.0)
+            self.schluessel.append("zeitmaschine")
+            namen.append("Zeitmaschine")
+        for text in namen:
             self.nav.addItem(QListWidgetItem(text))
         sl.addWidget(self.nav, 1)
         spruch = label("AUF BIBLIX GEHT DAS.", "leise")
@@ -583,6 +613,80 @@ class Haustechnik(QMainWindow):
         run(["biblix-orte"], 20)  # neuer Ort gleich in der Dolphin-Seitenleiste
         QMessageBox.information(self, "Haustechnik", "Fertig.\n\n" + tipp)
         self.neu_zeigen()
+
+    # ---- Zeitmaschine (Snapper auf Btrfs)
+
+    def seite_zeitmaschine(self, mit_passwort=False):
+        s, lay = seite()
+        lay.addWidget(label("Zeitmaschine", "h1"))
+        lay.addWidget(label("Vor und nach jedem Update hält Biblix den Zustand des Systems fest. Geht nach einem "
+                            "Update etwas kaputt, drehst du hier genau dieses Update zurück. Deine eigenen Dateien "
+                            "(alles in deinem Home-Ordner) bleiben dabei unverändert.", "leise"))
+        liste, fehler = schnappschuesse(mit_passwort)
+        r = QHBoxLayout()
+        r.addWidget(knopf("Jetzt Schnappschuss machen", True, self.schnappschuss_neu))
+        if shutil.which("btrfs-assistant"):
+            r.addWidget(knopf("Alle Schnappschüsse (Btrfs Assistant)",
+                              cb=lambda: QProcess.startDetached("btrfs-assistant-launcher", [])))
+        r.addStretch(1)
+        lay.addLayout(r)
+        if fehler and not mit_passwort:
+            k, kl = karte()
+            kl.addWidget(label("Die Liste braucht dein Passwort.", "leise"))
+            kl.addWidget(knopf("Liste laden", cb=lambda: self.zeitmaschine_mit_passwort()), 0, Qt.AlignmentFlag.AlignLeft)
+            lay.addWidget(k)
+            return s
+        paare = update_paare(liste)
+        if not paare:
+            lay.addWidget(label("Noch keine Updates festgehalten. Das erste kommt mit dem nächsten System-Update.", "leise"))
+        for vor, nach, datum, was in paare[:12]:
+            k, kl = karte()
+            zeile = QHBoxLayout()
+            name = "System-Update" if was in ("apt", "") else was
+            zeile.addWidget(label(f"<b>{name}</b> &nbsp; <span style='color:{F['leise']}'>{datum}</span>"), 1)
+            zeile.addWidget(label(f"#{vor} → #{nach}", "leise", wrap=False))
+            zeile.addWidget(knopf("Zurückdrehen", cb=lambda _=False, a=vor, b=nach, d=datum: self.zurueckdrehen(a, b, d)))
+            kl.addLayout(zeile)
+            lay.addWidget(k)
+        return s
+
+    def zeitmaschine_mit_passwort(self):
+        alt = self.stack.currentWidget()
+        neu = self.seite_zeitmaschine(mit_passwort=True)
+        self.stack.addWidget(neu)
+        self.stack.setCurrentWidget(neu)
+        if alt is not None:
+            self.stack.removeWidget(alt)
+            alt.deleteLater()
+
+    def schnappschuss_neu(self):
+        rc, out = run(["pkexec", ZEITMASCHINE_HELFER, "neu"], 120)
+        if rc == 0:
+            QMessageBox.information(self, "Zeitmaschine", "Schnappschuss gemacht.")
+            self.neu_zeigen()
+        elif rc not in (126, 127):   # 126/127: Passwort abgebrochen
+            QMessageBox.warning(self, "Zeitmaschine", "Hat nicht geklappt.\n\n" + out.strip())
+
+    def zurueckdrehen(self, vor, nach, datum):
+        frage = QMessageBox.question(
+            self, "Update zurückdrehen",
+            f"Das Update vom {datum} wird rückgängig gemacht (Schnappschuss #{vor} bis #{nach}).\n\n"
+            "Vorher hält Biblix den jetzigen Stand fest, du kannst also auch das wieder zurückdrehen. "
+            "Danach bitte neu starten.\n\nWeiter?")
+        if frage != QMessageBox.StandardButton.Yes:
+            return
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        try:
+            rc, out = run(["pkexec", ZEITMASCHINE_HELFER, "zurueck", str(vor), str(nach)], 1800)
+        finally:
+            QApplication.restoreOverrideCursor()
+        if rc == 0:
+            if QMessageBox.question(self, "Zeitmaschine", "Zurückgedreht. Jetzt neu starten?") == \
+                    QMessageBox.StandardButton.Yes:
+                self.neustarten_direkt()
+            self.neu_zeigen()
+        elif rc not in (126, 127):
+            QMessageBox.warning(self, "Zeitmaschine", "Hat nicht geklappt.\n\n" + out.strip()[-1500:])
 
 
 def main():

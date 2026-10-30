@@ -1,0 +1,17 @@
+[Unit]
+Description=Biblix: einmalige Einrichtung nach der Installation (Zeitmaschine, Treiber-Schluessel)
+# Nur auf Systemen aus der Biblix-ISO 2.0 oder neuer, und nur einmal
+ConditionPathExists=/etc/biblix-iso
+ConditionPathExists=!/var/lib/biblix/erststart-erledigt
+# Nicht im Live-System vom USB-Stick
+ConditionKernelCommandLine=!boot=live
+After=local-fs.target network-online.target
+# Absichtlich kein Before=display-manager: das Neu-Signieren der Treiber dauert Minuten, die Anmeldung soll nicht warten
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/biblix/biblix-erststart
+TimeoutStartSec=30min
+
+[Install]
+WantedBy=multi-user.target

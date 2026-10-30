@@ -1,0 +1,4 @@
+# Zeitmaschine: Schnappschuesse vor jedem Update (nur auf Btrfs, richtet biblix-erststart ein)
+btrfs-progs
+snapper
+btrfs-assistant

@@ -4,3 +4,4 @@
 /etc/xdg/autostart/de.biblix.Orte.desktop
 /etc/kernel/postinst.d/zz-biblix-grafik
 /etc/kernel/header_postinst.d/zz-biblix-grafik
+/etc/xdg/autostart/de.biblix.Willkommen.desktop

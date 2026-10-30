@@ -463,6 +463,32 @@ Description: Biblix-Design: Konfigurator, Firmen-Designs, Bibi-Startmenü, Anima
 
 Package: biblix-design
 Architecture: all
+Version: 2.11.1
+Priority: optional
+Section: x11
+Maintainer: Biblix <biblix@localhost>
+Depends: desktop-base, plymouth, grub-common, python3, python3-pyqt6, python3-pyqt6.qtsvg, librsvg2-bin,
+ x11-apps, pkexec, kde-cli-tools, libkf6config-bin, libglib2.0-bin, plasma-workspace, plasma-desktop,
+ qml6-module-org-kde-ksysguard, qml6-module-org-kde-plasma-plasma5support, qml6-module-org-kde-coreaddons,
+ qml6-module-qtquick-particles, qml6-module-qtmultimedia,
+ qml6-module-qtquick-shapes, fonts-dejavu-core
+Recommends: sddm-theme-breeze, fastfetch, pulseaudio-utils, gamemode, biblix-kwin-wuerfel, playerctl, mangohud
+Filename: ./biblix-design_2.11.1_all.deb
+Size: 22484736
+MD5sum: 9c81ea24672199a7bbb73e261ecc0d96
+SHA1: c05fa0bb2423eca480af8435f11d2e5ca424ab79
+SHA256: d769d7d99b074252b82cef027be8a79563d9c2ee266e2ab5cd79d4330c4aabbf
+SHA512: 16b0922f4c0468dd90cbdc8a453a98fdc754417014424e5f4420abb7adef2d9073b3d5c1cbc92d5f1e2ec31ce668cce1b43d0c8dcd9766614ca573ea97e77937
+Description: Biblix-Design: Konfigurator, Firmen-Designs, Bibi-Startmenü, Animationen
+ Das Aussehen von Biblix und die App "Biblix Design": sechs Firmen-Designs
+ (Bibi Tech, Bibi Budget Bank, Bibi Delivery, Bibi Mac, Nassmacher, Bibiplexx)
+ hell und dunkel, eigene Farben, das Bibi-Startmenü, Fensterrahmen mit
+ Schrauben-Knöpfen, Fenster-Animationen, Mauszeiger, Symbole, Klänge,
+ viele Hintergründe, Sperrbildschirm, Startbildschirm und Bootmenü.
+ Alles einzeln mischbar. Kommt als Update, ohne Neuinstallation.
+
+Package: biblix-design
+Architecture: all
 Version: 2.2.0
 Priority: optional
 Section: x11
@@ -949,6 +975,26 @@ Description: Biblix-System: Leistung, Treiber-Einstellungen, Sicherheit
  Firefox-Videobeschleunigung, mpv in Hochqualitaet, Standard-Apps,
  der Admin-Befehl "bibi" und der Systemname Biblix.
 
+Package: biblix-system
+Architecture: all
+Version: 1.5.0
+Priority: optional
+Section: admin
+Maintainer: Biblix <biblix@localhost>
+Depends: sudo, base-files
+Recommends: firewalld, power-profiles-daemon, systemd-zram-generator, gamemode, mpv, firefox-esr, nvidia-vaapi-driver, bash-completion
+Filename: ./biblix-system_1.5.0_all.deb
+Size: 9340
+MD5sum: 071071c370c5c2c32ca216c14e147190
+SHA1: 9b01ab404c766ffe9b87899d6ee86c307ad01710
+SHA256: 3359615d68b5368655877a644ff9f89b5b111ae707d80f34ebb7627e9a7ba4ef
+SHA512: 9db0660bbdc47b968114eef819ed2b8505550bf0ce384273a39fe6c0d0377d4b995eaff6da910a3beca249eaadcd199541eadbaa457eff95979bcbb4a4acff48
+Description: Biblix-System: Leistung, Treiber-Einstellungen, Sicherheit
+ Systemeinstellungen von Biblix: Spiele-Kernelwerte, zram, I/O-Scheduler,
+ NVIDIA- und AMD-Optionen, Bootparameter, Firewall, Paketquelle (Backports),
+ Firefox-Videobeschleunigung, mpv in Hochqualitaet, Standard-Apps,
+ der Admin-Befehl "bibi" und der Systemname Biblix.
+
 Package: biblix-tools
 Architecture: all
 Version: 1.0.0
@@ -1194,6 +1240,27 @@ MD5sum: 754a9f6b132bb1ace38ec9390a1d9607
 SHA1: 2444bcf1a0fd34e95001d56239921462e04760b3
 SHA256: 5150a6cc0ce33e6ccb2cac1c243fc85fb1c5e90923b9bd91c90ad1ccda21e666
 SHA512: 7b62b34d8d188231a5fe092d5c9416e8f3fed01ea94d813a384e8a5b0999f7ef81d22220b5bd855ad7f3de2fde7fda28286cd2b45769d021d5b058257c4597d5
+Description: Biblix-Werkzeuge: S-Launcher und Systemhelfer
+ S-Launcher (App-Browser und Spielezentrale), biblix-gpu (Grafik- und CPU-Check),
+ Update-Benachrichtigungen, Secure-Boot-, OneDrive- und Xbox-Funkadapter-Helfer,
+ Neustart in Windows sowie die Paketquelle fuer kuenftige Biblix-Updates.
+ .
+ AUF BIBLIX GEHT DAS.
+
+Package: biblix-tools
+Architecture: all
+Version: 1.8.0
+Priority: optional
+Section: admin
+Maintainer: Biblix <biblix@localhost>
+Depends: python3, python3-pyqt6, flatpak, pciutils, pkexec, polkitd, libnotify-bin, kdialog, efibootmgr, konsole, curl
+Recommends: mokutil, onedrive, pipewire-bin, libkscreen-bin, dkms, libarchive-tools, gamemode, power-profiles-daemon, vulkan-tools, kio-admin, python3-pil, parted, openssl, python3-evdev
+Filename: ./biblix-tools_1.8.0_all.deb
+Size: 236296
+MD5sum: 9493328410b457e365966d34888593eb
+SHA1: 2e8a069310e79aeb49d3c73a3d02637fd145de5a
+SHA256: 7365cadb0f01cfca8c6a8a59009fb87515da37f078fed471027ec90ab9960015
+SHA512: f2eeabb362294103acb64fbbba652ae5e38c93ba9a1f288c99eca66d5126d41e329526a9471872957efb1e92d85c13dbda78e2c9f69ba6ee5b0369557160af3d
 Description: Biblix-Werkzeuge: S-Launcher und Systemhelfer
  S-Launcher (App-Browser und Spielezentrale), biblix-gpu (Grafik- und CPU-Check),
  Update-Benachrichtigungen, Secure-Boot-, OneDrive- und Xbox-Funkadapter-Helfer,
